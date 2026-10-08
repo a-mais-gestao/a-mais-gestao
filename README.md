@@ -1,44 +1,21 @@
-# A+ Gestão — versão inicial para GitHub Pages
+# A+ Gestão
 
-Aplicação web estática em HTML, CSS e JavaScript, preparada para publicação gratuita no GitHub Pages. Não usa Replit nem exige créditos de IA.
+Aplicação web estática (HTML + CSS + JavaScript) para o GitHub Pages. Sem servidor e sem custo.
 
-## Como publicar gratuitamente
-1. Crie um repositório no GitHub chamado `a-mais-gestao` e deixe-o **Public** se quiser usar o GitHub Pages gratuito.
-2. Envie os arquivos desta pasta para a raiz do repositório. O arquivo principal deve ficar como `index.html` na raiz.
-3. No GitHub, abra **Settings → Pages**.
-4. Em **Build and deployment**, selecione **Deploy from a branch**, escolha `main` e `/ (root)`, e salve.
-5. Aguarde a publicação indicada na própria tela do GitHub Pages.
+## Publicar
+1. Crie o repositório `a-mais-gestao` (Public) e envie estes arquivos para a raiz.
+2. Em **Settings → Pages**, escolha **Deploy from a branch**, branch `main`, pasta `/ (root)`.
+3. Para atualizar, substitua o `index.html` no repositório. Seus dados não são afetados.
 
-## O que esta versão já faz
-- Painel com indicadores calculados a partir dos registros locais.
-- Módulos de produtos, vendas, consignações, lojas, pedidos personalizados, estoque, produção, custos, finanças, prospecção, oportunidades, metas, cidades, demanda e outros.
-- Cadastro, edição, exclusão e busca em cada módulo.
-- Exportação de backup Excel por módulo ou completo.
-- Importação de backup Excel com prévia dos módulos e quantidade de registros antes de confirmar.
-- Não contém registros fictícios pré-carregados.
+## Digitação automática
+- **Ctrl+K**: abre a busca rápida. Enter abre o módulo; Shift+Enter já abre um registro novo.
+- **Ctrl+Enter** no formulário salva e abre outro em branco. **Duplicar** copia um registro.
+- Códigos novos (LOJ-001, OP-001, PED-001…) e datas (hoje) vêm preenchidos.
+- **SKU ou nome do produto** preenche produto, custo (usa Custos reais, senão o cadastro) e preço (pelo canal, usando a Matriz de preços).
+- **Loja** preenche a comissão. **Contato/empresa** preenche pessoa, telefone e cidade. **Material** preenche unidade e custo.
+- Totais, lucro, comissão, saldo, margem, % de perda, atraso e situação são calculados na hora (campos verdes). Se você digitar num campo calculado, ele deixa de ser recalculado.
+- Campos como canal, forma de pagamento, cidade e responsável sugerem o que você já digitou antes e lembram o último valor usado.
 
-## Limitação importante desta primeira versão
-Os registros ficam no armazenamento local do navegador (`localStorage`), neste dispositivo. Isso é útil para validar a interface e o fluxo de trabalho, mas não sincroniza entre dispositivos e pode ser perdido se os dados do site forem apagados. Faça backups Excel regulares.
-
-## Próxima etapa: Supabase
-O projeto Supabase anterior pode ser reaproveitado. Antes de ativar sincronização, é necessário conferir a estrutura real das tabelas, finalizar a conta administrativa e configurar políticas de acesso. Nunca coloque chave `service_role` ou chave secreta no site público. Só uma chave publishable/anon pode aparecer no frontend, com RLS corretamente configurado.
-
-## Arquivos
-- `index.html` — aplicação completa nesta versão.
-- `.nojekyll` — evita processamento desnecessário pelo Jekyll no GitHub Pages.
-
-
-## Ajustes de correção
-- Leitura numérica compatível com formatos brasileiros (ex.: R$ 1.234,56).
-- Painel calcula receita/lucro com fallback para quantidade × valor unitário quando campos totais estiverem vazios.
-- Importação reconhece nomes de abas e cabeçalhos ignorando acentos, espaços e pontuação.
-- Importação preserva valores numéricos do Excel.
-
-Antes de publicar, mantenha um backup dos dados locais. Esta versão continua usando armazenamento local do navegador; não sincroniza com Supabase.
-
-
-## Atualização visual e automações
-
-Esta versão melhora a legibilidade das tabelas e cartões, fixa os cabeçalhos durante a rolagem das tabelas e adiciona preenchimento assistido a partir do SKU, Contato ID e loja cadastrados. Também recalcula automaticamente totais de vendas, saldo de pedidos personalizados e valores básicos de consignação quando os campos relacionados são preenchidos.
-
-**Importante:** os dados continuam armazenados localmente neste navegador. Faça backup Excel antes de atualizar e teste a restauração com uma cópia do arquivo. Valores sugeridos devem ser revisados, principalmente custos, taxas, comissões e preços especiais.
+## Dados
+Ficam no `localStorage` do navegador (mesma chave da versão anterior, então os registros antigos continuam). Use **Backup Excel** no painel com frequência. O painel avisa quando o último backup passa de 7 dias.
+Próxima etapa: sincronizar com o Supabase (nunca coloque a chave `service_role` no site).
