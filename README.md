@@ -37,4 +37,4 @@ Próxima etapa: sincronizar com o Supabase (nunca coloque a chave `service_role`
 - **Seleção em massa:** nas listas, marque as caixinhas (ou a do cabeçalho; Shift seleciona um intervalo) para **Editar em massa** (troca um campo em todos os selecionados) ou **Excluir selecionados**. A seleção vale só para o que está visível com a busca/filtro atual.
 
 ## Jarvis (assistente com Gemini)
-Botão **J** no canto inferior direito (ou Ctrl+J). Na engrenagem ⚙, cole sua chave gratuita do Google AI Studio (fica só no seu navegador, fora dos backups), escolha a voz e o tom. O Jarvis recebe um **resumo agregado** dos seus números (sem telefones) a cada pergunta. Microfone 🎤 funciona no Chrome/Edge.
+Botão **J** no canto inferior direito (ou Ctrl+J). Na engrenagem ⚙, cole sua chave gratuita do Google AI Studio (fica só no seu navegador, fora dos backups), escolha a voz (Charon, Puck, Kore, Fenrir ou Aoede, as mesmas do Gemini Live). O Jarvis recebe um **resumo agregado** dos seus números (sem telefones) a cada pergunta. Microfone 🎤 funciona no Chrome/Edge.
