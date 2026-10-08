@@ -35,3 +35,10 @@ O projeto Supabase anterior pode ser reaproveitado. Antes de ativar sincronizaç
 - Importação preserva valores numéricos do Excel.
 
 Antes de publicar, mantenha um backup dos dados locais. Esta versão continua usando armazenamento local do navegador; não sincroniza com Supabase.
+
+
+## Atualização visual e automações
+
+Esta versão melhora a legibilidade das tabelas e cartões, fixa os cabeçalhos durante a rolagem das tabelas e adiciona preenchimento assistido a partir do SKU, Contato ID e loja cadastrados. Também recalcula automaticamente totais de vendas, saldo de pedidos personalizados e valores básicos de consignação quando os campos relacionados são preenchidos.
+
+**Importante:** os dados continuam armazenados localmente neste navegador. Faça backup Excel antes de atualizar e teste a restauração com uma cópia do arquivo. Valores sugeridos devem ser revisados, principalmente custos, taxas, comissões e preços especiais.
