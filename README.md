@@ -38,3 +38,6 @@ Próxima etapa: sincronizar com o Supabase (nunca coloque a chave `service_role`
 
 ## Jarvis (assistente com Gemini)
 Botão **J** no canto inferior direito (ou Ctrl+J). Na engrenagem ⚙, cole sua chave gratuita do Google AI Studio (fica só no seu navegador, fora dos backups), escolha a voz (Charon, Puck, Kore, Fenrir ou Aoede, as mesmas do Gemini Live). O Jarvis recebe um **resumo agregado** dos seus números (sem telefones) a cada pergunta. Microfone 🎤 funciona no Chrome/Edge.
+
+## Precificação (aba Preços)
+Baseada na Calculadora de Custos 3D: filamento + energia + embalagem + custo fixo + amortização da impressora + falhas = custo; preço = custo × markup; mostra lucro bruto/líquido (imposto, cartão, anúncio), preço lojista e custo de uso pessoal. Ajuste os **Parâmetros do negócio** uma vez. Em cada produto informe tempo (h) e peso (g) e clique **Salvar no produto**: isso atualiza custo, Custos reais e Matriz de preços, que alimentam vendas e consignações. Mudou um parâmetro? **Recalcular todos os produtos**.
