@@ -26,3 +26,12 @@ O projeto Supabase anterior pode ser reaproveitado. Antes de ativar sincronizaç
 ## Arquivos
 - `index.html` — aplicação completa nesta versão.
 - `.nojekyll` — evita processamento desnecessário pelo Jekyll no GitHub Pages.
+
+
+## Ajustes de correção
+- Leitura numérica compatível com formatos brasileiros (ex.: R$ 1.234,56).
+- Painel calcula receita/lucro com fallback para quantidade × valor unitário quando campos totais estiverem vazios.
+- Importação reconhece nomes de abas e cabeçalhos ignorando acentos, espaços e pontuação.
+- Importação preserva valores numéricos do Excel.
+
+Antes de publicar, mantenha um backup dos dados locais. Esta versão continua usando armazenamento local do navegador; não sincroniza com Supabase.
