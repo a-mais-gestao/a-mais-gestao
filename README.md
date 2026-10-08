@@ -26,5 +26,12 @@ Aplicação web estática (HTML + CSS + JavaScript) para o GitHub Pages. Sem ser
 - Categoria, canal, forma de pagamento, cidade, responsável, fornecedor, unidade, cor e similares viram **listas de escolha** que aprendem com o que você já cadastrou. Só valores inéditos exigem digitar (opção ➕ Novo…), e o último valor usado já vem preenchido.
 
 ## Dados
-Ficam no `localStorage` do navegador (mesma chave da versão anterior, então os registros antigos continuam). Use **Backup Excel** no painel com frequência. O painel avisa quando o último backup passa de 7 dias.
+Ficam no `localStorage` do navegador (mesma chave da versão anterior, então os registros antigos continuam). Use **Backup Excel** ou **Backup JSON (completo, sem perdas)** no painel com frequência. O painel avisa quando o último backup passa de 7 dias.
 Próxima etapa: sincronizar com o Supabase (nunca coloque a chave `service_role` no site).
+
+## Regras dos números (v2)
+- **Vendido no mês** = vendas diretas (exceto canal CONSIGNADA e EVENTO) + consignações **acertadas** no mês + pedidos **entregues** no mês + eventos do mês. Não lance a mesma venda em dois lugares.
+- **Acertar** lança uma entrada RECEBIDA no caixa e pergunta quantas unidades sobraram e voltaram para casa; o resto vira nova linha em aberto na loja.
+- **Saldo do caixa** ignora lançamentos PENDENTE/ATRASADO/CANCELADO.
+- Renomear loja ou SKU atualiza os registros ligados a eles.
+- **Seleção em massa:** nas listas, marque as caixinhas (ou a do cabeçalho; Shift seleciona um intervalo) para **Editar em massa** (troca um campo em todos os selecionados) ou **Excluir selecionados**. A seleção vale só para o que está visível com a busca/filtro atual.
