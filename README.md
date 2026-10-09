@@ -41,3 +41,6 @@ Botão **J** no canto inferior direito (ou Ctrl+J). Na engrenagem ⚙, cole sua 
 
 ## Precificação (aba Preços)
 Método de custo real: filamento + energia + desgaste da máquina + **seu trabalho (R$/h)** + embalagem + reserva de falhas = custo. O preço é calculado pela **margem líquida desejada**: preço = custo ÷ (1 − imposto − cartão − anúncio − margem). Informe tempo, peso, horas manuais e setup do lote; **Salvar no produto** atualiza custo, Custos reais e Matriz de preços (usados em vendas e consignações). Os parâmetros iniciais são só exemplos: ajuste os seus. O painel **Hoje** mostra também o *lucro líquido estimado* (bruto − imposto, cartão e anúncio).
+
+## Painel Hoje (v3)
+Ações do dia + painel por período (Hoje, 7/30/90 dias, este mês, mês passado, ano) com comparação opcional: insights/alertas, caixa do período (módulo Financeiro), rentabilidade (faturamento, custo, lucro bruto, despesas operacionais, lucro líquido), ticket médio, taxa de conversão de pedidos, evolução, fontes de receita, meta do mês com projeção, fluxo de caixa de 7 dias e atividade recente. Despesas operacionais excluem as categorias Material, Marketing e Taxas (já contadas no custo e nas estimativas).
