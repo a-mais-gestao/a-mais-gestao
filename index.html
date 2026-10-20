@@ -788,8 +788,9 @@ const cols=m=>m.fields.filter(f=>f[2]!=='textarea').slice(0,6),SUM=/valor|receit
 function pill(v,k){const s=String(v),c=/CONCLU|ATIVA|ACERTADO|RECEBIDO|PAGO|GANHA|ENTREGUE|^OK$|ATINGIDA|REALIZADO|ATENDIDA/i.test(s)?'g':/ATRAS|CANCEL|PERDIDA|ACABANDO|SOBRECARGA|BAIXA|VAZIA/i.test(s)?'r':/PENDENTE|ABERTA|PRODU|NEGOCI|ALTA|PARCIAL|HOJE|ATENÇÃO/i.test(s)?'a':'';return`<span class="pill ${c}">${esc(s)}</span>`}
 const cell=(v,f)=>v===''||v==null?'<span class="ok">—</span>':/status|ativo|prioridade|situacao|atrasado/.test(f[0])?pill(v,f[0]):f[2]==='date'?esc(dt(v).split('-').reverse().join('/')||v):f[2]==='number'?(SUM.test(f[0])&&!/pct|%/.test(f[1])?money(v):esc(typeof v==='number'?v.toLocaleString('pt-BR',{maximumFractionDigits:2}):v)):esc(v);
 function list(){const m=mod(cur),R=rows(cur),hasSt=m.fields.some(f=>f[0]==='status');
- $('#content').innerHTML=`<div class="ph">${tabOf(cur)==='v-mais'?'<button class="btn s" data-go="v-mais">‹ Mais</button>':''}<h2>${ICON[cur]} ${esc(m.label)}</h2></div><div class="bar"><input id="q" placeholder="Buscar em ${esc(m.label.toLowerCase())}…" aria-label="Buscar"><span class="ok" id="cnt"></span>${vtog()}<button class="btn" id="ex">Exportar</button><button class="btn p" id="nw">+ Novo</button></div>${hasSt?'<div class="chips" id="chips"></div>':''}<div class="note" id="bulk" hidden><span id="bn"></span><button class="btn s" id="bed">Editar em massa</button><button class="btn s" id="bdel">Excluir selecionados</button><button class="btn s" id="bclr">Limpar seleção</button></div><div class="tw" id="tw"></div>`;
- $('#q').oninput=table;$('#ex').onclick=()=>exportMod(cur);$('#nw').onclick=()=>form(cur);$('#bdel').onclick=bulkDel;$('#bed').onclick=bulkEdit;$('#bclr').onclick=()=>{selIds.clear();table()};bindGo();table()}
+ const prodScan=cur==='produtos'?'<button class="btn" id="pscan">🔎 Pesquisar produtos no sistema</button>':'';
+ $('#content').innerHTML=`<div class="ph">${tabOf(cur)==='v-mais'?'<button class="btn s" data-go="v-mais">‹ Mais</button>':''}<h2>${ICON[cur]} ${esc(m.label)}</h2></div><div class="bar"><input id="q" placeholder="Buscar em ${esc(m.label.toLowerCase())}…" aria-label="Buscar"><span class="ok" id="cnt"></span>${vtog()}<button class="btn" id="ex">Exportar</button>${prodScan}<button class="btn p" id="nw">+ Novo</button></div>${hasSt?'<div class="chips" id="chips"></div>':''}<div class="note" id="bulk" hidden><span id="bn"></span><button class="btn s" id="bed">Editar em massa</button><button class="btn s" id="bdel">Excluir selecionados</button><button class="btn s" id="bclr">Limpar seleção</button></div><div class="tw" id="tw"></div>`;
+ $('#q').oninput=table;$('#ex').onclick=()=>exportMod(cur);if($('#pscan'))$('#pscan').onclick=pesquisarProdutosSistema;$('#nw').onclick=()=>form(cur);$('#bdel').onclick=bulkDel;$('#bed').onclick=bulkEdit;$('#bclr').onclick=()=>{selIds.clear();table()};bindGo();table()}
 function table(){const m=mod(cur),R=rows(cur),q=($('#q')?.value||'').toLowerCase(),C=cols(m);let F=R.filter(r=>(!flt||String(r.status)===flt)&&Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)));
  if(sk)F=[...F].sort((a,b)=>{const x=a[sk],y=b[sk];return(typeof x==='number'&&typeof y==='number'?x-y:String(x??'').localeCompare(String(y??''),'pt-BR',{numeric:true}))*sd});
  $('#cnt').textContent=`${F.length} de ${R.length}`;
@@ -902,6 +903,101 @@ function aopAgenda({data,tipo,empresa,tarefa,prioridade='MÉDIA',obs='',chave=''
  if(exists)return false;const id=uid();setRows('agenda',[{_id:id,_criadoEm:new Date().toISOString(),data,tipo:tipo||'TAREFA',empresa_contato:empresa||'',tarefa,responsavel:'',prioridade,status:'PENDENTE',situacao:data<todayS()?'ATRASADA':data===todayS()?'HOJE':'NO PRAZO',observacoes:obs||''},...rows('agenda')]);return id
 }
 function aopDate(v){return v||addD(todayS(),7)}
+
+/* ===== Pesquisa inteligente de produtos já usados em outros módulos ===== */
+function aopNormalizaProdutoNome(v){
+  return String(v||'').replace(/\s+/g,' ').trim().replace(/^[•\-–—]\s*/,'');
+}
+function aopCandidatosProdutos(){
+  const existente=new Map(),mapa=new Map();
+  rows('produtos').forEach(p=>{
+    const n=nz(p.produto),s=nz(p.sku);
+    if(n)existente.set('n:'+n,true);
+    if(s)existente.set('s:'+s,true);
+  });
+  const add=(nome,sku,fonte,d={})=>{
+    nome=aopNormalizaProdutoNome(nome);sku=String(sku||'').trim();
+    if(!nome)return;
+    const nn=nz(nome),ss=nz(sku);
+    if((nn&&existente.has('n:'+nn))||(ss&&existente.has('s:'+ss)))return;
+    const key=ss?'s:'+ss:'n:'+nn;
+    let c=mapa.get(key);
+    if(!c){c={nome,sku,custo:0,preco:0,peso:0,tempo:0,fontes:new Set(),ocorrencias:0};mapa.set(key,c)}
+    if(!c.sku&&sku)c.sku=sku;
+    if(!c.custo&&num(d.custo)>0)c.custo=num(d.custo);
+    if(!c.preco&&num(d.preco)>0)c.preco=num(d.preco);
+    if(!c.peso&&num(d.peso)>0)c.peso=num(d.peso);
+    if(!c.tempo&&num(d.tempo)>0)c.tempo=num(d.tempo);
+    c.fontes.add(fonte);c.ocorrencias++;
+  };
+  rows('personalizados').forEach(r=>add(r.produto_sku,'','Pedidos personalizados'));
+  rows('vendas').forEach(r=>add(r.produto,r.sku_produto,'Vendas',{custo:r.custo_unitario,preco:r.valor_unitario}));
+  rows('consignacoes').forEach(r=>add(r.produto,r.sku,'Consignações',{preco:r.preco_unitario}));
+  rows('movimentos').forEach(r=>add(r.produto,r.sku,'Movimentos de estoque'));
+  rows('producao').forEach(r=>add(r.produto,r.sku_produto,'Produção'));
+  rows('catalogo').forEach(r=>add(r.produto,r.sku,'Catálogo'));
+  rows('oportunidades').forEach(r=>add(r.produto,r.sku,'Oportunidades'));
+  rows('demanda').forEach(r=>add(r.produto_solucao,'','Demandas'));
+  rows('impressoes').forEach(r=>{
+    const q=Math.max(num(r.qtd_pecas)||1,1);
+    String(r.produtos||'').split(/\s*,\s*/).map(aopNormalizaProdutoNome).filter(Boolean).forEach(nome=>
+      add(nome,'','Impressões',{
+        custo:num(r.custo_total)/q,
+        preco:num(r.preco_total)/q,
+        peso:num(r.peso_total_g)/q,
+        tempo:num(r.tempo_total_h)/q
+      })
+    );
+  });
+  return [...mapa.values()].sort((a,b)=>b.ocorrencias-a.ocorrencias||a.nome.localeCompare(b.nome,'pt-BR'));
+}
+function pesquisarProdutosSistema(){
+  const C=aopCandidatosProdutos();
+  if(!C.length){
+    return aopOpen('🔎 Pesquisa de produtos',
+      '<div class="empty" style="padding:28px 10px"><b>Nenhum produto novo encontrado</b>O cadastro de Produtos já cobre os nomes/SKUs encontrados nos pedidos e demais módulos.</div>',
+      [{t:'Fechar',p:true,f:()=>true}]
+    );
+  }
+  const body=`<p style="margin-top:0">Encontrei <b>${C.length}</b> item(ns) usados em outros lugares que ainda não estão no cadastro mestre de Produtos.</p>
+  <div class="note"><span>Marque os que realmente são produtos. O sistema ignora automaticamente nome ou SKU já cadastrado.</span><button class="btn s" type="button" id="apsp-all">Desmarcar todos</button></div>
+  <div style="display:flex;flex-direction:column;gap:8px">${C.map((c,i)=>`
+    <label class="cq ok2" style="cursor:pointer">
+      <span class="lk"><input type="checkbox" class="apsp-ck" data-i="${i}" checked style="width:17px;height:17px;accent-color:var(--acc)"></span>
+      <span style="flex:1;min-width:0"><b>${esc(c.nome)}</b><small>${c.sku?'SKU: '+esc(c.sku)+' · ':''}${esc([...c.fontes].join(' · '))} · ${c.ocorrencias} ocorrência(s)</small></span>
+      <span style="text-align:right;white-space:nowrap">${c.preco?'<b>'+money(c.preco)+'</b>':'<small>sem preço</small>'}</span>
+    </label>`).join('')}</div>`;
+  const actions=[{
+    t:'Cadastrar selecionados',p:true,f:()=>{
+      const sel=[...document.querySelectorAll('.apsp-ck:checked')].map(x=>C[+x.dataset.i]);
+      if(!sel.length){toast('Selecione pelo menos um produto.');return false}
+      let n=0;
+      sel.forEach(c=>{
+        if(!aopProdutoExiste(c.nome,c.sku)){
+          aopSalvarProduto({
+            nome:c.nome,sku:c.sku,custo:c.custo,preco:c.preco,peso:c.peso,tempo:c.tempo,
+            observacoes:'Cadastro criado pela pesquisa de produtos do sistema. Fontes: '+[...c.fontes].join(' · ')
+          });
+          n++;
+        }
+      });
+      toast(n+' produto(s) cadastrado(s) automaticamente.');
+      page();bindGo();
+    }
+  },{t:'Agora não',f:()=>true}];
+  const el=aopOpen('🔎 Produtos encontrados no sistema',body,actions);
+  setTimeout(()=>{
+    const all=document.getElementById('apsp-all');
+    const cks=[...document.querySelectorAll('.apsp-ck')];
+    if(all)all.onclick=()=>{
+      const marcar=cks.some(x=>!x.checked);
+      cks.forEach(x=>x.checked=marcar);
+      all.textContent=marcar?'Desmarcar todos':'Selecionar todos';
+    };
+  },0);
+  return el;
+}
+
 function aopConsignacao(r){
  const loja=String(r.loja_empresa||'').trim(),produto=String(r.produto||'').trim(),sku=String(r.sku||'').trim(),estoque=num(r.estoque_loja),rec=num(r.a_receber),status=String(r.status_acerto||'PENDENTE').toUpperCase();
  const sugest=rec>0?'Fazer acerto / conferir vendas e recebimento':estoque<=0?'Verificar reposição na loja':'Conferir estoque físico e vendas';
