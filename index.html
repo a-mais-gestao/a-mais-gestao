@@ -432,7 +432,7 @@ const ov=document.createElement('div');ov.className='ov';ov.id='kov';ov.innerHTM
 const close=()=>ov.classList.remove('on');$('#kx').onclick=close;ov.onclick=e=>{if(e.target===ov)close()};addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 const stt=r=>String(r.status||'').toUpperCase(),PEND=['ORÇAMENTO','AGUARDANDO APROVAÇÃO'],isS=x=>/sa[ií]da/i.test(x.tipo),fdb=d=>String(d||'').slice(0,10).split('-').reverse().join('/'),
  topC=a=>{const o={};a.forEach(r=>{const k=String(r.categoria||'Sem categoria').trim();o[k]=(o[k]||0)+num(r.valor)});return Object.entries(o).sort((x,y)=>y[1]-x[1]).slice(0,5).map(([k,v])=>[esc(k),money(v)])},
- lst=a=>a.slice(0,6).map(r=>[esc(r.cliente||'')+' <span class="ok">'+esc(r.produto_sku||'')+'</span>',money(r.valor_total)]);
+ lst=a=>a.slice(0,6).map(r=>[esc(r.cliente||'')+' <span class="ok">'+produtoTexto(r.produto_sku,r)+'</span>',money(r.valor_total)]);
 function kSum(l){const t=todayS(),rg=perRange(hp,t),X=pmx(rg),F=X.F,pc=(a,b)=>b?f2(a/b*100)+'%':'0%',all=rows('financeiro'),
  fin=all.filter(x=>dIn(x.data,rg)&&!eq(x.status,'CANCELADO')&&realiz(x)),ent=fin.filter(x=>!isS(x)),out=fin.filter(isS),Pj=rows('personalizados'),
  pen=all.filter(x=>['PENDENTE','ATRASADO'].includes(stt(x))),pe=sum(pen.filter(x=>!isS(x)),'valor'),ps=sum(pen.filter(isS),'valor'),
@@ -528,7 +528,7 @@ function serie(r){const n=ndays(r),o=[];if(n<=31){for(let i=0;i<n;i++){const d=a
 function bars(S){const mx=Math.max(1,...S.map(x=>x[1])),w=600/S.length,k=Math.ceil(S.length/8);return`<svg viewBox="0 0 600 170" style="width:100%;height:auto"><defs><linearGradient id="bgr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--acc)"/><stop offset="1" stop-color="var(--acc)" stop-opacity=".25"/></linearGradient></defs>${[0,1,2,3].map(i=>`<line x1="0" x2="600" y1="${140-i*43}" y2="${140-i*43}" stroke="var(--line)"/>`).join('')}${S.map((x,i)=>{const h=x[1]/mx*130;return`<rect x="${i*w+w*.15}" y="${140-h}" width="${w*.7}" height="${Math.max(h,1.5)}" rx="4" fill="url(#bgr)"><title>${x[0]}: ${money(x[1])}</title></rect>${i%k?'':`<text x="${i*w+w/2}" y="160" text-anchor="middle" font-size="10" fill="var(--mut)">${x[0]}</text>`}`}).join('')}</svg>`}
 function hoje(){const t=todayS(),rg=perRange(hp,t),pv=prevR(rg),soon=addD(t,3),T=[],add=(k,ti,sub,m,r,d,v)=>T.push({k,ti,sub,m,r,d,v});
  rows('agenda').filter(r=>!done(r.status)&&dt(r.data)&&dt(r.data)<=soon).forEach(r=>add(dt(r.data)<t?0:1,r.tarefa,'Tarefa · '+(r.empresa_contato||r.tipo||''),'agenda',r._id,dt(r.data)));
- rows('personalizados').filter(r=>!done(r.status)&&dt(r.prazo)&&dt(r.prazo)<=soon).forEach(r=>add(dt(r.prazo)<t?0:1,'Entregar pedido de '+r.cliente,(r.produto_sku||'')+(num(r.saldo)?' · falta receber '+money(r.saldo):''),'personalizados',r._id,dt(r.prazo)));
+ rows('personalizados').filter(r=>!done(r.status)&&dt(r.prazo)&&dt(r.prazo)<=soon).forEach(r=>add(dt(r.prazo)<t?0:1,'Entregar pedido de '+r.cliente,produtoNome(r.produto_sku,r)+(num(r.saldo)?' · falta receber '+money(r.saldo):''),'personalizados',r._id,dt(r.prazo)));
  rows('lojas').filter(r=>eq(r.status,'ATIVA')&&dt(r.proxima_visita)&&dt(r.proxima_visita)<=soon).forEach(r=>add(dt(r.proxima_visita)<t?0:1,'Visitar '+r.loja_empresa,'Visita à loja parceira','lojas',r._id,dt(r.proxima_visita)));
  rows('financeiro').filter(r=>!done(r.status)&&dt(r.vencimento)&&dt(r.vencimento)<=soon).forEach(r=>add(dt(r.vencimento)<t?0:1,(/sa[ií]da/i.test(r.tipo)?'Pagar: ':'Receber: ')+r.descricao,'Vence em '+dt(r.vencimento).split('-').reverse().join('/'),'financeiro',r._id,dt(r.vencimento),money(r.valor)));
  rows('central_acoes').filter(r=>!done(r.status)&&dt(r.prazo)&&dt(r.prazo)<=soon).forEach(r=>add(dt(r.prazo)<t?0:1,r.acao,'Ação · '+(r.area||''),'central_acoes',r._id,dt(r.prazo)));
@@ -549,7 +549,7 @@ function hoje(){const t=todayS(),rg=perRange(hp,t),pv=prevR(rg),soon=addD(t,3),T
  const S=serie(rg),SR=[['Vendas diretas',F.dir,'#3b82f6'],['Lojas (acertos)',F.loj,'var(--acc)'],['Pedidos entregues',F.ped,'#a855f7'],['Eventos',F.ev,'var(--warn)']],mt=metaMes(t),mm=fat(t.slice(0,7)).tot,dd=+t.slice(8),dim=new Date(+t.slice(0,4),+t.slice(5,7),0).getDate(),proj=mm/dd*dim,
  st=x=>String(x.status).toUpperCase(),pend=Pj.filter(r=>['ORÇAMENTO','AGUARDANDO APROVAÇÃO'].includes(st(r))).length,prod=Pj.filter(r=>st(r)==='EM PRODUÇÃO').length,pron=Pj.filter(r=>st(r)==='PRONTO').length,pjp=Pj.filter(r=>dIn(r.data,rg)&&st(r)!=='CANCELADO'),apr=pjp.filter(r=>!['ORÇAMENTO','AGUARDANDO APROVAÇÃO'].includes(st(r))).length,
  recT=sum(rows('consignacoes').filter(r=>!eq(r.status_acerto,'ACERTADO')),'a_receber')+sum(Pj.filter(r=>!done(r.status)),'saldo')+sum(pen.filter(x=>!sai(x)),'valor'),fd=d=>String(d||'').slice(0,10).split('-').reverse().join('/'),
- act=[...rows('vendas').map(r=>({m:'vendas',r,l:'Venda · '+(r.produto||r.sku_produto||'')+' · '+money(rev(r))})),...fin.map(r=>({m:'financeiro',r,l:(sai(r)?'Saída':'Entrada')+' · '+(r.descricao||'')+' · '+money(r.valor)})),...Pj.map(r=>({m:'personalizados',r,l:'Pedido · '+(r.cliente||'')+' ('+(r.status||'')+')'})),...rows('consignacoes').map(r=>({m:'consignacoes',r,l:'Envio/consignação · '+(r.loja_empresa||'')+' · '+(r.produto||r.sku||'')}))].map(x=>({...x,d:x.r._criadoEm||dt(x.r.data||x.r.ultimo_envio)})).sort((a,b)=>String(b.d).localeCompare(String(a.d))).slice(0,8),h=new Date().getHours(),Pe=Pj.filter(r=>st(r)==='ENTREGUE'),tvn=rows('vendas').length+Pe.length,trv=sum(rows('vendas'),rev)+sum(Pe,'valor_total'),ds=[...new Set(rows('vendas').map(r=>dt(r.data)).filter(Boolean))].sort(),bs=ds.reduce((a,d,i)=>{const run=i&&addD(ds[i-1],1)===d?a.run+1:1;return{run,best:Math.max(a.best,run)}},{run:0,best:0}).best,
+ act=[...rows('vendas').map(r=>({m:'vendas',r,l:'Venda · '+(r.produto||produtoTexto(r.sku_produto,r)||'')+' · '+money(rev(r))})),...fin.map(r=>({m:'financeiro',r,l:(sai(r)?'Saída':'Entrada')+' · '+(r.descricao||'')+' · '+money(r.valor)})),...Pj.map(r=>({m:'personalizados',r,l:'Pedido · '+(r.cliente||'')+' ('+(r.status||'')+')'})),...rows('consignacoes').map(r=>({m:'consignacoes',r,l:'Envio/consignação · '+(r.loja_empresa||'')+' · '+(r.produto||produtoTexto(r.sku,r)||'')}))].map(x=>({...x,d:x.r._criadoEm||dt(x.r.data||x.r.ultimo_envio)})).sort((a,b)=>String(b.d).localeCompare(String(a.d))).slice(0,8),h=new Date().getHours(),Pe=Pj.filter(r=>st(r)==='ENTREGUE'),tvn=rows('vendas').length+Pe.length,trv=sum(rows('vendas'),rev)+sum(Pe,'valor_total'),ds=[...new Set(rows('vendas').map(r=>dt(r.data)).filter(Boolean))].sort(),bs=ds.reduce((a,d,i)=>{const run=i&&addD(ds[i-1],1)===d?a.run+1:1;return{run,best:Math.max(a.best,run)}},{run:0,best:0}).best,
  CQ=[['Primeira venda','Realize sua primeira venda',tvn>=1,'1 venda'],['Mil reais','Alcance R$ 1.000 em vendas',trv>=1e3,'R$ 1.000'],['Cinco mil','Alcance R$ 5.000 em vendas',trv>=5e3,'R$ 5.000'],['Dez mil','Alcance R$ 10.000 em vendas',trv>=1e4,'R$ 10.000'],['Dez vendas','Complete 10 vendas',tvn>=10,'10 vendas'],['Cinquenta vendas','Complete 50 vendas',tvn>=50,'50 vendas'],['Sequência de 5','5 dias consecutivos com vendas',bs>=5,'5 dias seguidos']];
  $('#content').innerHTML=head(`${h<12?'Bom dia':h<18?'Boa tarde':'Boa noite'} 👋 <small class="ok" style="font-size:15px;font-weight:400">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</small>`)+
  `${bkCard()}<div class="qk"><button data-qk="venda">⚡ Venda rápida<small>produto, quantidade e pronto</small></button><button data-qk="gasto">⚡ Gasto rápido<small>valor e categoria</small></button>${[['consignacoes','Enviar para loja','Consignação'],['personalizados','Novo pedido','Personalizado']].map(q=>`<button data-f="${q[0]}|" ${q[3]?`data-p='${q[3]}'`:''}>${q[1]}<small>${q[2]}</small></button>`).join('')}</div>
@@ -599,7 +599,7 @@ function fixLinks(){const ids=m=>new Set(rows(m).map(r=>r._id)),V=ids('vendas'),
 function syncRow(id,sid,q){const r=rows(id).find(x=>x._id===sid);if(!r)return'';const t=todayS();
  if(id==='vendas'){const v=rev(r);if(isBlocked(r.canal)||v<=0){finLink('v:'+sid,null);return''}
   const pend=eq(r.status_pagamento,'PENDENTE'),d=dt(r.data)||t;
-  finLink('v:'+sid,{data:d,tipo:'ENTRADA',categoria:'VENDA',descricao:'Venda · '+(r.produto||r.sku_produto||'')+(r.loja_cliente?' · '+r.loja_cliente:''),valor:r2(v),forma_pagamento:r.forma_pagamento||'',status:pend?'PENDENTE':'RECEBIDO',vencimento:pend?(dt(r.vencimento)||d):'',observacoes:'Lançado automaticamente pela venda'});
+  finLink('v:'+sid,{data:d,tipo:'ENTRADA',categoria:'VENDA',descricao:'Venda · '+(r.produto||produtoTexto(r.sku_produto,r)||'')+(r.loja_cliente?' · '+r.loja_cliente:''),valor:r2(v),forma_pagamento:r.forma_pagamento||'',status:pend?'PENDENTE':'RECEBIDO',vencimento:pend?(dt(r.vencimento)||d):'',observacoes:'Lançado automaticamente pela venda'});
   return pend?'Venda salva · lançada como A RECEBER no Financeiro':'Venda salva · valor lançado no caixa'}
  if(id==='personalizados'){const dl=eq(r.status,'ENTREGUE'),sal=num(r.saldo),sin=num(r.sinal),nm=r.cliente||'';
   if(!dl){finLink('p:'+sid,null,true);finLink('ps:'+sid,null,true);return''}
@@ -639,7 +639,7 @@ function fixFinStatus(){const f=$('#form'),s=f.elements.status,t=f.elements.tipo
 
 /* PEDIDOS: quadro por etapa */
 function pedidosV(){const S=['ORÇAMENTO','AGUARDANDO APROVAÇÃO','EM PRODUÇÃO','PRONTO','ENTREGUE'],R=rows('personalizados'),t=todayS(),col=r=>S.includes(String(r.status).toUpperCase())?String(r.status).toUpperCase():(eq(r.status,'CANCELADO')?null:S[0]);
- $('#content').innerHTML=head('Pedidos personalizados',`<button class="btn" data-go="personalizados">Ver lista</button><button class="btn p" data-f="personalizados|">+ Novo pedido</button>`)+`<div class="kan">${S.map(s=>{let c=R.filter(r=>col(r)===s);if(s==='ENTREGUE')c=c.slice(0,6);return`<div class="kc"><h4>${s[0]+s.slice(1).toLowerCase()}<span class="ok">${R.filter(r=>col(r)===s).length}</span></h4>${c.map(r=>{const d=dt(r.prazo),late=d&&d<t&&s!=='ENTREGUE';return`<div class="kd" data-f="personalizados|${r._id}"><b>${esc(r.cliente)}</b><small>${esc(r.produto_sku||'')}</small><small>${num(r.valor_total)?money(r.valor_total):''}${num(r.saldo)?' · falta '+money(r.saldo):''}</small>${d?`<small class="${late?'late':''}">Prazo ${d.split('-').reverse().slice(0,2).join('/')}${late?' (atrasado)':''}</small>`:''}${s!=='ENTREGUE'?`<button class="btn s" data-mv="${r._id}|${S[S.indexOf(s)+1]}">Avançar ›</button>`:''}</div>`}).join('')||'<small class="ok" style="padding:6px">Vazio</small>'}</div>`}).join('')}</div>`;
+ $('#content').innerHTML=head('Pedidos personalizados',`<button class="btn" data-go="personalizados">Ver lista</button><button class="btn p" data-f="personalizados|">+ Novo pedido</button>`)+`<div class="kan">${S.map(s=>{let c=R.filter(r=>col(r)===s);if(s==='ENTREGUE')c=c.slice(0,6);return`<div class="kc"><h4>${s[0]+s.slice(1).toLowerCase()}<span class="ok">${R.filter(r=>col(r)===s).length}</span></h4>${c.map(r=>{const d=dt(r.prazo),late=d&&d<t&&s!=='ENTREGUE';return`<div class="kd" data-f="personalizados|${r._id}"><b>${esc(r.cliente)}</b><small>${produtoTexto(r.produto_sku,r)}</small><small>${num(r.valor_total)?money(r.valor_total):''}${num(r.saldo)?' · falta '+money(r.saldo):''}</small>${d?`<small class="${late?'late':''}">Prazo ${d.split('-').reverse().slice(0,2).join('/')}${late?' (atrasado)':''}</small>`:''}${s!=='ENTREGUE'?`<button class="btn s" data-mv="${r._id}|${S[S.indexOf(s)+1]}">Avançar ›</button>`:''}</div>`}).join('')||'<small class="ok" style="padding:6px">Vazio</small>'}</div>`}).join('')}</div>`;
  document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[i,s]=b.dataset.mv.split('|');setRows('personalizados',R.map(r=>r._id===i?{...r,status:s,...(s==='ENTREGUE'?{data_entrega:todayS()}:{})}:r));syncRow('personalizados',i);toast('Pedido movido para '+s.toLowerCase());pedidosV()});wire()}
 /* ESTOQUE: calculado a partir dos lotes, movimentos, vendas e envios */
 function estoque(){const V=rows('vendas'),C=rows('consignacoes'),Mv=rows('movimentos'),Lt=rows('lotes');
@@ -785,8 +785,54 @@ function sazV(){const{J,L}=szList(),t=todayS(),pr=L.filter(x=>x.stt==='prep'),so
 HUBS.clientes.tabs.push(['v-sazonal','Datas sazonais']);ICON['v-sazonal']='📅';VL['v-sazonal']='Datas sazonais';VIEWS['v-sazonal']=sazV;
 /* ---------- listagem ---------- */
 const cols=m=>m.fields.filter(f=>f[2]!=='textarea').slice(0,6),SUM=/valor|receita|lucro|custo|a_receber|comissao_valor|saldo|^preco|^vendas|^receita/;
+/* Exibição inteligente de referências de produto: o banco continua usando SKU, mas a interface mostra o nome. */
+function produtoRef(v){
+ const raw=String(v??'').trim();if(!raw)return null;
+ const P=[...rows('produtos'),...rows('catalogo')],p=P.find(x=>eq(x.sku,raw))||P.find(x=>eq(x.produto,raw));
+ return p?{nome:String(p.produto||raw).trim(),sku:String(p.sku||raw).trim()}:null;
+}
+function produtoNome(v,r){const raw=String(v??'').trim();if(!raw)return '';const p=produtoRef(raw);return String(r?.produto||'').trim()||p?.nome||raw}
+function produtoTexto(v,r){
+ const raw=String(v??'').trim();if(!raw)return '<span class="ok">—</span>';
+ const p=produtoRef(raw),nome=produtoNome(raw,r),sku=String(r?.sku_produto||r?.sku||p?.sku||'').trim();
+ if(nome&&sku&&eq(raw,sku))return `<span>${esc(nome)}</span><small class="ok">SKU: ${esc(sku)}</small>`;
+ if(p&&eq(raw,p.sku))return `<span>${esc(p.nome)}</span><small class="ok">SKU: ${esc(p.sku)}</small>`;
+ return esc(nome||raw);
+}
+/* Produto mestre = fonte de verdade para manter SKU e nome sempre sincronizados. */
+function produtoCadastro(ref){
+ const raw=String(ref??'').trim();if(!raw)return null;
+ const P=rows('produtos');
+ return P.find(x=>eq(x.sku,raw))||P.find(x=>eq(x.produto,raw))||null;
+}
+function sincronizarProducaoProduto(o){
+ const x={...o},sku=String(x.sku_produto||'').trim(),nome=String(x.produto||'').trim();
+ const p=produtoCadastro(sku)||produtoCadastro(nome);
+ if(p){x.sku_produto=p.sku||sku;x.produto=p.produto||nome}
+ return x;
+}
+function repararOrdensProducao(){
+ const P=rows('produtos'),I=rows('impressoes'),R=rows('producao');let mudou=0;
+ if(!R.length)return 0;
+ const findP=v=>{const raw=String(v||'').trim();return raw?(P.find(x=>eq(x.sku,raw))||P.find(x=>eq(x.produto,raw))):null};
+ const out=R.map(r=>{
+  let x={...r},imp=x._imp&&I.find(i=>i._id===x._imp),sku=String(x.sku_produto||'').trim();
+  if(imp){
+   const job=imp._job||{},names=String(imp.produtos||job.mesas?.map(m=>m.nome).filter(Boolean).join(', ')||'').trim();
+   const p=(names.includes(',')?null:findP(names))||findP(sku);
+   if(p){x.sku_produto=p.sku;x.produto=p.produto}
+   if(eq(x.status,'CONCLUÍDA')&&num(x.qtd_produzida)<=0)x.status='EM PRODUÇÃO';
+  }
+  x=sincronizarProducaoProduto(x);
+  if(JSON.stringify(x)!==JSON.stringify(r))mudou++;
+  return x;
+ });
+ if(mudou)setRows('producao',out);
+ return mudou;
+}
+
 function pill(v,k){const s=String(v),c=/CONCLU|ATIVA|ACERTADO|RECEBIDO|PAGO|GANHA|ENTREGUE|^OK$|ATINGIDA|REALIZADO|ATENDIDA/i.test(s)?'g':/ATRAS|CANCEL|PERDIDA|ACABANDO|SOBRECARGA|BAIXA|VAZIA/i.test(s)?'r':/PENDENTE|ABERTA|PRODU|NEGOCI|ALTA|PARCIAL|HOJE|ATENÇÃO/i.test(s)?'a':'';return`<span class="pill ${c}">${esc(s)}</span>`}
-const cell=(v,f)=>v===''||v==null?'<span class="ok">—</span>':/status|ativo|prioridade|situacao|atrasado/.test(f[0])?pill(v,f[0]):f[2]==='date'?esc(dt(v).split('-').reverse().join('/')||v):f[2]==='number'?(SUM.test(f[0])&&!/pct|%/.test(f[1])?money(v):esc(typeof v==='number'?v.toLocaleString('pt-BR',{maximumFractionDigits:2}):v)):esc(v);
+const cell=(v,f,r)=>v===''||v==null?'<span class="ok">—</span>':/status|ativo|prioridade|situacao|atrasado/.test(f[0])?pill(v,f[0]):(['sku_produto','produto_sku','produto_solucao'].includes(f[0])&&!String(r?.produto||'').trim())?produtoTexto(v,r):f[2]==='date'?esc(dt(v).split('-').reverse().join('/')||v):f[2]==='number'?(SUM.test(f[0])&&!/pct|%/.test(f[1])?money(v):esc(typeof v==='number'?v.toLocaleString('pt-BR',{maximumFractionDigits:2}):v)):esc(v);
 function list(){const m=mod(cur),R=rows(cur),hasSt=m.fields.some(f=>f[0]==='status');
  const prodScan=cur==='produtos'?'<button class="btn" id="pscan">🔎 Pesquisar produtos no sistema</button>':'';
  $('#content').innerHTML=`<div class="ph">${tabOf(cur)==='v-mais'?'<button class="btn s" data-go="v-mais">‹ Mais</button>':''}<h2>${ICON[cur]} ${esc(m.label)}</h2></div><div class="bar"><input id="q" placeholder="Buscar em ${esc(m.label.toLowerCase())}…" aria-label="Buscar"><span class="ok" id="cnt"></span>${vtog()}<button class="btn" id="ex">Exportar</button>${prodScan}<button class="btn p" id="nw">+ Novo</button></div>${hasSt?'<div class="chips" id="chips"></div>':''}<div class="note" id="bulk" hidden><span id="bn"></span><button class="btn s" id="bed">Editar em massa</button><button class="btn s" id="bdel">Excluir selecionados</button><button class="btn s" id="bclr">Limpar seleção</button></div><div class="tw" id="tw"></div>`;
@@ -795,7 +841,7 @@ function table(){const m=mod(cur),R=rows(cur),q=($('#q')?.value||'').toLowerCase
  if(sk)F=[...F].sort((a,b)=>{const x=a[sk],y=b[sk];return(typeof x==='number'&&typeof y==='number'?x-y:String(x??'').localeCompare(String(y??''),'pt-BR',{numeric:true}))*sd});
  $('#cnt').textContent=`${F.length} de ${R.length}`;
  const ch=$('#chips');if(ch){const c={};R.forEach(r=>{const s=r.status;if(s)c[s]=(c[s]||0)+1});ch.innerHTML=`<button class="chip ${flt?'':'on'}" data-s="">Todos</button>`+Object.entries(c).map(([s,n])=>`<button class="chip ${flt===s?'on':''}" data-s="${esc(s)}">${esc(s)} (${n})</button>`).join('');ch.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{flt=b.dataset.s;table()})}
- $('#tw').className=vmode()==='grid'?'vg-wrap':'tw';$('#tw').innerHTML=F.length?(vmode()==='grid'?vgHtml(m,F):`<table><thead><tr><th style="width:36px"><input type="checkbox" id="sa" aria-label="Selecionar todos"></th>${C.map(f=>`<th data-k="${f[0]}">${esc(f[1])}${sk===f[0]?sd>0?' ▲':' ▼':''}</th>`).join('')}</tr></thead><tbody>${F.map(r=>`<tr data-e="${esc(r._id)}"><td><input type="checkbox" data-sel="${esc(r._id)}" ${selIds.has(r._id)?'checked':''}></td>${C.map(f=>`<td>${cell(r[f[0]],f)}</td>`).join('')}</tr>`).join('')}</tbody>${C.some(f=>f[2]==='number'&&SUM.test(f[0]))?`<tfoot><tr><td></td>${C.map((f,i)=>`<td>${f[2]==='number'&&SUM.test(f[0])&&!/pct|%/.test(f[1])?money(F.reduce((a,r)=>a+num(r[f[0]]),0)):i?'':'Total'}</td>`).join('')}</tr></tfoot>`:''}</table>`):`<div class="empty"><b>${R.length?'Nada encontrado':'Nenhum registro ainda'}</b>${R.length?'Tente outra busca ou filtro.':'Clique em “+ Novo” ou importe um backup Excel.'}</div>`;
+ $('#tw').className=vmode()==='grid'?'vg-wrap':'tw';$('#tw').innerHTML=F.length?(vmode()==='grid'?vgHtml(m,F):`<table><thead><tr><th style="width:36px"><input type="checkbox" id="sa" aria-label="Selecionar todos"></th>${C.map(f=>`<th data-k="${f[0]}">${esc(f[1])}${sk===f[0]?sd>0?' ▲':' ▼':''}</th>`).join('')}</tr></thead><tbody>${F.map(r=>`<tr data-e="${esc(r._id)}"><td><input type="checkbox" data-sel="${esc(r._id)}" ${selIds.has(r._id)?'checked':''}></td>${C.map(f=>`<td>${cell(r[f[0]],f,r)}</td>`).join('')}</tr>`).join('')}</tbody>${C.some(f=>f[2]==='number'&&SUM.test(f[0]))?`<tfoot><tr><td></td>${C.map((f,i)=>`<td>${f[2]==='number'&&SUM.test(f[0])&&!/pct|%/.test(f[1])?money(F.reduce((a,r)=>a+num(r[f[0]]),0)):i?'':'Total'}</td>`).join('')}</tr></tfoot>`:''}</table>`):`<div class="empty"><b>${R.length?'Nada encontrado':'Nenhum registro ainda'}</b>${R.length?'Tente outra busca ou filtro.':'Clique em “+ Novo” ou importe um backup Excel.'}</div>`;
  document.querySelectorAll('th[data-k]').forEach(h=>h.onclick=()=>{sd=sk===h.dataset.k?-sd:1;sk=h.dataset.k;table()});document.querySelectorAll('[data-e]').forEach(t=>t.onclick=()=>form(cur,t.dataset.e));document.querySelectorAll('.vg-card[data-e]').forEach(c=>c.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target===c){e.preventDefault();form(cur,c.dataset.e)}});const gs=$('#gs');if(gs){gs.onchange=()=>{sk=gs.value||null;sd=1;table()};const gd=$('#gd');if(gd)gd.onclick=()=>{sd=-sd;table()}}bindSel(F)}
 /* ---------- PRECIFICAÇÃO: custo real (material + energia + máquina + trabalho + falhas) e preço por margem líquida ---------- */
 const PRC_DEF={custo_kg:89.9,potencia:150,kwh:.84,impressora:4500,vida:20000,fixo_h:0,desgaste_h:.3,hora:20,rolo:25,emb_rolo:10,falhas:10,imposto:8,cartao:4,anuncio:10,margem:30,lojista:60},
@@ -1038,7 +1084,13 @@ function aopPedido(r){
 }
 function aopAfterSave(modulo,row,isNew){if(!isNew||!row)return;if(modulo==='vendas'){const nome=String(row.produto||'').trim(),sku=String(row.sku_produto||'').trim();if(nome&&!aopProdutoExiste(nome,sku))return setTimeout(()=>aopOpen('💰 Venda registrada',`<p style="font-size:15px;margin-top:0"><b>${esc(nome)}</b> foi vendido, mas ainda não existe no cadastro de Produtos.</p><p>Quer aproveitar os dados desta venda e salvar o produto agora?</p>`,[{t:'Salvar como produto',p:true,f:()=>{aopCadastrarProduto({nome,sku,preco:num(row.valor_unitario),custo:num(row.custo_unitario),observacoes:'Cadastro criado a partir de uma venda.'});return false}},{t:'Agora não',f:()=>true}]),120)}if(modulo==='movimentos'){const nome=String(row.produto||'').trim(),sku=String(row.sku||'').trim();if(nome&&!aopProdutoExiste(nome,sku))return setTimeout(()=>aopOpen('📦 Produto novo detectado',`<p style="font-size:15px;margin-top:0">Você registrou <b>${esc(nome)}</b> em um movimento de estoque, mas ele ainda não está cadastrado.</p>`,[{t:'Salvar como produto',p:true,f:()=>{aopCadastrarProduto({nome,sku,observacoes:'Cadastro criado a partir de um movimento de estoque.'});return false}},{t:'Agora não',f:()=>true}]),120)}if(modulo==='prospeccao'){const nome=String(row.empresa||row.responsavel_contato||'').trim(),ex=aopContatoExiste(nome,'');if(nome&&!ex)return setTimeout(()=>aopCadastrarContato({nome,fone:''}),120)}if(modulo==='consignacoes')return setTimeout(()=>aopConsignacao(row),120);if(modulo==='personalizados')return setTimeout(()=>aopPedido(row),120);if(modulo==='producao')return setTimeout(()=>aopOpen('⚙️ Produção registrada',`<p style="font-size:15px;margin-top:0"><b>${esc(row.produto||row.sku_produto||'Ordem de produção')}</b> foi registrada.</p><p>Quer deixar o próximo passo na Agenda para não depender da memória?</p><div class="f"><label>Prazo / próxima conferência</label><input id="aoprod" type="date" value="${aopDate(row.prazo)}"></div>`,[{t:'Criar lembrete',p:true,f:()=>{const d=document.getElementById('aoprod').value||aopDate(),id=aopAgenda({data:d,tipo:'TAREFA',empresa:'',tarefa:`Conferir produção: ${row.produto||row.sku_produto||row.op}`,prioridade:'MÉDIA',obs:`Origem: OP ${row.op||''}`,chave:`AOP-OP-${row._id}`});toast(id?'Lembrete criado.':'Esse lembrete já existe.');page();bindGo()}},{t:'Agora não',f:()=>true}]),120)}
 
-function saveRec(again){const o=read();if(!o)return;const m=mod(cur),L=LAST();REMEMBER.forEach(k=>o[k]&&(L[k]=o[k]));localStorage.setItem('aplus_last',JSON.stringify(L));if(cur==='vendas'&&isBlocked(o.canal)&&!confirm(`Vendas com canal ${o.canal} NÃO entram no Faturamento do dashboard nem no caixa.\n\n• CONSIGNADA: registre o envio em Consignações; o dinheiro entra no acerto da loja.\n• EVENTO: registre a receita no módulo Eventos.\n\nSalvar mesmo assim?`))return;const sid=ed||uid();let R=rows(cur);
+function saveRec(again){const o=read();if(!o)return;const m=mod(cur),L=LAST();REMEMBER.forEach(k=>o[k]&&(L[k]=o[k]));localStorage.setItem('aplus_last',JSON.stringify(L));if(cur==='vendas'&&isBlocked(o.canal)&&!confirm(`Vendas com canal ${o.canal} NÃO entram no Faturamento do dashboard nem no caixa.\n\n• CONSIGNADA: registre o envio em Consignações; o dinheiro entra no acerto da loja.\n• EVENTO: registre a receita no módulo Eventos.\n\nSalvar mesmo assim?`))return;if(cur==='producao'){
+  o=sincronizarProducaoProduto(o);
+  if(!String(o.sku_produto||'').trim())return toast('Selecione um produto válido pelo SKU antes de salvar a ordem.');
+  if(eq(o.status,'CONCLUÍDA')&&num(o.qtd_produzida)<=0)return toast('Uma ordem não pode ser CONCLUÍDA com 0 unidades produzidas. Informe a quantidade produzida ou mantenha a ordem em produção.');
+  if(num(o.qtd_produzida)<0||num(o.qtd_perdida)<0)return toast('As quantidades produzida e perdida não podem ser negativas.');
+}
+const sid=ed||uid();let R=rows(cur);
  if(ed)R=R.map(r=>r._id===ed?{...r,...o}:r);else R=[{...o,_id:sid,_criadoEm:new Date().toISOString()},...R];const prv=ed?rows(cur).find(r=>r._id===ed):null;cascade(cur,ed,o);const ok=setRows(cur,R);if(ok){const mg=syncRow(cur,sid);toast(mg||(cur==='produtos'&&autoPreco(o,prv)?'Produto salvo · custo e preços calculados automaticamente':ed?'Registro atualizado':'Registro salvo'))}
  {const savedMod=cur,savedNew=!ed,savedRow={...o,_id:sid};const c=cur;if(bk)cur=bk;nav();page();bindGo();if(again){cur=c;ed=null;form(c)}else{bk=null;$('#ov').classList.remove('on');ed=null} if(savedNew&&ok)setTimeout(()=>aopAfterSave(savedMod,savedRow,true),100)}}
 $('#sv').onclick=()=>saveRec(0);$('#sn').onclick=()=>saveRec(1);$('#mx').onclick=()=>{$('#ov').classList.remove('on');ed=null;if(bk){cur=bk;bk=null}};
@@ -1420,7 +1472,10 @@ function njSave(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
   if(oldPed)setRows('personalizados',rows('personalizados').map(r=>r._imp===id?{...r,...o}:r));else njAdd('personalizados',{pedido_sku:nextId(mod('personalizados')),...o,_imp:id})}
  else if(oldPed)setRows('personalizados',rows('personalizados').filter(r=>r._imp!==id));
  /* ordem de produção */
- if(ok){njAdd('producao',{op:oldOp||nextId(mod('producao')),data_abertura:hoje,produto:names,qtd_planejada:c.pieces,qtd_produzida:st==='CONCLUIDA'?c.pieces:0,qtd_perdida:0,data_inicio:hoje,prazo:J.prazo||'',status:st==='CONCLUIDA'?'CONCLUÍDA':'EM PRODUÇÃO',tempo_estimado:r2(c.el),impressora:[...new Set(J.mesas.map(m=>m.impressora||'Impressora padrão'))].join(', '),observacoes:'Origem: Nova impressão '+codigo+(J.tipo==='ENCOMENDA'?' · '+J.cliente.nome:''),_imp:id})}
+ if(ok){
+  const unica=c.mes.length===1?produtoCadastro(c.mes[0].nome):null;
+  njAdd('producao',{op:oldOp||nextId(mod('producao')),data_abertura:hoje,sku_produto:unica?unica.sku:'',produto:unica?unica.produto:names,qtd_planejada:c.pieces,qtd_produzida:st==='CONCLUIDA'?c.pieces:0,qtd_perdida:0,data_inicio:hoje,prazo:J.prazo||'',status:st==='CONCLUIDA'?'CONCLUÍDA':'EM PRODUÇÃO',tempo_estimado:r2(c.el),impressora:[...new Set(J.mesas.map(m=>m.impressora||'Impressora padrão'))].join(', '),observacoes:'Origem: Nova impressão '+codigo+(J.tipo==='ENCOMENDA'?' · '+J.cliente.nome:''),_imp:id})}
+
  /* sinal */
  if(J.tipo==='ENCOMENDA'&&ok&&sinal>0&&J.lancaSinal)njAdd('financeiro',{data:(oldFin&&oldFin.data)||hoje,tipo:'ENTRADA',categoria:'PEDIDO',descricao:'Sinal '+codigo+' · '+J.cliente.nome.trim(),valor:r2(sinal),forma_pagamento:c.payLab,status:'RECEBIDO',observacoes:'Origem: Nova impressão',_imp:id});
  /* conclusão: baixa de estoque e entrada no estoque */
@@ -1435,7 +1490,9 @@ function njSave(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
 /* eventos (uma vez) */
 {const C=document.getElementById('content');C.addEventListener('input',njOnInput);C.addEventListener('change',njOnInput);C.addEventListener('click',njOnClick)}
 
+const _prodReparadas=repararOrdensProducao();
 go('v-hoje');snapAuto();
+if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
 /* ===== Bolinhas de ajuda (?) ao lado de cada campo de entrada ===== */
 (function(){
 const nz=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
