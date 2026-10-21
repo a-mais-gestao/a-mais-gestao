@@ -263,7 +263,7 @@ body[data-vm=grid] .vg-off{display:none!important}body[data-vm=list] .vg-x{displ
 <div class="toast" id="toast"></div>
 <script>
 const MODULES=[
-{id:'produtos',label:'Produtos',icon:'▦',sheet:'PRODUTOS',desc:'Cadastro mestre de produtos e SKUs.',fields:[['sku','SKU','text',true],['produto','Produto','text',true],['categoria','Categoria'],['custo_unitario','Custo unitário','number'],['estoque_minimo','Estoque mínimo','number'],['ativo','Ativo?','select',['SIM','NÃO']],['preco_padrao','Preço padrão','number'],['estoque_inicial','Estoque inicial','number'],['tempo_h','Tempo de impressão (h)','number'],['peso_g','Peso da peça (g)','number'],['horas_manuais','Horas manuais por peça (h)','number'],['setup_h','Setup do lote (h)','number'],['lote_un','Peças por lote','number'],['observacoes','Observações','textarea'],['motor','Motor','select',['GIRO','SOB DEMANDA','PERSONALIZADO','ATACADO']],['disponibilidade','Disponibilidade'],['nivel_servico','Nível serviço'],['cidade_foco','Cidade foco']]},
+{id:'produtos',label:'Produtos',icon:'▦',sheet:'PRODUTOS',desc:'Cadastro mestre de produtos e SKUs.',fields:[['sku','SKU','text',true],['produto','Produto','text',true],['categoria','Categoria'],['uso_produto','Destino do produto','select',['PEDIDO','LOJA','CONSIGNAÇÃO','USO PESSOAL','SEM CLASSIFICAÇÃO']],['custo_unitario','Custo unitário','number'],['estoque_minimo','Estoque mínimo','number'],['ativo','Ativo?','select',['SIM','NÃO']],['preco_padrao','Preço padrão','number'],['estoque_inicial','Estoque inicial','number'],['tempo_h','Tempo de impressão (h)','number'],['peso_g','Peso da peça (g)','number'],['horas_manuais','Horas manuais por peça (h)','number'],['setup_h','Setup do lote (h)','number'],['lote_un','Peças por lote','number'],['observacoes','Observações','textarea'],['motor','Motor','select',['GIRO','SOB DEMANDA','PERSONALIZADO','ATACADO']],['disponibilidade','Disponibilidade'],['nivel_servico','Nível serviço'],['cidade_foco','Cidade foco']]},
 {id:'lojas',label:'Lojas parceiras',icon:'⌂',sheet:'LOJAS',fields:[['codigo','Código','text',true],['loja_empresa','Loja / Empresa','text',true],['nicho','Nicho'],['responsavel','Responsável'],['telefone','Telefone / WhatsApp'],['cidade','Cidade'],['bairro','Bairro'],['rua','Rua'],['numero','Nº'],['data_inicio','Data de início','date'],['comissao','Comissão %','number'],['status','Status','select',['ATIVA','PAUSADA','ENCERRADA']],['proxima_visita','Próxima visita','date'],['ultimo_acerto','Último acerto','date'],['observacoes','Observações','textarea']]},
 {id:'vendas',label:'Vendas',icon:'↗',sheet:'VENDAS',fields:[['data','Data','date',true],['canal','Canal','select',['DIRETA','CONSIGNADA','ONLINE','ATACADO','PERSONALIZADO','EVENTO']],['loja_cliente','Loja / Cliente'],['sku_produto','SKU produto'],['produto','Produto'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['status_pagamento','Pagamento','select',['RECEBIDO','PENDENTE']],['forma_pagamento','Forma de pagamento'],['vencimento','Vencimento (se pendente)','date'],['receita_bruta','Receita bruta','number'],['desconto','Desconto','number'],['taxa_canal','Taxa do canal','number'],['frete','Frete','number'],['imposto','Imposto (R$)','number'],['receita_liquida','Receita líquida','number'],['custo_unitario','Custo unitário','number'],['custo_total','Custo total','number'],['lucro','Lucro','number']]},
 {id:'consignacoes',label:'Consignações',icon:'⇄',sheet:'CONSIGNAÇÕES',fields:[['loja_empresa','Loja / Empresa','text',true],['sku','SKU'],['produto','Produto'],['qtd_enviada','Qtd. enviada','number'],['qtd_vendida','Qtd. vendida','number'],['qtd_devolvida','Qtd. devolvida','number'],['estoque_loja','Estoque na loja','number'],['preco_unitario','Preço unit.','number'],['valor_bruto','Valor bruto','number'],['comissao_pct','Comissão %','number'],['comissao_valor','Comissão R$','number'],['a_receber','A receber','number'],['status_acerto','Status acerto','select',['PENDENTE','ACERTADO','PARCIAL']],['ultimo_envio','Último envio','date'],['ultimo_acerto','Último acerto','date'],['observacoes','Observações','textarea']]},
@@ -335,7 +335,53 @@ const calc=(id,g,t,s)=>{const done=['ENTREGUE','CANCELADO'];
 /* ---------- estrutura: 6 telas de trabalho + cadastros ---------- */
 const VL={'v-hoje':'Hoje','v-lojas':'Lojas parceiras','v-pedidos':'Pedidos','v-estoque':'Estoque','v-mais':'Mais ferramentas','v-preco':'Precificação','v-nova':'Nova impressão'};
 const TABS=[['v-hoje','Hoje'],['v-lojas','Lojas'],['v-pedidos','Pedidos'],['v-estoque','Estoque'],['v-preco','Preços'],['financeiro','Finanças'],['v-mais','Mais']];
-const VIEWS={'v-hoje':hoje,'v-lojas':lojasV,'v-pedidos':pedidosV,'v-estoque':estoqueV,'v-mais':maisV,'v-preco':precoV,'v-nova':novaV};let bk=null;
+/* ===== PRODUTOS: central visual por destino ===== */
+function produtosV(){
+ const R=rows('produtos'),t=estoque(), stockById=Object.fromEntries(t.map(x=>[x._id,x])),
+       tabs=[['all','Todos','▦'],['PEDIDO','Para pedido','🧾'],['LOJA','Para uso na loja','🏪'],['CONSIGNAÇÃO','Para consignação','🤝'],['USO PESSOAL','Uso pessoal','👤']],
+       curTab=window._prodTab||'all', q=String($('#prodq')?.value||'').trim().toLowerCase(),
+       filt=R.filter(r=>{
+         const u=String(r.uso_produto||'SEM CLASSIFICAÇÃO').toUpperCase();
+         const okTab=curTab==='all'||u===curTab;
+         const txt=[r.produto,r.sku,r.categoria,r.material,r.descricao_curta,u].map(x=>String(x||'').toLowerCase()).join(' ');
+         return okTab&&(!q||txt.includes(q));
+       }),
+       count=u=>R.filter(r=>String(r.uso_produto||'SEM CLASSIFICAÇÃO').toUpperCase()===u).length,
+       colors={PEDIDO:'pill b',LOJA:'pill g','CONSIGNAÇÃO':'pill a','USO PESSOAL':'pill', 'SEM CLASSIFICAÇÃO':'pill r'},
+       label=u=>u==='PEDIDO'?'Para pedido':u==='LOJA'?'Para uso na loja':u==='CONSIGNAÇÃO'?'Para consignação':u==='USO PESSOAL'?'Uso pessoal':'Sem classificação';
+ $('#content').innerHTML=head('Produtos',
+   `<button class="btn" data-go="estoque">📦 Ver estoque</button><button class="btn" id="pscanprod">🔎 Pesquisar no sistema</button><button class="btn p" data-f="produtos|">＋ Novo produto</button>`)+
+   `<div class="panel" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap">
+        <div><h3 style="margin-bottom:4px">Onde este produto é usado?</h3><p class="ok" style="margin:0">Separe o catálogo conforme a finalidade para não misturar pedido, loja, consignação e peças pessoais.</p></div>
+        <div class="f" style="min-width:min(360px,100%);margin:0"><input id="prodq" placeholder="🔎 Buscar por nome, SKU, categoria ou material..." value="${esc($('#prodq')?.value||'')}"></div>
+      </div>
+      <div class="vsw" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+        ${tabs.map(([id,n,ic])=>`<button type="button" data-ptab="${id}" class="${curTab===id?'on':''}">${ic} ${n} <span class="ok">${id==='all'?R.length:count(id)}</span></button>`).join('')}
+      </div>
+   </div>
+   <div class="k5" style="margin-bottom:16px">
+     ${tabs.slice(1).map(([id,n,ic])=>`<div class="kc2" style="cursor:default"><small>${ic} ${n}</small><b>${count(id)}</b><span>${count(id)===1?'produto':'produtos'}</span></div>`).join('')}
+   </div>
+   ${filt.length?`<div class="cgrid" style="grid-template-columns:repeat(auto-fill,minmax(245px,1fr))">${filt.map(r=>{
+      const st=stockById[r._id]||{},u=String(r.uso_produto||'SEM CLASSIFICAÇÃO').toUpperCase(),
+            img=String(r.foto||'').trim(), preco=num(r.preco_padrao), custo=num(r.custo_unitario);
+      return `<div class="ccard" data-f="produtos|${r._id}">
+        <div class="cimg">${img?`<img src="${esc(img)}" alt="${esc(r.produto)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`:''}<div class="cph" style="${img?'display:none':''}">📦</div></div>
+        <div class="cbd">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><h4>${esc(r.produto||'Produto sem nome')}</h4><p>${esc(r.descricao_curta||r.categoria||'')}</p></div><span class="${colors[u]||'pill'}">${label(u)}</span></div>
+          <div class="cft"><span><small class="ok">SKU</small><br><b>${esc(r.sku||'—')}</b></span><span style="text-align:right"><small class="ok">Estoque</small><br><b>${st.casa??0}</b></span></div>
+          <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span><small class="ok">Custo</small><br>${custo?money(custo):'—'}</span><span style="text-align:right"><small class="ok">Preço</small><br><b>${preco?money(preco):'—'}</b></span></div>
+        </div></div>`;
+   }).join('')}</div>`:`<div class="empty"><b>Nenhum produto nesta seção</b>${q?'Tente outro termo de busca.':'Cadastre ou classifique seus produtos para eles aparecerem aqui.'}<div class="ph"><button class="btn p" data-f="produtos|">＋ Cadastrar produto</button></div></div>`}`+
+   `<p class="foot">A classificação é apenas organizacional: ela não altera custo, estoque ou preço. Um produto pode ser recategorizado a qualquer momento no cadastro.</p>`;
+ $('#prodq').oninput=()=>produtosV();
+ document.querySelectorAll('[data-ptab]').forEach(b=>b.onclick=()=>{window._prodTab=b.dataset.ptab;produtosV()});
+ document.querySelectorAll('[data-f]').forEach(el=>el.style.cursor='pointer');
+ const ps=$('#pscanprod');if(ps)ps.onclick=pesquisarProdutosSistema;
+ wire();
+}
+const VIEWS={'v-hoje':hoje,'v-lojas':lojasV,'v-pedidos':pedidosV,'v-estoque':estoqueV,'v-mais':maisV,'v-preco':precoV,'v-nova':novaV,'produtos':produtosV};let bk=null;
 Object.assign(ICON,{'v-hoje':'🏠','v-lojas':'🏪','v-pedidos':'✨','v-estoque':'📦','v-mais':'⋯','v-preco':'🏷️','v-nova':'➕',impressoes:'🖨️',impressoras:'🖨️'});
 const lab=id=>VL[id]||mod(id).label,tabOf=id=>TABS.some(t=>t[0]===id)?id:'v-mais',addD=(d,n)=>new Date(Date.parse(d)+n*864e5).toISOString().slice(0,10);
 const rev=r=>r.receita_liquida!==''&&r.receita_liquida!=null?num(r.receita_liquida):r.receita_bruta!==''&&r.receita_bruta!=null?num(r.receita_bruta):num(r.quantidade)*num(r.valor_unitario);
@@ -1437,7 +1483,9 @@ function njT5(){const J=NJ,c=njCalc(J),cell=(l,v,dim)=>`<div class="njc ${dim&&!
  <div class="njtl"><span>Total Indireto</span><b>${money(c.indireto)}</b></div>
  <div class="njcost"><div><b>Custo Total do Job</b><small>Direto + Indireto</small></div><b class="njbig bad">${money(c.custo)}</b></div>
  <div class="njprice"><div class="njpt"><div><b>Preço Total</b><small>${c.pieces} peça${c.pieces>1?'s':''} · ${J.modoPreco==='MARGEM'?'Margem: '+f2(num(J.margem))+'%':'Preço fixo'}${c.pieces>1?' · '+money(c.preco/c.pieces)+' por peça':''}</small></div><b class="njbig acc">${money(c.preco)}</b></div>
- <div class="g2"><div class="njc bd"><small>Custo Total</small><b class="bad">${money(c.custo)}</b></div><div class="njc gd"><small>Lucro Total</small><b class="${c.lucro<0?'bad':'good'}">${money(c.lucro)}</b><small>Rentabilidade: ${f2(c.rent)}%</small><small style="display:block;margin-top:5px"><b>Lucro Virgem: ${money(c.lucroVirgem)}</b> · ${money(c.lucroVirgemUnit)} / peça</small></div></div><p class="foot">💡 <b>Lucro Virgem</b> ignora custos projetados ou não imediatos: depreciação, desgaste, reserva de falhas, mão de obra, embalagem, taxas, impostos, entrega e extras. Aqui considera somente <b>filamento + energia</b> como custo imediato.</p></div>
+ <div class="g2"><div class="njc bd"><small>Custo Total</small><b class="bad">${money(c.custo)}</b></div><div class="njc gd"><small>Lucro Total</small><b class="${c.lucro<0?'bad':'good'}">${money(c.lucro)}</b><small>Rentabilidade: ${f2(c.rent)}%</small><small style="display:block;margin-top:5px"><b>Lucro Virgem: ${money(c.lucroVirgem)}</b> · ${money(c.lucroVirgemUnit)} / peça</small></div></div>
+ <div class="njprice" style="margin-top:10px"><div class="njpt"><div><b>Valor sem ajustes</b><small>Preço de venda − filamento − energia · sem depreciação, desgaste ou reservas projetadas</small></div><b class="njbig acc">${money(c.lucroVirgem)}</b></div><div class="g2" style="margin-top:10px"><div class="njc"><small>Preço de venda</small><b>${money(c.preco)}</b></div><div class="njc"><small>Custos imediatos</small><b>${money(c.fil+c.en)}</b><small>Filamento + energia</small></div></div></div>
+ <p class="foot">💡 <b>Valor sem ajustes</b> é a visualização imediata da venda: considera apenas filamento + energia. O resultado é o <b>Lucro Virgem</b> e ignora depreciação, desgaste, reserva de falhas, mão de obra, embalagem, taxas, impostos, entrega e extras.</p></div>
  <details class="njplan" open><summary>O que acontece ao salvar</summary><ul>${njPlan(J,c).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>
  <button type="button" class="btn p njsave" data-nja="save">💾 ${J.status==='ORCAMENTO'&&!J.id?'Calcular e Gerar Orçamento':'Salvar impressão'}</button></div>`}
 /* ---- atualização leve (sem recriar inputs) ---- */
