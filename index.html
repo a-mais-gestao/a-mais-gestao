@@ -311,7 +311,7 @@ const NAV=[['Início',['dashboard']],['Vendas e clientes',['vendas','consignacoe
 /* opções sugeridas (digitáveis) para campos que antes eram texto livre */
 const SIM=['SIM','NÃO'],PR=['ALTA','MÉDIA','BAIXA'];
 const PRE={prioridade:PR,ativo:SIM,producao_propria:SIM,atendido_depois:SIM,potencial:['ALTO','MÉDIO','BAIXO'],impacto:['ALTO','MÉDIO','BAIXO'],unidade:['UN','G','KG','M','ML','CM'],canal:['DIRETA','CONSIGNADA','ONLINE','ATACADO','PERSONALIZADO','EVENTO','WHATSAPP','INSTAGRAM'],forma_pagamento:['PIX','DINHEIRO','CARTÃO DÉBITO','CARTÃO CRÉDITO','BOLETO','TRANSFERÊNCIA'],disponibilidade:['EM ESTOQUE','SOB DEMANDA','INDISPONÍVEL'],nivel_servico:['ALTO','MÉDIO','BAIXO'],origem:['INDICAÇÃO','INSTAGRAM','WHATSAPP','VISITA','EVENTO','SITE'],categoria:[],area:['VENDAS','PRODUÇÃO','FINANCEIRO','MARKETING','ESTOQUE']};
-const PREM={financeiro:{categoria:['VENDA','PEDIDO','CONSIGNAÇÃO','EVENTO','MATERIAL','EMBALAGEM','FRETE','MARKETING','TAXAS','ENERGIA','OUTROS','EMPRÉSTIMO RECEBIDO','PAGAMENTO DE EMPRÉSTIMO']},materiais:{categoria:['FILAMENTO','ACABAMENTO','EMBALAGEM','COMPONENTE','FERRAGEM']},eventos:{status:['PLANEJADO','REALIZADO','CANCELADO']},bobinas:{status:['EM USO','NOVA','ACABANDO','VAZIA']},cidades:{status:['ATIVA','EM EXPANSÃO','PROSPECTO']},demanda:{status:['ABERTA','ATENDIDA','NÃO ATENDIDA']},prospeccao:{status:['ATIVO','PAUSADO','ENCERRADO'],etapa:['PRIMEIRO CONTATO','CONVERSA','PROPOSTA','FECHAMENTO'],resultado:['SEM RESPOSTA','INTERESSADO','NÃO TEM INTERESSE','FECHOU']},personalizados:{etapa:['ARTE','IMPRESSÃO','ACABAMENTO','ENTREGA']},metas:{status:['EM ANDAMENTO','ATINGIDA','NÃO ATINGIDA']},impressora:{status:['OK','MANUTENÇÃO','PARADA'],tipo_registro:['USO','MANUTENÇÃO','PEÇA TROCADA']},agenda:{tipo:['LIGAÇÃO','VISITA','WHATSAPP','ENTREGA','REUNIÃO']},nichos:{potencial:['ALTO','MÉDIO','BAIXO']},capacidade:{status_capacidade:['OK','ATENÇÃO','SOBRECARGA']},central_acoes:{prioridade:['ALTA','MÉDIA','BAIXA']}};
+const PREM={financeiro:{categoria:['VENDA','PEDIDO','CONSIGNAÇÃO','EVENTO','MATERIAL','EMBALAGEM','FRETE','MARKETING','TAXAS','ENERGIA','OUTROS','EMPRÉSTIMO RECEBIDO','PAGAMENTO DE EMPRÉSTIMO','INVESTIMENTO']},materiais:{categoria:['FILAMENTO','ACABAMENTO','EMBALAGEM','COMPONENTE','FERRAGEM']},eventos:{status:['PLANEJADO','REALIZADO','CANCELADO']},bobinas:{status:['EM USO','NOVA','ACABANDO','VAZIA']},cidades:{status:['ATIVA','EM EXPANSÃO','PROSPECTO']},demanda:{status:['ABERTA','ATENDIDA','NÃO ATENDIDA']},prospeccao:{status:['ATIVO','PAUSADO','ENCERRADO'],etapa:['PRIMEIRO CONTATO','CONVERSA','PROPOSTA','FECHAMENTO'],resultado:['SEM RESPOSTA','INTERESSADO','NÃO TEM INTERESSE','FECHOU']},personalizados:{etapa:['ARTE','IMPRESSÃO','ACABAMENTO','ENTREGA']},metas:{status:['EM ANDAMENTO','ATINGIDA','NÃO ATINGIDA']},impressora:{status:['OK','MANUTENÇÃO','PARADA'],tipo_registro:['USO','MANUTENÇÃO','PEÇA TROCADA']},agenda:{tipo:['LIGAÇÃO','VISITA','WHATSAPP','ENTREGA','REUNIÃO']},nichos:{potencial:['ALTO','MÉDIO','BAIXO']},capacidade:{status_capacidade:['OK','ATENÇÃO','SOBRECARGA']},central_acoes:{prioridade:['ALTA','MÉDIA','BAIXA']}};
 const opts=(m,k)=>(PREM[m.id]||{})[k]||PRE[k];
 /* códigos automáticos sequenciais */
 const AUTO={lojas:['codigo','LOJ'],producao:['op','OP'],lotes:['lote','LT'],contatos:['contato_id','CT'],nichos:['nicho_id','NI'],oportunidades:['oportunidade_id','OPT'],cidades:['id_cidade','CID'],personalizados:['pedido_sku','PED'],impressoes:['codigo','IMP'],impressoras:['codigo','IMPR'],eventos:['sku_evento','EVT'],materiais:['codigo_material','MAT'],bobinas:['codigo_bobina','BOB']};
@@ -488,7 +488,7 @@ function kSum(l){const t=todayS(),rg=perRange(hp,t),X=pmx(rg),F=X.F,pc=(a,b)=>b?
  caixa=sum(all.filter(realiz),x=>(isS(x)?-1:1)*num(x.valor)),
  pjp=Pj.filter(r=>dIn(r.data,rg)&&stt(r)!=='CANCELADO'),apr=pjp.filter(r=>!PEND.includes(stt(r))),
  cons=sum(rows('consignacoes').filter(r=>!eq(r.status_acerto,'ACERTADO')),'a_receber'),sal=sum(Pj.filter(r=>!done(r.status)),'saldo'),
- dopL=out.filter(x=>!['MATERIAL','EMBALAGEM','ENERGIA','FRETE','TAXAS','EVENTO','PAGAMENTO DE EMPRÉSTIMO','EMPRÉSTIMO RECEBIDO'].includes(String(x.categoria).toUpperCase())),
+ dopL=out.filter(x=>!['MATERIAL','EMBALAGEM','ENERGIA','FRETE','TAXAS','EVENTO','INVESTIMENTO','IMPRESSORA','PAGAMENTO DE EMPRÉSTIMO','EMPRÉSTIMO RECEBIDO'].includes(String(x.categoria).toUpperCase())),
  pend=Pj.filter(r=>PEND.includes(stt(r))),prod=Pj.filter(r=>stt(r)==='EM PRODUÇÃO'),pron=Pj.filter(r=>stt(r)==='PRONTO'),
  M={
  'Entradas':{v:money(X.ent),per:1,note:'Recebimentos lançados, por categoria',r:[['Lançamentos',ent.length],...topC(ent)],go:'financeiro'},
@@ -570,7 +570,7 @@ function cascade(id,rid,o){if(!rid)return;const p=rows(id).find(r=>r._id===rid);
 /* HOJE: o que precisa de atenção, com os registros reais */
 let hp='30d',hcmp=false,hAll=false;const PER=[['hoje','Hoje'],['7d','7 dias'],['30d','30 dias'],['90d','90 dias'],['mes','Este mês'],['mpas','Mês passado'],['ano','Este ano']],dIn=(d,r)=>{const v=dt(d);return !!v&&v>=r[0]&&v<=r[1]},ndays=r=>Math.round((Date.parse(r[1])-Date.parse(r[0]))/864e5)+1,prevR=r=>{const n=ndays(r);return[addD(r[0],-n),addD(r[0],-1)]};
 function perRange(k,t){const m=t.slice(0,7);if(k==='hoje')return[t,t];if(k==='7d')return[addD(t,-6),t];if(k==='30d')return[addD(t,-29),t];if(k==='90d')return[addD(t,-89),t];if(k==='mes')return[m+'-01',t];if(k==='mpas'){const d=new Date(m+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()-1);return[d.toISOString().slice(0,10),addD(m+'-01',-1)]}return[t.slice(0,4)+'-01-01',t]}
-function pmx(r){const F=fat(r),fin=rows('financeiro').filter(x=>dIn(x.data,r)&&!eq(x.status,'CANCELADO')),sa=x=>/sa[ií]da/i.test(x.tipo),re=fin.filter(realiz),dop=sum(fin.filter(x=>sa(x)&&!['MATERIAL','EMBALAGEM','ENERGIA','FRETE','TAXAS','EVENTO','PAGAMENTO DE EMPRÉSTIMO','EMPRÉSTIMO RECEBIDO'].includes(String(x.categoria).toUpperCase())),'valor'),
+function pmx(r){const F=fat(r),fin=rows('financeiro').filter(x=>dIn(x.data,r)&&!eq(x.status,'CANCELADO')),sa=x=>/sa[ií]da/i.test(x.tipo),re=fin.filter(realiz),dop=sum(fin.filter(x=>sa(x)&&!['MATERIAL','EMBALAGEM','ENERGIA','FRETE','TAXAS','EVENTO','INVESTIMENTO','IMPRESSORA','PAGAMENTO DE EMPRÉSTIMO','EMPRÉSTIMO RECEBIDO'].includes(String(x.categoria).toUpperCase())),'valor'),
  nV=rows('vendas').filter(x=>dIn(x.data,r)&&!isBlocked(x.canal)).length+rows('personalizados').filter(x=>eq(x.status,'ENTREGUE')&&dIn(x.data_entrega||x.prazo||x.data,r)).length;
  return{F,ent:sum(re.filter(x=>!sa(x)),'valor'),out:sum(re.filter(sa),'valor'),dop,custo:F.tot-F.luc,liq:F.liq-dop,nV,tk:nV?(F.dir+F.ped)/nV:0}}
 function serie(r){const n=ndays(r),o=[];if(n<=31){for(let i=0;i<n;i++){const d=addD(r[0],i);o.push([d.slice(8)+'/'+d.slice(5,7),fat([d,d]).tot])}}else{let m=r[0].slice(0,7);const m1=r[1].slice(0,7);while(m<=m1){o.push([m.slice(5)+'/'+m.slice(2,4),fat([m>r[0].slice(0,7)?m+'-01':r[0],m<m1?m+'-31':r[1]]).tot]);const d=new Date(m+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+1);m=d.toISOString().slice(0,7)}}return o}
@@ -689,7 +689,7 @@ function fixFinStatus(){const f=$('#form'),s=f.elements.status,t=f.elements.tipo
 /* PEDIDOS: quadro por etapa */
 function pedidosV(){const S=['ORÇAMENTO','AGUARDANDO APROVAÇÃO','EM PRODUÇÃO','PRONTO','ENTREGUE'],R=rows('personalizados'),t=todayS(),col=r=>S.includes(String(r.status).toUpperCase())?String(r.status).toUpperCase():(eq(r.status,'CANCELADO')?null:S[0]);
  $('#content').innerHTML=head('Pedidos personalizados',`<button class="btn" data-go="personalizados">Ver lista</button><button class="btn p" data-f="personalizados|">+ Novo pedido</button>`)+`<div class="kan">${S.map(s=>{let c=R.filter(r=>col(r)===s);if(s==='ENTREGUE')c=c.slice(0,6);return`<div class="kc"><h4>${s[0]+s.slice(1).toLowerCase()}<span class="ok">${R.filter(r=>col(r)===s).length}</span></h4>${c.map(r=>{const d=dt(r.prazo),late=d&&d<t&&s!=='ENTREGUE';return`<div class="kd" data-f="personalizados|${r._id}"><b>${esc(r.cliente)}</b><small>${produtoTexto(r.produto_sku,r)}</small><small>${num(r.valor_total)?money(r.valor_total):''}${num(r.saldo)?' · falta '+money(r.saldo):''}</small>${d?`<small class="${late?'late':''}">Prazo ${d.split('-').reverse().slice(0,2).join('/')}${late?' (atrasado)':''}</small>`:''}${s!=='ENTREGUE'?`<button class="btn s" data-mv="${r._id}|${S[S.indexOf(s)+1]}">Avançar ›</button>`:''}</div>`}).join('')||'<small class="ok" style="padding:6px">Vazio</small>'}</div>`}).join('')}</div>`;
- document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[i,s]=b.dataset.mv.split('|');setRows('personalizados',R.map(r=>r._id===i?{...r,status:s,...(s==='ENTREGUE'?{data_entrega:todayS()}:{})}:r));syncRow('personalizados',i);toast('Pedido movido para '+s.toLowerCase());pedidosV()});wire()}
+ document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[i,s]=b.dataset.mv.split('|');setRows('personalizados',R.map(r=>r._id===i?{...r,status:s,etapa:({'EM PRODUÇÃO':'IMPRESSÃO','PRONTO':'ENTREGA','ENTREGUE':'ENTREGA'})[s]??r.etapa,...(s==='ENTREGUE'?{data_entrega:todayS()}:{})}:r));syncRow('personalizados',i);toast('Pedido movido para '+s.toLowerCase());pedidosV()});wire()}
 /* ESTOQUE: calculado a partir dos lotes, movimentos, vendas e envios */
 function estoque(){const V=rows('vendas'),C=rows('consignacoes'),Mv=rows('movimentos'),Lt=rows('lotes');
  return rows('produtos').map(p=>{const k=x=>eq(x,p.sku),sg={'ENTRADA':1,'DEVOLUÇÃO':1,'SAÍDA EVENTO':-1,'PERDA':-1,'AJUSTE':1};
@@ -900,10 +900,13 @@ function lucroVirgemTexto(r){
  return `<small class="ok" title="Lucro Virgem = preço menos apenas custos imediatos de filamento e energia. Ignora depreciação, desgaste, falhas, mão de obra, embalagem, taxas, impostos, entrega e outros custos projetados.">Lucro Virgem: ${money(v)}${q>1?' · '+money(u)+' / peça':''}</small>`;
 }
 /* Produto mestre = fonte de verdade para manter SKU e nome sempre sincronizados. */
+function acharProduto(nome){const R=rows('produtos'),raw=String(nome??'').trim(),n=nz(raw);if(!n)return null;
+ const p=R.find(x=>eq(x.sku,raw))||R.find(x=>eq(x.produto,raw))||R.find(x=>nz(x.produto)===n);if(p)return p;
+ if(n.length<5)return null;const C=R.filter(x=>{const k=nz(x.produto);return k.length>=5&&(k.includes(n)||n.includes(k))});return C.length===1?C[0]:null}
 function produtoCadastro(ref){
  const raw=String(ref??'').trim();if(!raw)return null;
  const P=rows('produtos');
- return P.find(x=>eq(x.sku,raw))||P.find(x=>eq(x.produto,raw))||null;
+ return acharProduto(raw);
 }
 function sincronizarProducaoProduto(o){
  const x={...o},sku=String(x.sku_produto||'').trim(),nome=String(x.produto||'').trim();
@@ -946,14 +949,24 @@ function table(){const m=mod(cur),R=rows(cur),q=($('#q')?.value||'').toLowerCase
 /* ---------- PRECIFICAÇÃO: custo real (material + energia + máquina + trabalho + falhas) e preço por margem líquida ---------- */
 const PRC_DEF={custo_kg:89.9,potencia:150,kwh:.84,impressora:4500,vida:20000,fixo_h:0,desgaste_h:.3,hora:20,rolo:25,emb_rolo:10,falhas:10,imposto:8,cartao:4,anuncio:10,margem:30,lojista:60},
 PRC_LAB=[['custo_kg','Filamento (R$/kg)'],['potencia','Potência padrão (W) — usada se a mesa não tiver impressora cadastrada'],['kwh','Custo do kWh (R$)'],['impressora','Valor da impressora (R$)'],['vida','Vida útil da impressora (h)'],['fixo_h','Custo fixo por hora de impressão (R$/h; 0 = não ratear)'],['desgaste_h','Desgaste por hora de impressão: bico, correia, mesa (R$/h)'],['hora','Sua hora de trabalho (R$/h)'],['rolo','Valor do rolo de embalagem (R$)'],['emb_rolo','Embalagens por rolo'],['falhas','Reserva para falhas (% sobre material, energia e máquina)'],['imposto','Imposto (% do preço)'],['cartao','Taxa do cartão (% do preço)'],['anuncio','Anúncio / marketplace (% do preço; 0 se não usa)'],['margem','Margem LÍQUIDA desejada (% do preço)'],['lojista','Preço lojista (% do preço final)']];
-const PRC=()=>{let o={};try{o=JSON.parse(localStorage.getItem('aplus_preco'))||{}}catch{}return{...PRC_DEF,...o}},r2=n=>Math.round(num(n)*100)/100;
+const PRC_REAL=()=>{const o={};try{
+ const M=rows('materiais').filter(m=>/FILAMENTO/i.test(m.categoria||'')&&eq(m.unidade,'G')&&num(m.custo_unidade)>0&&num(m.estoque_atual)>0),g=sum(M,'estoque_atual');
+ if(g>0)o.custo_kg=Math.round(M.reduce((a,m)=>a+num(m.custo_unidade)*1000*num(m.estoque_atual),0)/g*100)/100;
+ const p=rows('impressoras').find(x=>x.nome&&eq(x.status,'ATIVA'));
+ if(p){if(num(p.potencia_w)>0)o.potencia=num(p.potencia_w);if(num(p.valor)>0)o.impressora=num(p.valor);if(num(p.vida_h)>0)o.vida=num(p.vida_h);if(p.desgaste_h!==''&&p.desgaste_h!=null)o.desgaste_h=num(p.desgaste_h)}
+ }catch{}return o};
+const PRC_SAVED=()=>{try{return JSON.parse(localStorage.getItem('aplus_preco'))||{}}catch{return{}}};
+const PRC=()=>({...PRC_DEF,...PRC_REAL(),...PRC_SAVED()}),r2=n=>Math.round(num(n)*100)/100;
+const COSTLOCK={produtos:['custo_unitario'],custos:['custo_materiais','custo_impressao','mao_obra','embalagem','outros_custos','custo_unitario'],matriz_precos:['custo_unitario']};
+function costLock(id,k,old,rid){if(!rid||!(COSTLOCK[id]||[]).includes(k))return false;const p=rows('produtos').find(x=>eq(x.sku,old.sku));return !!p&&num(p.tempo_h)>0&&num(p.peso_g)>0}
 function stMg(n){return n>=20?'OK':n>=10?'ATENÇÃO':'BAIXA'}
 function precif(o,P){const h=num(o.h),g=num(o.g),q=Math.max(num(o.q)||1,1),kg=num(o.kg)||P.custo_kg,m=(o.mg===''||o.mg==null?P.margem:num(o.mg))/100,
  fil=g/1000*kg,kw=P.potencia*h/1000,en=kw*P.kwh,maq=(P.impressora/Math.max(P.vida,1)+num(P.desgaste_h))*h,fx=P.fixo_h*h,emb=P.rolo/Math.max(P.emb_rolo,1),tr=P.hora*(num(o.hm)+num(o.su)/q),base=fil+en+maq+fx+emb+tr,fal=(fil+en+maq+fx)*P.falhas/100,custo=base+fal,
  tx=(P.imposto+P.cartao+P.anuncio)/100,den=1-tx-m,ok=den>.02,preco=ok?custo/den:0,imp=preco*P.imposto/100,car=preco*P.cartao/100,anu=preco*P.anuncio/100,ll=preco-custo-imp-car-anu,lb=preco-custo,lj=preco*P.lojista/100,ljb=lj-custo,ljl=ljb-lj*P.imposto/100,pess=(fil+en+maq)*(1+P.falhas/100),lv=preco-fil-en,lvPct=preco?lv/preco*100:0;
  return{fil,en,maq,fx,emb,tr,fal,custo,preco,imp,car,anu,lb,ll,lj,ljb,ljl,pess,lv,lvPct,minimo:tx<1?custo/(1-tx):0,kw,ok,mn:m*100,lojMin:preco?custo/(preco*(1-P.imposto/100))*100:0,mk:custo?preco/custo:0,pay:ll>0?Math.ceil(P.impressora/ll):0}}
 let pc={sku:'',nome:'',h:'',g:'',hm:'',su:'',q:'1',kg:'',mg:''};
-const pcO=p=>({h:p.tempo_h,g:p.peso_g,hm:p.horas_manuais,su:p.setup_h,q:p.lote_un||1});
+function matKg(nome){if(!nome)return'';const M=rows('materiais').find(x=>eq(x.material,nome)&&eq(x.unidade,'G')&&num(x.custo_unidade)>0);return M?String(Math.round(num(M.custo_unidade)*1000*100)/100):''}
+const pcO=p=>({h:p.tempo_h,g:p.peso_g,hm:p.horas_manuais,su:p.setup_h,q:p.lote_un||1,kg:matKg(p.material)});
 function pcApply(sku,nome,o,r){const up=(id,x)=>{const R=rows(id),i=R.findIndex(y=>eq(y.sku,sku));if(i>=0){R[i]={...R[i],...x};setRows(id,R)}else setRows(id,[{sku,produto:nome,...x,_id:uid(),_criadoEm:new Date().toISOString()},...R])},m=r.preco?(r.preco-r.custo)/r.preco*100:0;
  up('produtos',{tempo_h:num(o.h),peso_g:num(o.g),horas_manuais:num(o.hm),setup_h:num(o.su),lote_un:Math.max(num(o.q)||1,1),custo_unitario:r2(r.custo),preco_padrao:r2(r.preco),ativo:'SIM'});
  up('custos',{custo_materiais:r2(r.fil),custo_impressao:r2(r.en+r.maq+r.fx),mao_obra:r2(r.tr),embalagem:r2(r.emb),outros_custos:r2(r.fal),custo_unitario:r2(r.custo),preco_atual:r2(r.preco),lucro_atual:r2(r.ll),margem_atual:r2(r.preco?r.ll/r.preco*100:0),preco_sugerido:r2(r.preco),status_margem:stMg(r.preco?r.ll/r.preco*100:0)});
@@ -964,15 +977,15 @@ function pcRes(){const P=PRC(),r=precif(pc,P),ok=num(pc.h)>0&&num(pc.g)>0,L=(a,b
  <div class="panel" style="margin-bottom:12px"><h3>Consumidor final</h3>${L('Imposto ('+P.imposto+'%)',r.imp)}${L('Taxa do cartão ('+P.cartao+'%)',r.car)}${L('Anúncio ('+P.anuncio+'%)',r.anu)}${L('Lucro líquido',r.ll,r.ll<=0)}${L('Lucro Virgem',r.lv,r.lv<=0)}<p class="foot" style="margin-bottom:0">Lucro Virgem = preço − filamento − energia. Ignora depreciação, desgaste, falhas, mão de obra, embalagem, taxas, impostos, entrega e demais custos projetados.</p>${L('Preço mínimo (cobre custo e taxas, sem lucro)',r.minimo)}</div>
  <div class="panel" style="margin-bottom:12px"><h3>Lojista (${P.lojista}% do preço)</h3>${L('Preço lojista',r.lj)}${L('Lucro bruto',r.ljb,r.ljb<=0)}${L('Lucro líquido (após imposto)',r.ljl,r.ljl<=0)}${r.ljl<0?`<div class="note" style="margin-top:8px"><span>⚠ Com ${f2(r.mn)}% de margem, o preço lojista (${P.lojista}% do preço final) fica abaixo do custo. Para não perder dinheiro o lojista precisa ser pelo menos ${f2(r.lojMin)}% do preço final, ou aumente a margem.</span></div>`:''}</div>
  <div class="panel"><h3>Uso pessoal (maker)</h3>${L('Material + energia + máquina + falhas',r.pess)}</div>`}
-function pcPick(sku){const p=rows('produtos').find(x=>eq(x.sku,sku)),v=x=>x===undefined||x===''?'':f2(num(x));pc.sku=sku;if(p){pc.nome=p.produto||'';pc.h=v(p.tempo_h);pc.g=v(p.peso_g);pc.hm=v(p.horas_manuais);pc.su=v(p.setup_h);pc.q=v(p.lote_un)||'1'}precoV()}
+function pcPick(sku){const p=rows('produtos').find(x=>eq(x.sku,sku)),v=x=>x===undefined||x===''?'':f2(num(x));pc.sku=sku;if(p){pc.nome=p.produto||'';pc.h=v(p.tempo_h);pc.g=v(p.peso_g);pc.hm=v(p.horas_manuais);pc.su=v(p.setup_h);pc.q=v(p.lote_un)||'1';pc.kg=matKg(p.material)}else pc.kg='';precoV()}
 function precoV(){const P=PRC(),PR=rows('produtos'),Lp=PR.filter(p=>num(p.tempo_h)>0&&num(p.peso_g)>0),fi=(id,l,k)=>`<div class="f"><label>${l}</label><input id="${id}" inputmode="decimal" value="${esc(pc[k])}"></div>`;
  $('#content').innerHTML=head('Precificação',`<button class="btn" id="pc-all">Recalcular todos os produtos</button>`)+`<div class="cols"><div><div class="panel" style="margin-bottom:16px"><h3>Peça</h3><div class="fg"><div class="f full"><label>Produto cadastrado (opcional)</label><select id="pc-sku"><option value="">— peça avulsa —</option>${PR.map(p=>`<option value="${esc(p.sku)}" ${eq(p.sku,pc.sku)?'selected':''}>${esc(p.produto)} (${esc(p.sku)})</option>`).join('')}</select></div>
  <div class="f full"><label>Nome da peça</label><input id="pc-nome" value="${esc(pc.nome)}"></div>${fi('pc-h','Tempo de impressão (h, ex.: 2,5)','h')}${fi('pc-g','Peso com suportes (g)','g')}${fi('pc-hm','Horas manuais por peça (acabamento + embalagem)','hm')}${fi('pc-su','Setup do lote (h, dividido pelas peças)','su')}${fi('pc-q','Peças no lote','q')}${fi('pc-kg','Filamento desta peça R$/kg (vazio = padrão)','kg')}${fi('pc-mg','Margem líquida desta peça % (vazio = padrão)','mg')}</div>
  <div class="ph" style="margin-top:12px"><button class="btn p" id="pc-save">Salvar no produto</button></div><p class="foot">Preço = custo ÷ (1 − imposto − cartão − anúncio − margem líquida). Salvar grava custo e preços no produto, em Custos reais e na Matriz de preços; vendas e consignações passam a usá-los.</p></div>
- <details class="panel"><summary>Parâmetros do negócio (valem para todas as peças — confira os seus)</summary><div class="fg" style="margin-top:10px">${PRC_LAB.map(([k,l])=>`<div class="f"><label>${l}</label><input data-pp="${k}" inputmode="decimal" value="${P[k]}"></div>`).join('')}</div></details>
+ <details class="panel"><summary>Parâmetros do negócio (valem para todas as peças — confira os seus)</summary><div class="fg" style="margin-top:10px">${PRC_LAB.map(([k,l])=>`<div class="f"><label>${l}</label><input data-pp="${k}" inputmode="decimal" value="${P[k]}"></div>`).join('')}</div><p class="foot">Filamento (R$/kg, média ponderada do estoque em Materiais) e dados da impressora (potência, valor, vida útil e desgaste) vêm dos cadastros de <b>Materiais</b> e <b>Impressoras</b>. Só digite aqui para forçar outro valor; apague o campo para voltar a usar o cadastro.</p></details>
  ${Lp.length?`<div class="panel" style="margin-top:16px"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">Produtos precificados ${vtog()}</h3><div class="tw"><table data-gv><thead><tr><th>Produto</th><th>Custo</th><th>Consumidor</th><th>Lojista</th><th>Lucro líq.</th></tr></thead><tbody>${Lp.map(p=>{const r=precif(pcO(p),P);return`<tr data-pk="${esc(p.sku)}"><td>${esc(p.produto)}</td><td>${money(r.custo)}</td><td>${money(r.preco)}</td><td>${money(r.lj)}</td><td>${money(r.ll)}</td></tr>`}).join('')}</tbody></table></div></div>`:''}</div><div id="pc-res"></div></div>`;
  const ids={'pc-nome':'nome','pc-h':'h','pc-g':'g','pc-hm':'hm','pc-su':'su','pc-q':'q','pc-kg':'kg','pc-mg':'mg'};Object.keys(ids).forEach(i=>$('#'+i).oninput=()=>{pc[ids[i]]=$('#'+i).value;pcRes()});$('#pc-sku').onchange=e=>pcPick(e.target.value);
- document.querySelectorAll('[data-pp]').forEach(i=>i.oninput=()=>{const o={...PRC()};o[i.dataset.pp]=num(i.value);localStorage.setItem('aplus_preco',JSON.stringify(o));pcRes()});
+ document.querySelectorAll('[data-pp]').forEach(i=>i.oninput=()=>{const o=PRC_SAVED(),v=i.value.trim();if(v==='')delete o[i.dataset.pp];else o[i.dataset.pp]=num(v);localStorage.setItem('aplus_preco',JSON.stringify(o));pcRes()});
  document.querySelectorAll('tr[data-pk]').forEach(t=>t.onclick=()=>{pcPick(t.dataset.pk);scrollTo(0,0)});
  $('#pc-save').onclick=()=>{const P=PRC();if(!(num(pc.h)>0&&num(pc.g)>0))return toast('Informe tempo e peso');const r=precif(pc,P);if(!r.ok)return toast('Reduza a margem ou as taxas');let sku=pc.sku,nome=(pc.nome||'').trim();
   if(!sku){if(!nome)return toast('Dê um nome à peça');sku=(prompt('SKU do novo produto (ex.: VASO-01):')||'').trim();if(!sku)return}
@@ -1010,7 +1023,7 @@ function form(id,rid=null,preset=null){if(id==='impressoes'||id==='v-nova')retur
   else{const op=opts(m,k)||(/sku|loja|empresa|contato_id|cidade|produto$|material|categoria|responsavel|nicho|cliente|fornecedor|concorrente|cor$/.test(k)?lookup(k):null),ms=(MASTER[id]||[]).includes(k),L2=!ms&&(LK.test(k)||SELK.test(k))&&ty!=='number'&&ty!=='date'?[...new Set([...(op||[]),...(LK.test(k)?(GLOBAL.test(k)?suggest(k):suggestM(id,k)):[]),...(v?[v]:[])])].filter(Boolean):[];
    if(L2.length)h=`<select name="${k}"><option value=""></option>${L2.map(z=>`<option ${v===z?'selected':''}>${esc(z)}</option>`).join('')}<option value="__new">➕ Novo…</option></select>`;
    else{if(op)dls.push(`<datalist id="dl-${k}">${op.map(z=>`<option value="${esc(z)}">`).join('')}</datalist>`);
-    h=`<input name="${k}" ${ty==='date'?'type="date"':ty==='number'?'inputmode="decimal"':''} value="${esc(v)}" ${req?'required':''} ${op?`list="dl-${k}"`:''} ${auto?'data-auto="1"':''}>`}}
+    h=`<input name="${k}" ${ty==='date'?'type="date"':ty==='number'?'inputmode="decimal"':''} value="${esc(v)}" ${req?'required':''} ${op?`list="dl-${k}"`:''} ${auto?'data-auto="1"':''} ${costLock(id,k,old,rid)?'readonly title="Custo calculado em Preços. Para mudar, edite lá."':''}>`}}
   return`<div class="f ${ty==='textarea'?'full':''}"><label>${esc(l)}${req?' *':''}${auto?' (automático)':''}</label>${h}</div>`};
  const main=m.fields.filter((f,i)=>!calcK.includes(f[0])&&f[2]!=='textarea'&&(i<(m.id==='vendas'?10:8)||f[3]===true)),more=m.fields.filter(f=>!calcK.includes(f[0])&&f[2]!=='textarea'&&!main.includes(f)),ta=m.fields.filter(f=>f[2]==='textarea'),cf=m.fields.filter(f=>calcK.includes(f[0]));
  $('#form').innerHTML=`<div class="fg">${main.map(fld).join('')}${cf.length?`<div class="sec">Calculado automaticamente</div>${cf.map(fld).join('')}`:''}${ta.map(fld).join('')}${more.length?`<details><summary>Mais campos (${more.length})</summary><div class="fg">${more.map(fld).join('')}</div></details>`:''}</div>${dls.join('')}`;
@@ -1154,7 +1167,7 @@ function aopConsignacao(r){
  actions.push({t:'Agora não',f:()=>{toast('Tudo certo. A Jornada A+ continua acompanhando esta pendência.')}});return aopOpen('🔁 Próximo passo da consignação',body,actions)
 }
 function aopNovoSkuProduto(){const R=rows('produtos');const n=Math.max(0,...R.map(x=>+(String(x.sku||'').match(/^P3D-(\d+)$/)||[0,0])[1]));return`P3D-${String(n+1).padStart(3,'0')}`}
-function aopProdutoExiste(nome,sku){const n=nz(nome),s=nz(sku);return rows('produtos').find(p=>(s&&eq(p.sku,s))||(n&&eq(p.produto,n)))}
+function aopProdutoExiste(nome,sku){const s=String(sku||'').trim(),a=s&&rows('produtos').find(p=>eq(p.sku,s));return a||acharProduto(nome)||undefined}
 function aopSalvarProduto(d){const nome=String(d.nome||'').trim();if(!nome)return false;const ex=aopProdutoExiste(nome,d.sku);if(ex)return ex;const P=PRC(),peso=num(d.peso),tempo=num(d.tempo),custo=num(d.custo),preco=num(d.preco);let precoPad=preco,custoUn=custo;
  if(!precoPad&&custoUn&&num(P.margem)>0)precoPad=r2(custoUn/(1-num(P.margem)/100));
  const o={sku:(d.sku||aopNovoSkuProduto()),produto:nome,categoria:d.categoria||'PEÇA 3D',custo_unitario:r2(custoUn),estoque_minimo:0,ativo:'SIM',preco_padrao:r2(precoPad),estoque_inicial:0,tempo_h:r2(tempo),peso_g:r2(peso),horas_manuais:0,setup_h:0,lote_un:1,observacoes:d.observacoes||'Cadastro criado a partir de outro fluxo do A+',motor:'PERSONALIZADO',disponibilidade:'SOB DEMANDA',nivel_servico:'MÉDIO',cidade_foco:''};
@@ -1555,9 +1568,9 @@ function njContato(C){const R=rows('contatos'),o={pessoa:C.nome.trim(),whatsapp:
  if(i<0&&o.whatsapp)i=R.findIndex(x=>String(x.whatsapp||x.telefone).replace(/\D/g,'')===o.whatsapp.replace(/\D/g,''));
  if(i>=0){R[i]={...R[i],...o,ultimo_contato:todayS()};setRows('contatos',R);return R[i].contato_id}
  const cid=nextId(mod('contatos'));njAdd('contatos',{contato_id:cid,...o,ultimo_contato:todayS()});return cid}
-function njProduto(m,c,J){const R=rows('produtos'),P=PRC(),ex=R.find(x=>eq(x.produto,m.nome)),sku=ex?ex.sku:'P3D-'+String(Math.max(0,...R.map(x=>+(String(x.sku).match(/^P3D-(\d+)$/)||[0,0])[1]))+1).padStart(3,'0'),q=m.q,
+function njProduto(m,c,J){const R=rows('produtos'),P=PRC(),ex=acharProduto(m.nome),sku=ex?ex.sku:'P3D-'+String(Math.max(0,...R.map(x=>+(String(x.sku).match(/^P3D-(\d+)$/)||[0,0])[1]))+1).padStart(3,'0'),q=m.q,
  un=x=>x/q,fl=(m.fil+m.en+m.des+m.dep)*(1+P.falhas/100),extra=(c.mo+c.emb+c.ext+c.ent)*m.share,custo=un(fl+extra),preco=un(c.preco*m.share),tx=c.tx;
- pcApply(sku,m.nome,{h:m.hrs,g:m.g,hm:un(c.hMo*m.share),su:0,q:1},{fil:un(m.fil),en:un(m.en+m.des),maq:un(m.dep),fx:0,tr:un(c.mo*m.share),emb:un((c.emb+c.ext)*m.share),fal:un((m.fil+m.en+m.des+m.dep)*P.falhas/100),custo,preco,lj:preco*P.lojista/100,minimo:tx<1?custo/(1-tx):custo});return sku}
+ if(!ex)pcApply(sku,m.nome,{h:m.hrs,g:m.g,hm:un(c.hMo*m.share),su:0,q:1},{fil:un(m.fil),en:un(m.en+m.des),maq:un(m.dep),fx:0,tr:un(c.mo*m.share),emb:un((c.emb+c.ext)*m.share),fal:un((m.fil+m.en+m.des+m.dep)*P.falhas/100),custo,preco,lj:preco*P.lojista/100,minimo:tx<1?custo/(1-tx):custo});return sku}
 function njSave(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
  if(J.tipo==='ENCOMENDA'&&!J.cliente.nome.trim()){NJT=0;NJERR=true;njRender();return toast('Informe o cliente')}
  if(c.gT<=0){NJT=1;njRender();return toast('Informe o peso (g) do filamento em pelo menos uma mesa')}
@@ -1593,8 +1606,54 @@ function njSave(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
 /* eventos (uma vez) */
 {const C=document.getElementById('content');C.addEventListener('input',njOnInput);C.addEventListener('change',njOnInput);C.addEventListener('click',njOnClick)}
 
+
+/* ---------- correção única v4: custos, caixa e cadastros ---------- */
+function migV4(){
+ try{
+ if(localStorage.getItem('aplus_mig_v4'))return;
+ if(!Object.keys(db).some(k=>rows(k).length)){localStorage.setItem('aplus_mig_v4','1');return}
+ snapSave('antes da correção v4');
+ const L=[],dg=s=>String(s||'').replace(/\D/g,'');
+ /* parâmetros salvos que apenas repetiam o padrão deixam de "congelar" o cadastro */
+ {const o=PRC_SAVED();let n=0;Object.keys(o).forEach(k=>{if(k in PRC_DEF&&num(o[k])===PRC_DEF[k]){delete o[k];n++}});if(n){localStorage.setItem('aplus_preco',JSON.stringify(o));L.push('Parâmetros de preço: '+n+' valor(es) padrão liberado(s) para seguir o cadastro.')}}
+ /* investimentos fora das despesas operacionais */
+ {let n=0;const R=rows('financeiro').map(r=>{const c=String(r.categoria||'').toUpperCase();if(c==='IMPRESSORA'||(c==='MARKETING'&&/tablet/i.test(r.descricao||''))){n++;return{...r,categoria:'INVESTIMENTO'}}return r});if(n){setRows('financeiro',R);L.push('Financeiro: '+n+' lançamento(s) (impressora/tablet) movido(s) para INVESTIMENTO.')}}
+ /* telefone da loja que não é telefone */
+ {let n=0;const R=rows('lojas').map(r=>{if(r.telefone&&dg(r.telefone).length<8){const C=rows('contatos').find(c=>eq(c.empresa,r.loja_empresa)||eq(c.empresa,r.telefone)),t=C&&(C.whatsapp||C.telefone);if(t){n++;return{...r,telefone:t}}}return r});if(n){setRows('lojas',R);L.push('Lojas: telefone corrigido em '+n+' loja(s).')}}
+ /* pedidos: etapa e custo iguais aos da impressão de origem */
+ {const I=rows('impressoes');let n=0;const R=rows('personalizados').map(r=>{let x=r;
+  if(eq(r.status,'ENTREGUE')&&r.etapa!=='ENTREGA')x={...x,etapa:'ENTREGA'};
+  const cod=((String(r.observacoes||'').match(/Nova impress[aã]o\s+(IMP-\d+)/i)||[])[1]),im=(r._imp&&I.find(i=>i._id===r._imp))||(cod&&I.find(i=>eq(i.codigo,cod)));
+  if(im&&num(im.custo_total)>0&&Math.abs(num(x.custo_estimado)-num(im.custo_total))>.005)x={...x,custo_estimado:r2(im.custo_total)};
+  if(x!==r)n++;return x});if(n){setRows('personalizados',R);L.push('Pedidos: etapa/custo acertados em '+n+' pedido(s).')}}
+ /* recalcula todos os produtos com o filamento e a impressora reais */
+ {const P=PRC(),Lp=rows('produtos').filter(p=>num(p.tempo_h)>0&&num(p.peso_g)>0);let n=0;Lp.forEach(p=>{const o=pcO(p),r=precif(o,P);if(r.ok){pcApply(p.sku,p.produto,o,r);n++}});if(n)L.push('Preços: '+n+' produto(s) recalculado(s) (filamento R$ '+f2(P.custo_kg)+'/kg).')}
+ localStorage.setItem('aplus_mig_v4','1');
+ if(L.length)setTimeout(()=>alert('Correções aplicadas (uma única vez):\n\n• '+L.join('\n• ')+'\n\nUma cópia dos dados de antes foi guardada em Mais › Backup e dados.'),600);
+ }catch(e){console.error('migV4',e)}}
+
+/* ---------- correção única v5: une produtos com o mesmo nome ---------- */
+function migV5(){
+ try{
+ if(localStorage.getItem('aplus_mig_v5'))return;
+ const G={};rows('produtos').forEach(p=>{const k=nz(p.produto);if(k)(G[k]=G[k]||[]).push(p)});
+ const dups=Object.values(G).filter(g=>g.length>1);
+ if(!dups.length){localStorage.setItem('aplus_mig_v5','1');return}
+ snapSave('antes de unir produtos duplicados');
+ const L=[],score=p=>(p.categoria?2:0)+(p.estoque_minimo!==''&&p.estoque_minimo!=null?1:0)+(num(p.tempo_h)>0?1:0),
+  refs=[['lotes','sku_produto'],['movimentos','sku'],['vendas','sku_produto'],['consignacoes','sku'],['producao','sku_produto'],['fichas','sku_produto'],['catalogo','sku'],['oportunidades','sku'],['concorrentes','sku']];
+ dups.forEach(g=>{const[keep,...rest]=[...g].sort((a,b)=>score(b)-score(a)||String(a.sku).localeCompare(String(b.sku)));
+  rest.forEach(d=>{
+   refs.forEach(([m,f])=>{const R=rows(m);if(R.some(r=>eq(r[f],d.sku)))setRows(m,R.map(r=>eq(r[f],d.sku)?{...r,[f]:keep.sku}:r))});
+   ['custos','matriz_precos'].forEach(m=>{const R=rows(m),has=R.some(r=>eq(r.sku,keep.sku));setRows(m,has?R.filter(r=>!eq(r.sku,d.sku)):R.map(r=>eq(r.sku,d.sku)?{...r,sku:keep.sku}:r))});
+   const ei=num(d.estoque_inicial);
+   setRows('produtos',rows('produtos').filter(p=>p._id!==d._id).map(p=>p._id===keep._id?{...p,estoque_inicial:num(p.estoque_inicial)+ei}:p));
+   L.push(d.sku+' → '+keep.sku+' ('+keep.produto+')')})});
+ localStorage.setItem('aplus_mig_v5','1');
+ setTimeout(()=>alert('Produtos duplicados unidos (uma única vez):\n\n• '+L.join('\n• ')+'\n\nLotes, produção, vendas, custos e preços foram religados ao produto mantido. Uma cópia dos dados de antes foi guardada em Mais › Backup e dados.'),900);
+ }catch(e){console.error('migV5',e)}}
 const _prodReparadas=repararOrdensProducao();
-go('v-hoje');snapAuto();
+migV4();migV5();go('v-hoje');snapAuto();
 if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
 /* ===== Bolinhas de ajuda (?) ao lado de cada campo de entrada ===== */
 (function(){
