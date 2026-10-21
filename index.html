@@ -901,8 +901,7 @@ function lucroVirgemTexto(r){
 }
 /* Produto mestre = fonte de verdade para manter SKU e nome sempre sincronizados. */
 function acharProduto(nome){const R=rows('produtos'),raw=String(nome??'').trim(),n=nz(raw);if(!n)return null;
- const p=R.find(x=>eq(x.sku,raw))||R.find(x=>eq(x.produto,raw))||R.find(x=>nz(x.produto)===n);if(p)return p;
- if(n.length<5)return null;const C=R.filter(x=>{const k=nz(x.produto);return k.length>=5&&(k.includes(n)||n.includes(k))});return C.length===1?C[0]:null}
+ return R.find(x=>eq(x.sku,raw))||R.find(x=>eq(x.produto,raw))||R.find(x=>nz(x.produto)===n)||null}
 function produtoCadastro(ref){
  const raw=String(ref??'').trim();if(!raw)return null;
  const P=rows('produtos');
