@@ -483,7 +483,7 @@ function caixaV(){const P=rows('produtos').filter(p=>!eq(p.ativo,'NÃO')&&vendav
 function fluxoV(){const F=rows('financeiro').filter(r=>!eq(r.status,'CANCELADO')&&dt(r.data)),M={};F.forEach(r=>{if(!finImpactaCaixa(r))return;const k=dt(r.data).slice(0,7);M[k]=M[k]||{e:0,s:0};M[k][_sa(r)?'s':'e']+=num(r.valor)});
  const ks=Object.keys(M).sort();let ac=0;const L=ks.map(k=>{const r=M[k];ac+=r.e-r.s;return[k,r.e,r.s,r.e-r.s,ac]}),t=todayS(),pen=F.filter(r=>!realiz(r)),pe=sum(pen.filter(r=>!_sa(r)&&finImpactaCaixa(r)),'valor'),ps=sum(pen.filter(r=>_sa(r)&&finImpactaCaixa(r)),'valor'),caixa=saldoCaixaAtual();
  $('#content').innerHTML=head('Fluxo de caixa',vtog())+`<div class="kpis">${_kp('Saldo realizado',money(caixa))}${_kp('A receber',money(pe))}${_kp('A pagar pelo caixa da empresa',money(ps),'var(--bad)')}${_kp('Projeção',money(caixa+pe-ps))}</div>`+(L.length?`<div class="panel"><h3>Entradas × saídas por mês</h3>${bars(L.map(x=>[_fm(x[0]),Math.max(x[3],0)]))}</div><div class="tw" style="margin-top:14px"><table data-gv><thead><tr><th>Mês</th><th>Entradas</th><th>Saídas</th><th>Resultado</th><th>Acumulado</th></tr></thead><tbody>${L.reverse().map(x=>`<tr><td>${_fm(x[0])}</td><td>${money(x[1])}</td><td>${money(x[2])}</td><td><b>${money(x[3])}</b></td><td>${money(x[4])}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><b>Sem lançamentos ainda</b>Registre entradas e saídas em Financeiro.</div>')}
-function relvV(){const V=rows('vendas').filter(r=>dt(r.data)),by=(f)=>{const o={};V.forEach(r=>{const k=f(r)||'—';o[k]=o[k]||{n:0,q:0,r:0,l:0,lv:0,la:0,known:0,est:0,sem:0};const x=o[k];x.n++;x.q+=num(r.quantidade);x.r+=rev(r);x.l+=num(r.lucro);const m=lucroIndicadoresRegistro(r,'vendas');if(m){x.lv+=num(m.lucroVirgem);x.la+=num(m.lucroSemAjustes);x.known++;if(m.estimado)x.est++}else x.sem++});return Object.entries(o).sort((a,b)=>b[1].r-a[1].r)},
+function relvV(){const V=liVendasMaisPedidos(),by=(f)=>{const o={};V.forEach(r=>{const k=f(r)||'—';o[k]=o[k]||{n:0,q:0,r:0,l:0,lv:0,la:0,known:0,est:0,sem:0};const x=o[k];x.n++;x.q+=num(r.quantidade);x.r+=rev(r);x.l+=num(r.lucro);const m=lucroIndicadoresRegistro(r,'vendas');if(m){x.lv+=num(m.lucroVirgem);x.la+=num(m.lucroSemAjustes);x.known++;if(m.estimado)x.est++}else x.sem++});return Object.entries(o).sort((a,b)=>b[1].r-a[1].r)},
  tb=(t,a)=>`<div class="panel" style="margin-bottom:14px"><h3>${t}</h3><div class="tw"><table data-gv><thead><tr><th>${t.split(' ').pop()}</th><th>Vendas</th><th>Qtd</th><th>Receita</th><th>Lucro registrado</th><th>Lucro Virgem</th><th>Lucro sem Ajustes</th></tr></thead><tbody>${a.map(([k,x])=>`<tr><td>${esc(k)}</td><td>${x.n}</td><td>${x.q}</td><td>${money(x.r)}</td><td>${money(x.l)}</td><td>${x.known?money(x.lv):'—'}<small class="ok">${x.known?`${x.est} estim.`:''}</small></td><td>${x.known?money(x.la):'—'}<small class="ok">${x.known?`${x.est} estim.`:''}</small></td></tr>`).join('')||'<tr><td colspan=7 class="ok">Sem dados</td></tr>'}</tbody></table></div></div>`;
  const total=lucroIndicadoresResumo(V,'vendas');
  $('#content').innerHTML=head('Relatório de vendas',vtog())+`<div class="kpis">${_kp('Vendas',V.length)}${_kp('Receita',money(sum(V,rev)))}${_kp('Lucro registrado',money(sum(V,'lucro')))}${_kp('Ticket médio',money(V.length?sum(V,rev)/V.length:0))}${_kp('Lucro Virgem',money(total.lucroVirgem))}${_kp('Lucro sem Ajustes',money(total.lucroSemAjustes))}</div><p class="foot">Lucro Virgem e Lucro sem Ajustes usam valores registrados quando disponíveis; para vendas antigas, o relatório estima com as fichas e parâmetros atuais. ${total.estimados} registro(s) estimado(s), ${total.sem} sem composição suficiente. O lucro antigo é mantido separadamente.</p>`+tb('Por canal',by(r=>r.canal))+tb('Por produto',by(r=>r.produto||r.sku_produto))+tb('Por mês',by(r=>dt(r.data).slice(0,7)).sort((a,b)=>b[0].localeCompare(a[0])))}
@@ -684,7 +684,7 @@ function hoje(){const t=todayS(),rg=perRange(hp,t),pv=prevR(rg),soon=addD(t,3),T
  ${dh('Insights do negócio',IN.length+' alerta(s)')}<div class="panel">${IN.length?IN.map(i=>`<div class="al ${i[0]?'r':''}">${i[0]?'⚠':'💡'} ${esc(i[1])}</div>`).join(''):'<span class="ok">Tudo em ordem por aqui.</span>'}</div>
  ${dh('Caixa do período','livro-caixa (módulo Financeiro)')}<div class="k5">${kc('Entradas',money(F0.ent),'var(--acc)','Recebimentos lançados',cmp(F0.ent,P0&&P0.ent))}${kc('Saídas',money(F0.out),'var(--bad)','Despesas e compras pagas',cmp(F0.out,P0&&P0.out))}${kc('Resultado do período',money(F0.ent-F0.out),'#3b82f6','Entradas − saídas')}${kc('Saldo total em caixa',money(caixa),caixa<0?'var(--bad)':'var(--ink)','Dinheiro no caixa próprio')}${kc('Caixa do empréstimo',money(saldoCaixaTerceirosAtual()),'var(--warn)','Saldo emprestado ainda não usado')}${kc('Total disponível',money(saldoCaixaDisponivel()),'var(--acc)','Caixa próprio + caixa do empréstimo')}</div>
  ${dh('Rentabilidade','quanto você lucra com o que vende')}<div class="k5">${kc('Faturamento',money(F.tot),'#3b82f6','Total vendido',cmp(F.tot,P0&&P0.F.tot))}${kc('Custo dos produtos',money(F0.custo),'var(--warn)','Material do que foi vendido')}${kc('Lucro bruto',money(F.luc),'var(--ink)','Margem: '+pc(F.luc,F.tot),cmp(F.luc,P0&&P0.F.luc))}${kc('Despesas operacionais',money(F0.dop),'var(--bad)','Exceto itens já embutidos no custo')}${kc('Lucro líquido',money(F0.liq),F0.liq>=0?'var(--acc)':'var(--bad)','Margem: '+pc(F0.liq,F.tot),cmp(F0.liq,P0&&P0.liq))}</div>
- <div class="panel" style="margin-top:12px"><h3>Lucros por critério · vendas diretas</h3><div class="k5">${(()=>{const a=lucroIndicadoresResumo(rows('vendas').filter(r=>dt(r.data)>=rg[0]&&dt(r.data)<=rg[1]&&!['CONSIGNADA','EVENTO'].includes(String(r.canal||'').toUpperCase())),'vendas');return `${kc('Lucro Virgem',money(a.lucroVirgem),'var(--acc)',a.n+' venda(s) com composição disponível')}${kc('Lucro sem Ajustes',money(a.lucroSemAjustes),'#3b82f6',a.n+' venda(s) com composição disponível')}`})()}</div><p class="foot">Valores somam vendas diretas registradas no período selecionado. Quando não existe fotografia histórica dos custos, o valor é uma estimativa com custos atuais; ${(()=>{const a=lucroIndicadoresResumo(rows('vendas').filter(r=>dt(r.data)>=rg[0]&&dt(r.data)<=rg[1]&&!['CONSIGNADA','EVENTO'].includes(String(r.canal||'').toUpperCase())),'vendas');return `${a.estimados} estimativa(s) e ${a.sem} venda(s) sem composição suficiente foram identificadas.`})()} Consignações e pedidos aparecem nas respectivas telas para não somar a mesma operação duas vezes.</p></div>
+ <div class="panel" style="margin-top:12px"><h3>Lucros por critério · vendas diretas e pedidos entregues</h3><div class="k5">${(()=>{const a=lucroIndicadoresResumo(liVendasMaisPedidos(rg[0],rg[1],true),'vendas');return `${kc('Lucro Virgem',money(a.lucroVirgem),'var(--acc)',a.n+' venda(s)/pedido(s) com composição disponível')}${kc('Lucro sem Ajustes',money(a.lucroSemAjustes),'#3b82f6',a.n+' venda(s)/pedido(s) com composição disponível')}`})()}</div><p class="foot">Valores somam vendas diretas e pedidos personalizados entregues no período, desde que o pedido não esteja já registrado em Vendas. Quando não existe fotografia histórica dos custos, o valor é uma estimativa com a composição salva e parâmetros atuais; ${(()=>{const a=lucroIndicadoresResumo(liVendasMaisPedidos(rg[0],rg[1],true),'vendas');return `${a.estimados} estimativa(s) e ${a.sem} registro(s) sem composição suficiente foram identificados.`})()} Consignações e eventos permanecem separados para evitar contagem dupla.</p></div>
  <div class="k5" style="margin-top:12px">${kc('Ticket médio',money(F0.tk),'#3b82f6',F0.nV+' venda(s)')}${kc('Taxa de conversão',pc(apr,pjp.length),pjp.length&&apr/pjp.length<.3?'var(--bad)':'var(--acc)',apr+' de '+pjp.length+' pedido(s) aprovado(s)')}${kc('Orçamentos pendentes',pend,'var(--warn)','Aguardando o cliente')}${kc('Em produção',prod,'#3b82f6','Imprimindo agora')}${kc('Prontos p/ entrega',pron,'var(--acc)','Esperando retirada')}${kc('A receber',money(recT),'var(--warn)','Lojas + saldo de pedidos')}</div>
  <div class="g3" style="margin-top:18px"><div class="panel" style="grid-column:span 2"><h3>Evolução do faturamento</h3>${bars(S)}</div><div class="panel"><h3>Fontes de receita</h3>${F.tot?SR.map(x=>`<div style="margin-bottom:10px"><div class="rw" style="border:0;padding:0"><span>${x[0]}</span><b>${money(x[1])} · ${pc(x[1],F.tot)}</b></div><div class="pg"><i style="width:${x[1]/F.tot*100}%;background:${x[2]}"></i></div></div>`).join(''):'<div class="empty">Nenhuma receita no período.</div>'}</div></div>
  <div class="g3" style="margin-top:16px"><div class="panel"><h3>Meta do mês <button class="btn s" id="hmeta" style="float:right">${mt?'Editar':'Definir'}</button></h3>${mt?`<div class="rw" style="border:0"><span>Faturamento</span><b>${pc(mm,mt)}</b></div><div class="pg"><i style="width:${Math.min(100,mm/mt*100)}%"></i></div><div class="rw"><span>${money(mm)} de ${money(mt)}</span><span class="ok">faltam ${money(Math.max(0,mt-mm))}</span></div><div class="rw"><span>Dias restantes</span><b>${dim-dd}</b></div><div class="rw"><span>Projeção do mês</span><b style="color:${proj>=mt?'var(--acc)':'var(--warn)'}">${money(proj)}</b></div>`:'<p class="ok">Defina uma meta de faturamento para acompanhar o ritmo do mês.</p>'}</div>
@@ -1184,6 +1184,29 @@ function lucroIndicadoresResumo(registros,ctx=''){
  let lv=0,la=0,n=0,estimados=0,sem=0;
  (registros||[]).forEach(r=>{const x=lucroIndicadoresRegistro(r,ctx);if(!x){sem++;return}lv+=num(x.lucroVirgem);la+=num(x.lucroSemAjustes);n++;if(x.estimado)estimados++});
  return{lucroVirgem:r2(lv),lucroSemAjustes:r2(la),n,estimados,sem};
+}
+/* Junta vendas registradas com pedidos personalizados já entregues. O pedido só entra se ainda não estiver representado na tabela Vendas. */
+function liVendasMaisPedidos(dataIni='',dataFim='',somenteDiretas=false){
+ const vendasTodas=rows('vendas').filter(r=>dt(r.data)&&(!dataIni||dt(r.data)>=dataIni)&&(!dataFim||dt(r.data)<=dataFim));
+ const base=somenteDiretas?vendasTodas.filter(r=>!['CONSIGNADA','EVENTO'].includes(String(r.canal||'').toUpperCase())):vendasTodas.slice();
+ const chaves=new Set();
+ const addKey=v=>{const z=String(v||'').trim();if(z)chaves.add(z)};
+ vendasTodas.forEach(v=>{addKey(v._imp);addKey(v.impressao_id);addKey(v._impressao_id);addKey(v.pedido_id);addKey(v._pedido_id);addKey(String(v._lk||'').replace(/^[a-z]+:/i,''));});
+ const pedidos=rows('personalizados').filter(r=>eq(r.status,'ENTREGUE')).map(r=>{
+  const data=dt(r.data_entrega||r.prazo||r.data),im=rows('impressoes').find(x=>x._id===(r._imp||r.impressao_id||r._impressao_id));
+  const q=Math.max(1,num(r.qtd_pecas)||num(r.quantidade)||num(im&&im.qtd_pecas)||num((String(r.personalizacao||'').match(/\bx\s*(\d+)/i)||[])[1])||1);
+  const nome=produtoNome(r.produto_sku||r.produto,r),total=Math.max(0,num(r.valor_total));
+  return{...r,_liPedidoEntregue:true,_liPedidoId:r._id,data,canal:'PEDIDO ENTREGUE',produto:nome,sku_produto:(produtoRef(r.produto_sku||r.produto)||{}).sku||r.produto_sku||'',quantidade:q,qtd_pecas:q,valor_unitario:q?total/q:total,receita_bruta:total,receita_liquida:total,valor_total:total,preco_total:total,forma_pagamento:(im&&im._job&&im._job.pagto)||r.forma_pagamento||'',lucro:(im&&num(im.lucro))||Math.max(0,total-num(r.custo_estimado)),custo_total:(im&&num(im.custo_total))||num(r.custo_estimado)};
+ }).filter(r=>r.data&&(!dataIni||r.data>=dataIni)&&(!dataFim||r.data<=dataFim));
+ const pedidosNovos=pedidos.filter(o=>{
+  const ids=[o._id,o._imp,o.impressao_id,o._impressao_id].map(x=>String(x||'').trim()).filter(Boolean);
+  if(ids.some(x=>chaves.has(x)))return false;
+  // Fallback against a manually registered personalized sale when it has the same product/date/total.
+  const normal=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const already=v=>/PERSONALIZADO|PEDIDO/.test(String(v.canal||'').toUpperCase())&&dt(v.data)===o.data&&Math.abs(rev(v)-o.valor_total)<0.011&&normal(v.produto||produtoTexto(v.sku_produto,v))===normal(o.produto);
+  return !vendasTodas.some(already);
+ });
+ return [...base,...pedidosNovos].sort((a,b)=>dt(a.data).localeCompare(dt(b.data)));
 }
 
 function pcApplyImpl(sku,nome,o,r){const up=(id,x)=>{const R=rows(id),i=R.findIndex(y=>eq(y.sku,sku));if(i>=0){R[i]={...R[i],...x};setRows(id,R)}else setRows(id,[{sku,produto:nome,...x,_id:uid(),_criadoEm:new Date().toISOString()},...R])},m=r.preco?(r.preco-r.custo)/r.preco*100:0;
@@ -2161,8 +2184,24 @@ function migLucrosV3(){
   if(changed)console.info('A+ Gestão: '+changed+' estimativa(s) de lucro atualizada(s) para a regra de taxas por forma de pagamento.');
  }catch(e){console.error('A+ Gestão: não foi possível atualizar estimativas de lucro antigas',e)}
 }
+function migLucrosKatanaEEntregas(){
+ const key='aplus_mig_lucros_pedidos_entregues_v1';try{if(localStorage.getItem(key))return}catch{}
+ let changed=0;
+ try{
+  const atualiza=(id,ctx)=>{const old=rows(id),next=old.map(r=>{
+   if(num(r.versao_lucros)>=3&&liTem(r,'lucro_virgem')&&liTem(r,'lucro_sem_ajustes'))return r;
+   const v=lucroIndicadoresRegistro(r,ctx);if(!v||!Number.isFinite(Number(v.lucroVirgem))||!Number.isFinite(Number(v.lucroSemAjustes)))return r;
+   changed++;return{...r,lucro_virgem:r2(v.lucroVirgem),lucro_sem_ajustes:r2(v.lucroSemAjustes),margem_virgem:r2(v.margemVirgem),margem_sem_ajustes:r2(v.margemSemAjustes),versao_lucros:3,lucros_estimados:v.estimado!==false,fonte_lucros:v.fonte||(v.estimado?'Recalculado da composição salva com parâmetros atuais':'Registrado no trabalho')};
+  });if(next.some((r,i)=>r!==old[i]))setRows(id,next)};
+  // Impression first so linked orders can use its complete pair of indicators.
+  atualiza('impressoes','impressoes');
+  atualiza('personalizados','personalizados');
+  try{localStorage.setItem(key,'1')}catch{}
+  if(changed)console.info('A+ Gestão: '+changed+' registro(s) atualizados com Lucro Virgem e Lucro sem Ajustes.');
+ }catch(e){console.error('A+ Gestão: não foi possível completar os indicadores de pedidos entregues',e)}
+}
 const _prodReparadas=repararOrdensProducao();
-migV4();migV5();migLucrosV3();go('v-hoje');snapAuto();
+migV4();migV5();migLucrosV3();migLucrosKatanaEEntregas();go('v-hoje');snapAuto();
 if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
 /* ===== Bolinhas de ajuda (?) ao lado de cada campo de entrada ===== */
 (function(){
