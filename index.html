@@ -1014,7 +1014,7 @@ const GLOBAL=/^(cidade|cidade_local|cidade_foco|responsavel|fornecedor|unidade|c
 function suggest(k){const c={};MODULES.forEach(m=>rows(m.id).forEach(r=>{const v=r[k];if(typeof v==='string'&&v.trim())c[v]=(c[v]||0)+1}));return Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,40)}
 function form(id,rid=null,preset=null){if(id==='impressoes'||id==='v-nova')return njOpen(rid);const m=mod(id);if(VIEWS[cur])bk=cur;cur=id;ed=rid;const old=rid?{...rows(id).find(r=>r._id===rid)}:preset||{},L=LAST(),calcK=CALC[id]||[],dls=[];
  const fld=f=>{const[k,l,ty,x]=f,req=x===true,so=Array.isArray(x)?x:null;let v=old[k]??'';
-  if(!rid&&!preset){if(ty==='date')v=todayS();else if(REMEMBER.includes(k)&&L[k]&&!(MASTER[id]||[]).includes(k))v=L[k];else if(k==='status'&&so)v=so[0];else if(AUTO[id]&&AUTO[id][0]===k)v=nextId(m)}
+  if(!rid&&!preset){if(ty==='date')v=k==='ultimo_acerto'?'':todayS();else if(REMEMBER.includes(k)&&L[k]&&!(MASTER[id]||[]).includes(k))v=L[k];else if(k==='status'&&so)v=so[0];else if(AUTO[id]&&AUTO[id][0]===k)v=nextId(m)}
   if(ty==='date')v=dt(v);if(ty==='number'&&v!=='')v=f2(num(v));if(!rid){if(k==='status_pagamento'&&!v)v='RECEBIDO';if(id==='financeiro'&&k==='status'&&!(preset&&preset.status))v=old.tipo==='SAÍDA'?'PAGO':'RECEBIDO'}const auto=calcK.includes(k);let h;
   if(ty==='textarea')h=`<textarea name="${k}">${esc(v)}</textarea>`;
   else if(so&&so.length<=5){const o=so.includes(v)||!v?so:[...so,v];h=`<input type="hidden" name="${k}" value="${esc(v)}"><div class="seg" data-seg="${k}">${o.map(z=>`<button type="button" class="${v===z?'on':''}">${esc(z)}</button>`).join('')}</div>`}
