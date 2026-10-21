@@ -456,7 +456,7 @@ function pdvOk(){const{sub,d,t}=pdvT(),n=PDV.cart.reduce((a,x)=>a+x.q,0);if(!PDV
  const need=new Map();PDV.cart.forEach(x=>{if(x.kind==='kit'){(x.componentes||[]).forEach(c=>need.set(c.sku,(need.get(c.sku)||0)+num(c.quantidade)*x.q));}else if(x.sku&&rows('produtos').some(p=>eq(p.sku,x.sku))){need.set(x.sku,(need.get(x.sku)||0)+x.q);}});const currentStock=estoque();for(const[sku,qty]of need){const p=rows('produtos').find(z=>eq(z.sku,sku)),e=p&&currentStock.find(z=>z._id===p._id);if(p&&(!e||num(e.casa)+0.0001<qty)){toast(`Estoque insuficiente de ${p.produto}: precisa ${qty}, disponível ${e?e.casa:0}.`);return;}}
  if(t<=0){toast('O total precisa ser maior que zero');return}const din=PDV.pay==='DINHEIRO',r=cc(PDV.rec);if(din&&r<t){toast('O valor recebido é menor que o total');return}
  let rest=d;const imp=PRC().imposto,novos=PDV.cart.map((x,i)=>{const b=x.p*x.q,dd=i===PDV.cart.length-1?rest:Math.round(d*b/sub);rest-=dd;const liq=b-dd,ip=r2(liq/100*imp/100),c=x.kind==='kit'?sum((x.componentes||[]),z=>num(custoSku(z.sku))*num(z.quantidade)):(x.sku?custoSku(x.sku):0);
-  const v={_id:uid(),_criadoEm:new Date().toISOString(),data:todayS(),canal:'DIRETA',loja_cliente:'Balcão',sku_produto:x.kind==='kit'?'':(x.sku||''),produto:x.n,quantidade:x.q,valor_unitario:x.p/100,status_pagamento:'RECEBIDO',forma_pagamento:PDV.pay,receita_bruta:b/100,desconto:dd/100,taxa_canal:0,frete:0,imposto:ip,receita_liquida:liq/100,custo_unitario:c,custo_total:x.q*c,lucro:liq/100-x.q*c-ip};if(x.kind==='kit'){v._kit_id=x.kitId;v._kit_codigo=x.sku||'';v._kit_componentes=(x.componentes||[]).map(z=>({sku:z.sku,produto:z.produto,quantidade:num(z.quantidade),custo_unitario:num(custoSku(z.sku))}));}const lm=lucroIndicadoresRegistro(v,x.kind==='kit'?'kits':'vendas');if(lm){v.lucro_virgem=lm.lucroVirgem;v.lucro_sem_ajustes=lm.lucroSemAjustes;v.margem_virgem=lm.margemVirgem;v.margem_sem_ajustes=lm.margemSemAjustes;v.versao_lucros=2;v.lucros_estimados=true;}return v});
+  const v={_id:uid(),_criadoEm:new Date().toISOString(),data:todayS(),canal:'DIRETA',loja_cliente:'Balcão',sku_produto:x.kind==='kit'?'':(x.sku||''),produto:x.n,quantidade:x.q,valor_unitario:x.p/100,status_pagamento:'RECEBIDO',forma_pagamento:PDV.pay,receita_bruta:b/100,desconto:dd/100,taxa_canal:0,frete:0,imposto:ip,taxa_pagamento:r2((liq/100)*Math.max(0,liTaxaPagamentoPct(PDV.pay)||0)/100),receita_liquida:liq/100,custo_unitario:c,custo_total:x.q*c,lucro:liq/100-x.q*c-ip};if(x.kind==='kit'){v._kit_id=x.kitId;v._kit_codigo=x.sku||'';v._kit_componentes=(x.componentes||[]).map(z=>({sku:z.sku,produto:z.produto,quantidade:num(z.quantidade),custo_unitario:num(custoSku(z.sku))}));}const lm=lucroIndicadoresRegistro(v,x.kind==='kit'?'kits':'vendas');if(lm){v.lucro_virgem=lm.lucroVirgem;v.lucro_sem_ajustes=lm.lucroSemAjustes;v.margem_virgem=lm.margemVirgem;v.margem_sem_ajustes=lm.margemSemAjustes;v.versao_lucros=3;v.lucros_estimados=true;v.fonte_lucros='Estimativa gravada no momento da venda; custo dos componentes baseado nos parâmetros atuais e taxa de pagamento pela forma registrada.';}return v});
  setRows('vendas',[...rows('vendas'),...novos]);novos.forEach(v=>syncRow('vendas',v._id,1));fixLinks();
  PDV.last={t,n,pay:PDV.pay,troco:din?r-t:null};PDV.cart=[];toast('Venda registrada: '+fc(t));caixaV()}
 function caixaV(){const P=rows('produtos').filter(p=>!eq(p.ativo,'NÃO')&&vendavel(p)),K=rows('kits').filter(k=>eq(k.ativo,'SIM')),E=estoque(),hj=rows('vendas').filter(r=>dt(r.data)===todayS()&&eq(r.loja_cliente,'Balcão')),
@@ -1034,7 +1034,13 @@ function repararOrdensProducao(){
 }
 
 function pill(v,k){const s=String(v),c=/CONCLU|ATIVA|ACERTADO|RECEBIDO|PAGO|GANHA|ENTREGUE|^OK$|ATINGIDA|REALIZADO|ATENDIDA/i.test(s)?'g':/ATRAS|CANCEL|PERDIDA|ACABANDO|SOBRECARGA|BAIXA|VAZIA/i.test(s)?'r':/PENDENTE|ABERTA|PRODU|NEGOCI|ALTA|PARCIAL|HOJE|ATENÇÃO/i.test(s)?'a':'';return`<span class="pill ${c}">${esc(s)}</span>`}
-const cell=(v,f,r)=>v===''||v==null?'<span class="ok">—</span>':/status|ativo|prioridade|situacao|atrasado/.test(f[0])?pill(v,f[0]):f[0]==='lucro'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:cur==='personalizados'&&f[0]==='valor_total'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:cur==='consignacoes'&&f[0]==='a_receber'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:cur==='custos'&&f[0]==='lucro_atual'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:cur==='matriz_precos'&&f[0]==='preco_balcao'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:(f[0]==='produtos'||f[0]==='produto')?produtosTexto(v,r):(['sku_produto','produto_sku','produto_solucao'].includes(f[0]))?produtoTexto(v,r):f[2]==='date'?esc(dt(v).split('-').reverse().join('/')||v):f[2]==='number'?(SUM.test(f[0])&&!/pct|%/.test(f[1])?money(v):esc(typeof v==='number'?v.toLocaleString('pt-BR',{maximumFractionDigits:2}):v)):esc(v);
+const cell=(v,f,r)=>{
+ const k=f[0];
+ let base=v===''||v==null?'<span class="ok">—</span>':/status|ativo|prioridade|situacao|atrasado/.test(k)?pill(v,k):k==='lucro'?`<span>${money(v)}</span>`:cur==='personalizados'&&k==='valor_total'?`<span>${money(v)}</span>`:cur==='consignacoes'&&k==='a_receber'?`<span>${money(v)}</span>`:cur==='custos'&&k==='lucro_atual'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:cur==='matriz_precos'&&k==='preco_balcao'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:(k==='produtos'||k==='produto')?produtosTexto(v,r):(['sku_produto','produto_sku','produto_solucao'].includes(k))?produtoTexto(v,r):f[2]==='date'?esc(dt(v).split('-').reverse().join('/')||v):f[2]==='number'?(SUM.test(k)&&!/pct|%/.test(f[1])?money(v):esc(typeof v==='number'?v.toLocaleString('pt-BR',{maximumFractionDigits:2}):v)):esc(v);
+ const showIndicator=(cur==='impressoes'&&k==='produtos')||(cur==='vendas'&&k==='produto')||(cur==='consignacoes'&&k==='produto')||(cur==='personalizados'&&k==='produto_sku')||(cur==='produtos'&&k==='produto')||(cur==='kits'&&k==='nome');
+ if(showIndicator)base+=lucroIndicadoresHTML(r,cur);
+ return base;
+};
 function list(){const m=mod(cur),R=rows(cur),hasSt=m.fields.some(f=>f[0]==='status');
  const prodScan=cur==='produtos'?'<button class="btn" id="pscan">🔎 Pesquisar produtos no sistema</button>':'';
  $('#content').innerHTML=`<div class="ph">${tabOf(cur)==='v-mais'?'<button class="btn s" data-go="v-mais">‹ Mais</button>':''}<h2>${ICON[cur]} ${esc(m.label)}</h2></div><div class="bar"><input id="q" placeholder="Buscar em ${esc(m.label.toLowerCase())}…" aria-label="Buscar"><span class="ok" id="cnt"></span>${vtog()}<button class="btn" id="ex">Exportar</button>${prodScan}<button class="btn p" id="nw">+ Novo</button></div>${hasSt?'<div class="chips" id="chips"></div>':''}<div class="note" id="bulk" hidden><span id="bn"></span><button class="btn s" id="bed">Editar em massa</button><button class="btn s" id="bdel">Excluir selecionados</button><button class="btn s" id="bclr">Limpar seleção</button></div><div class="tw" id="tw"></div>`;
@@ -1069,6 +1075,17 @@ const pcO=p=>({h:p.tempo_h,g:p.peso_g,hm:p.horas_manuais,su:p.setup_h,q:p.lote_u
 /* Indicadores de lucro globais: uma regra única, transparente e reutilizada nas telas. */
 function liTem(o,k){return !!o&&Object.prototype.hasOwnProperty.call(o,k)&&o[k]!==''&&o[k]!==null&&o[k]!==undefined&&Number.isFinite(Number(o[k]))}
 function liFonte(texto,estimado=true){return{fonte:texto||'Estimativa com parâmetros atuais',estimado:!!estimado}}
+/* Percentuais padrão de pagamento, compartilhados conceitualmente com Nova impressão. */
+function liTaxaPagamentoPct(forma){
+ const s=String(forma||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+ if(!s)return null;
+ if(s.includes('DEBITO'))return 1.5;
+ if(s.includes('CREDITO'))return Math.max(0,num(PRC().cartao));
+ if(s.includes('BOLETO'))return 2;
+ if(s.includes('CARTAO')||s.includes('CREDIT')||s.includes('DEBIT'))return Math.max(0,num(PRC().cartao));
+ if(s.includes('PIX')||s.includes('DINHEIRO')||s.includes('TRANSFERENCIA')||s.includes('TRANSFER'))return 0;
+ return null;
+}
 function liResultado(receita,fil,en,emb,op={}){
  const extVir=Math.max(0,num(op.extrasVirgem)),extEmb=Math.max(0,num(op.extrasEmbalagem)),ent=Math.max(0,num(op.entrega)),tax=Math.max(0,num(op.imposto)),fee=Math.max(0,num(op.taxaPagamento));
  const lv=num(receita)-num(fil)-num(en)-extVir-ent-tax-fee,la=lv-num(emb)-extEmb;
@@ -1112,7 +1129,7 @@ function lucroIndicadoresRegistro(r,ctx=''){
  const context=ctx||cur||'';
  if(num(r.versao_lucros)>=2&&liTem(r,'lucro_virgem')&&liTem(r,'lucro_sem_ajustes')){
   const q=Math.max(1,num(r.qtd_pecas)||num(r.quantidade)||num(r.qtd_vendida)||1),revv=liTem(r,'receita_bruta')?Math.max(0,num(r.receita_bruta)-num(r.desconto)):Math.max(0,num(r.preco_total)||num(r.valor_total)||num(r.receita_liquida)||num(r.valor_bruto)||num(r.preco_venda)||num(r.valor_unitario)*q);
-  return{lucroVirgem:r2(r.lucro_virgem),lucroSemAjustes:r2(r.lucro_sem_ajustes),margemVirgem:liTem(r,'margem_virgem')?num(r.margem_virgem):(revv?r2(num(r.lucro_virgem)/revv*100):0),margemSemAjustes:liTem(r,'margem_sem_ajustes')?num(r.margem_sem_ajustes):(revv?r2(num(r.lucro_sem_ajustes)/revv*100):0),receita:revv,unidades:q,...liFonte(r.lucros_estimados?'Estimativa gravada na venda; custos de componentes usam os parâmetros atuais':'Registrado no trabalho',!!r.lucros_estimados)};
+  return{lucroVirgem:r2(r.lucro_virgem),lucroSemAjustes:r2(r.lucro_sem_ajustes),margemVirgem:liTem(r,'margem_virgem')?num(r.margem_virgem):(revv?r2(num(r.lucro_virgem)/revv*100):0),margemSemAjustes:liTem(r,'margem_sem_ajustes')?num(r.margem_sem_ajustes):(revv?r2(num(r.lucro_sem_ajustes)/revv*100):0),receita:revv,unidades:q,...liFonte(r.fonte_lucros||(r.lucros_estimados?'Estimativa gravada na venda; custos de componentes usam os parâmetros atuais':'Registrado no trabalho'),!!r.lucros_estimados)};
  }
  if(r._job){try{const c=njCalc(r._job);if(c&&Number.isFinite(Number(c.lucroVirgem))&&Number.isFinite(Number(c.lucroSemAjustes)))return{lucroVirgem:r2(c.lucroVirgem),lucroSemAjustes:r2(c.lucroSemAjustes),margemVirgem:num(c.margemVirgem),margemSemAjustes:num(c.margemSemAjustes),receita:r2(c.preco),unidades:Math.max(1,num(c.pieces)||1),...liFonte('Recalculado pela composição da impressão',true)}}catch{}}
  const link=r._imp||r.impressao_id||r._impressao_id;
@@ -1121,6 +1138,13 @@ function lucroIndicadoresRegistro(r,ctx=''){
  const payment=String(r.forma_pagamento||r.pagamento||'').toUpperCase(),isCard=/CART[AÃ]O|CR[EÉ]DITO|D[EÉ]BITO|CREDIT|DEBIT/.test(payment);
  const txKnown=liTem(r,'imposto'),payKnown=liTem(r,'taxa_pagamento'),channel=liTem(r,'taxa_canal')?num(r.taxa_canal):0;
  const opts={impostoConhecido:txKnown,imposto:num(r.imposto),taxaPagamentoConhecida:payKnown,taxaPagamento:num(r.taxa_pagamento),taxaCanal:channel,usarTaxaCartao:isCard,estimarTaxaPagamento:context==='produtos'||(context==='kits'&&!r._kit_id&&!Array.isArray(r._kit_componentes)),entrega:Math.max(0,num(r.frete)),fonte:context==='kits'?'Estimativa atual do kit; extras/entrega só entram se informados':'Estimativa com custos atuais; não representa necessariamente o custo histórico',estimado:true};
+ const payPct=(!payKnown&&(context==='vendas'||context==='kits'))?liTaxaPagamentoPct(payment):null;
+ if(!payKnown&&payPct!==null&&(context==='vendas'||context==='kits')){
+  opts.taxaPagamentoConhecida=true;opts.taxaPagamento=r2(Math.max(0,receita)*payPct/100);opts.usarTaxaCartao=false;opts.estimarTaxaPagamento=false;
+  opts.fonte=(opts.fonte||'Estimativa com custos atuais')+'; taxa de pagamento estimada pela forma registrada ('+payment+')';
+ }else if(!payKnown&&(context==='vendas'||context==='kits')&&!payment.trim()){
+  opts.fonte=(opts.fonte||'Estimativa com custos atuais')+'; forma de pagamento não informada, taxa assumida como R$ 0,00';
+ }
  if(context==='kits'||r._kit_id||r._kit_componentes){
   const kit=r._kit_id?rows('kits').find(x=>x._id===r._kit_id):null,parts=Array.isArray(r._kit_componentes)?r._kit_componentes:(kit?kitParts(kit):(context==='kits'?kitParts(r):[]));
   const x=liKitComponentes(parts,receita,q,opts);return x;
@@ -1152,9 +1176,9 @@ function lucroIndicadoresRegistro(r,ctx=''){
 function lucroIndicadoresHTML(r,ctx='',opts={}){
  const context=ctx||cur||'',aplicaveis=['impressoes','vendas','personalizados','produtos','custos','matriz_precos','estoque','kits','consignacoes'];if(!aplicaveis.includes(context))return '';
  const x=lucroIndicadoresRegistro(r,context);
- if(!x)return `<div class="li-lucros" style="margin-top:5px"><small class="ok" title="Faltam ficha de impressão ou custos por componente para estimar os dois indicadores.">Lucro Virgem / sem Ajustes: sem composição de custos suficiente</small>${context==='consignacoes'&&(num(r.comissao_valor)||num(r.comissao_pct))?`<small class="ok">Comissão de loja: ${money(liTem(r,'comissao_valor')?r.comissao_valor:num(r.valor_bruto)*num(r.comissao_pct)/100)} · exibida à parte e não descontada destes indicadores.</small>`:''}</div>`;
+ if(!x)return `<div class="li-lucros" style="margin-top:5px"><small class="ok" title="Faltam ficha de impressão ou custos por componente para estimar os dois indicadores.">Lucro Virgem / sem Ajustes: sem composição de custos suficiente</small>${context==='consignacoes'&&(num(r.comissao_valor)||num(r.comissao_pct))?`<small class="ok">Comissão de loja: ${money(liTem(r,'comissao_valor')?r.comissao_valor:num(r.valor_bruto)*num(r.comissao_pct)/100)} · exibida à parte e não descontada destes indicadores.</small>`:''}${context==='vendas'&&num(r.taxa_canal)>0?`<small class="ok">Taxa do canal registrada: ${money(r.taxa_canal)} · fica separada e não é descontada dos dois indicadores definidos.</small>`:''}</div>`;
  const q=Math.max(1,num(x.unidades)||num(r&&r.qtd_pecas)||num(r&&r.quantidade)||num(r&&r.qtd_vendida)||1),mark=x.estimado?' · estimado':' · registrado',tag=esc(x.fonte||''),per=q>1?` <span class="ok">(${money(num(x.lucroVirgem)/q)}/un.)</span>`:'' ,per2=q>1?` <span class="ok">(${money(num(x.lucroSemAjustes)/q)}/un.)</span>`:'';
- return `<div class="li-lucros" style="margin-top:5px;display:flex;flex-direction:column;gap:2px"><small title="Lucro Virgem = preço − filamento − energia − extras que não sejam embalagem − entrega − imposto − taxa de pagamento. Não desconta embalagem, depreciação, desgaste, falhas ou mão de obra."><b>Lucro Virgem:</b> <span style="color:${num(x.lucroVirgem)<0?'var(--bad)':'var(--acc)'}">${money(x.lucroVirgem)}</span> <span class="ok">${f2(x.margemVirgem)}%</span>${per}${mark}</small><small title="Lucro sem Ajustes = preço − filamento − energia − extras − embalagem − entrega − imposto − taxa de pagamento. Não desconta depreciação, desgaste, falhas ou mão de obra."><b>Lucro sem Ajustes:</b> <span style="color:${num(x.lucroSemAjustes)<0?'var(--bad)':'var(--acc)'}">${money(x.lucroSemAjustes)}</span> <span class="ok">${f2(x.margemSemAjustes)}%</span>${per2}${mark}</small><small class="ok" style="font-size:11px" title="${tag}">${esc(x.estimado?'Estimativa com custos atuais; extras e entrega só entram se estiverem registrados.':(x.fonte||'Valores gravados na impressão.'))}</small>${context==='consignacoes'&&(num(r.comissao_valor)||num(r.comissao_pct))?`<small class="ok">Comissão de loja: ${money(liTem(r,'comissao_valor')?r.comissao_valor:num(r.valor_bruto)*num(r.comissao_pct)/100)} · exibida à parte e não descontada destes indicadores.</small>`:''}</div>`;
+ return `<div class="li-lucros" style="margin-top:5px;display:flex;flex-direction:column;gap:2px"><small title="Lucro Virgem = preço − filamento − energia − extras que não sejam embalagem − entrega − imposto − taxa de pagamento. Não desconta embalagem, depreciação, desgaste, falhas ou mão de obra."><b>Lucro Virgem:</b> <span style="color:${num(x.lucroVirgem)<0?'var(--bad)':'var(--acc)'}">${money(x.lucroVirgem)}</span> <span class="ok">${f2(x.margemVirgem)}%</span>${per}${mark}</small><small title="Lucro sem Ajustes = preço − filamento − energia − extras − embalagem − entrega − imposto − taxa de pagamento. Não desconta depreciação, desgaste, falhas ou mão de obra."><b>Lucro sem Ajustes:</b> <span style="color:${num(x.lucroSemAjustes)<0?'var(--bad)':'var(--acc)'}">${money(x.lucroSemAjustes)}</span> <span class="ok">${f2(x.margemSemAjustes)}%</span>${per2}${mark}</small><small class="ok" style="font-size:11px" title="${tag}">${esc(x.fonte||(x.estimado?'Estimativa com custos atuais; extras e entrega só entram se estiverem registrados.':'Valores gravados na impressão.'))}</small>${context==='consignacoes'&&(num(r.comissao_valor)||num(r.comissao_pct))?`<small class="ok">Comissão de loja: ${money(liTem(r,'comissao_valor')?r.comissao_valor:num(r.valor_bruto)*num(r.comissao_pct)/100)} · exibida à parte e não descontada destes indicadores.</small>`:''}${context==='vendas'&&num(r.taxa_canal)>0?`<small class="ok">Taxa do canal registrada: ${money(r.taxa_canal)} · fica separada e não é descontada dos dois indicadores definidos.</small>`:''}</div>`;
 }
 function lucroIndicadoresResumo(registros,ctx=''){
  let lv=0,la=0,n=0,estimados=0,sem=0;
@@ -2122,8 +2146,23 @@ HUBS.vendas.tabs.push(['kits','Kits de venda']);
 /* Compra, recebimento, consumo e saldo ficam reconciliados desde a abertura. */
 withDbTransaction(()=>stockEnsureOpeningLots());
 
+function migLucrosV3(){
+ const key='aplus_mig_lucros_v3';try{if(localStorage.getItem(key))return}catch{}
+ let changed=0;
+ try{
+  const upd=(id,ctx)=>{const R=rows(id).map(r=>{
+   if(num(r.versao_lucros)!==2||r.lucros_estimados!==true)return r;
+   const copy={...r};delete copy.versao_lucros;delete copy.lucro_virgem;delete copy.lucro_sem_ajustes;delete copy.margem_virgem;delete copy.margem_sem_ajustes;
+   const v=lucroIndicadoresRegistro(copy,ctx);if(!v)return r;
+   changed++;return{...r,lucro_virgem:v.lucroVirgem,lucro_sem_ajustes:v.lucroSemAjustes,margem_virgem:v.margemVirgem,margem_sem_ajustes:v.margemSemAjustes,versao_lucros:3,lucros_estimados:true,fonte_lucros:v.fonte||'Estimativa recalculada com a regra atual e custos atuais'};
+  });if(R.some((r,i)=>r!==rows(id)[i]))setRows(id,R)};
+  upd('vendas','vendas');
+  localStorage.setItem(key,'1');
+  if(changed)console.info('A+ Gestão: '+changed+' estimativa(s) de lucro atualizada(s) para a regra de taxas por forma de pagamento.');
+ }catch(e){console.error('A+ Gestão: não foi possível atualizar estimativas de lucro antigas',e)}
+}
 const _prodReparadas=repararOrdensProducao();
-migV4();migV5();go('v-hoje');snapAuto();
+migV4();migV5();migLucrosV3();go('v-hoje');snapAuto();
 if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
 /* ===== Bolinhas de ajuda (?) ao lado de cada campo de entrada ===== */
 (function(){
