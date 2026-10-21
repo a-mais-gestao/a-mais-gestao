@@ -1449,8 +1449,14 @@ function njCli(){const C=NJ.cliente;return`<div class="njsec"><div class="f"><la
  <div class="njsub"><b>Informações do Cliente</b><div class="g2" style="margin-top:10px"><div class="f full"><label>Nome *</label>${njInp('cli.nome',C.nome,'Nome completo',NJERR&&!C.nome.trim()?'class="bad"':'')}</div><div class="f"><label>WhatsApp</label>${njInp('cli.whatsapp',C.whatsapp,'(44) 99999-9999','inputmode="tel"')}</div><div class="f"><label>Endereço</label>${njInp('cli.endereco',C.endereco,'Rua, número, bairro, cidade')}</div></div></div></div>`}
 function njFilRow(m,f){const o=njFilOpts(),has=o.some(x=>x.key===f.key),L=has?o:[...o,njFilInfo(f.key)];
  return`<div class="njfr"><span class="njdot">🎨</span><select data-njp="fil.${m.id}.${f.id}.key">${L.map(x=>`<option value="${esc(x.key)}" ${x.key===f.key?'selected':''}>${esc(x.label)}${x.avail!=null?' · '+f2(x.avail)+' g':''}</option>`).join('')}</select>${njInp(`fil.${m.id}.${f.id}.g`,f.g,'0','inputmode="decimal"')}<span class="ok">g</span>${m.multi&&m.fils.length>1?`<button type="button" class="btn s njx" data-nja="delFil:${m.id}:${f.id}" aria-label="Remover cor">🗑</button>`:'<span></span>'}</div>`}
+function njPickProd(id,sku){const m=NJ.mesas.find(x=>x.id===id),p=rows('produtos').find(x=>eq(x.sku,sku));if(!m||!p)return;
+ m.nome=p.produto||m.nome;
+ const mi=Math.round(num(p.tempo_h)*60);if(mi>0){const d=Math.floor(mi/1440),h=Math.floor((mi%1440)/60),mm=mi%60;m.d=d?String(d):'';m.h=h?String(h):'';m.m=mm?String(mm):''}
+ if(num(p.peso_g)>0&&m.fils[0])m.fils[0].g=f2(num(p.peso_g));
+ const M=p.material&&rows('materiais').find(x=>eq(x.categoria,'FILAMENTO')&&eq(x.material,p.material));if(M&&m.fils[0]){m.fils[0].key='M|'+M.codigo_material;delete m.fils[0].price}}
 function njMesaH(m,i){const pr=njPrinters(),shown=m.multi?m.fils:m.fils.slice(0,1);
  return`<div class="njm"><div class="njmh"><b>Mesa #${i+1}</b><span><button type="button" class="btn s" data-nja="dupMesa:${m.id}">⧉ Duplicar</button> ${NJ.mesas.length>1?`<button type="button" class="btn s njx" data-nja="delMesa:${m.id}" aria-label="Remover mesa">🗑</button>`:''}</span></div>
+ ${(PL=>PL.length?`<div class="f"><label>Usar produto já cadastrado</label><select data-njp="mesa.${m.id}.__prod"><option value="">— escolher (preenche nome, peso, tempo e filamento) —</option>${PL.map(p=>`<option value="${esc(p.sku)}" ${nz(p.produto)===nz(m.nome)?'selected':''}>${esc(p.sku)} · ${esc(p.produto)}</option>`).join('')}</select></div>`:'')(rows('produtos').filter(p=>p.sku&&p.produto&&!eq(p.ativo,'NÃO')))}
  <div class="f"><label>Nome do Produto${NJ.tipo==='ESTOQUE'?' *':''}</label>${njInp(`mesa.${m.id}.nome`,m.nome,'Ex.: Suporte de celular')}</div>
  <div class="g2" style="margin-top:12px"><div class="f"><label>Impressora</label><select data-njp="mesa.${m.id}.impressora">${pr.map(p=>`<option ${p===(m.impressora||'Impressora padrão')?'selected':''}>${esc(p)}</option>`).join('')}<option value="__new">➕ Cadastrar impressora…</option></select><small class="ok">${(pn=>pn.reg?`${f2(pn.pot)} W · ${money(pn.valor)} · vida ${f2(pn.vida)} h`:'Sem cadastro: usa os valores de Preços › Calculadora')(njPrn(m.impressora))}</small></div>
  <div class="f"><label>Modo de Execução</label>${i===0?'<div class="seg"><button type="button" class="on" disabled>Primeira mesa</button></div><small class="ok">Começa assim que o trabalho inicia</small>':njSeg(`mesa.${m.id}.modo`,m.modo,[['SEQ','Sequencial'],['PAR','Paralelo']])+`<small class="ok">${m.modo==='PAR'?'Roda junto com a mesa anterior':'Aguarda mesa anterior terminar'}</small>`}</div></div>
@@ -1522,6 +1528,7 @@ function njOnInput(e){if(cur!=='v-nova'||!NJ)return;const t=e.target;if(t.id==='
  const sel=t.tagName==='SELECT',chk=t.type==='checkbox';if(sel&&e.type==='input')return;if(!sel&&!chk&&e.type==='change')return;
  let v=chk?t.checked:t.value;
  if(sel&&v==='__new'){njRender();return form('impressoras')}
+ if(sel&&/\.__prod$/.test(p)){if(v)njPickProd(p.split('.')[1],v);NJSAVED=false;return njRender()}
  if(sel&&v==='__manual'){const a=p.split('.'),x=NJ.extras.find(z=>z.id===a[1]);x.manual=true;x.mat='';return njRender()}
  if(p.startsWith('ext.')&&p.endsWith('.mat')){const x=NJ.extras.find(z=>z.id===p.split('.')[1]),M=rows('materiais').find(m=>eq(m.codigo_material,v));x.mat=v;if(M){x.nome=M.material;x.custo=f2(num(M.custo_unidade))}return njRender()}
  if(/^fil\..*\.key$/.test(p)){const a=p.split('.');delete NJ.mesas.find(x=>x.id===a[1]).fils.find(x=>x.id===a[2]).price}
