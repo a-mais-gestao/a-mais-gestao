@@ -442,7 +442,7 @@ function kSum(l){const t=todayS(),rg=perRange(hp,t),X=pmx(rg),F=X.F,pc=(a,b)=>b?
  caixa=sum(all.filter(realiz),x=>(isS(x)?-1:1)*num(x.valor)),
  pjp=Pj.filter(r=>dIn(r.data,rg)&&stt(r)!=='CANCELADO'),apr=pjp.filter(r=>!PEND.includes(stt(r))),
  cons=sum(rows('consignacoes').filter(r=>!eq(r.status_acerto,'ACERTADO')),'a_receber'),sal=sum(Pj.filter(r=>!done(r.status)),'saldo'),
- dopL=out.filter(x=>!['MATERIAL','EMBALAGEM','ENERGIA','FRETE','TAXAS','EVENTO','PAGAMENTO DE EMPRÉSTIMO'].includes(String(x.categoria).toUpperCase())),
+ dopL=out.filter(x=>!['MATERIAL','EMBALAGEM','ENERGIA','FRETE','TAXAS','EVENTO','PAGAMENTO DE EMPRÉSTIMO','EMPRÉSTIMO RECEBIDO'].includes(String(x.categoria).toUpperCase())),
  pend=Pj.filter(r=>PEND.includes(stt(r))),prod=Pj.filter(r=>stt(r)==='EM PRODUÇÃO'),pron=Pj.filter(r=>stt(r)==='PRONTO'),
  M={
  'Entradas':{v:money(X.ent),per:1,note:'Recebimentos lançados, por categoria',r:[['Lançamentos',ent.length],...topC(ent)],go:'financeiro'},
@@ -524,7 +524,7 @@ function cascade(id,rid,o){if(!rid)return;const p=rows(id).find(r=>r._id===rid);
 /* HOJE: o que precisa de atenção, com os registros reais */
 let hp='30d',hcmp=false,hAll=false;const PER=[['hoje','Hoje'],['7d','7 dias'],['30d','30 dias'],['90d','90 dias'],['mes','Este mês'],['mpas','Mês passado'],['ano','Este ano']],dIn=(d,r)=>{const v=dt(d);return !!v&&v>=r[0]&&v<=r[1]},ndays=r=>Math.round((Date.parse(r[1])-Date.parse(r[0]))/864e5)+1,prevR=r=>{const n=ndays(r);return[addD(r[0],-n),addD(r[0],-1)]};
 function perRange(k,t){const m=t.slice(0,7);if(k==='hoje')return[t,t];if(k==='7d')return[addD(t,-6),t];if(k==='30d')return[addD(t,-29),t];if(k==='90d')return[addD(t,-89),t];if(k==='mes')return[m+'-01',t];if(k==='mpas'){const d=new Date(m+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()-1);return[d.toISOString().slice(0,10),addD(m+'-01',-1)]}return[t.slice(0,4)+'-01-01',t]}
-function pmx(r){const F=fat(r),fin=rows('financeiro').filter(x=>dIn(x.data,r)&&!eq(x.status,'CANCELADO')),sa=x=>/sa[ií]da/i.test(x.tipo),re=fin.filter(realiz),dop=sum(fin.filter(x=>sa(x)&&!['MATERIAL','EMBALAGEM','ENERGIA','FRETE','TAXAS','EVENTO','PAGAMENTO DE EMPRÉSTIMO'].includes(String(x.categoria).toUpperCase())),'valor'),
+function pmx(r){const F=fat(r),fin=rows('financeiro').filter(x=>dIn(x.data,r)&&!eq(x.status,'CANCELADO')),sa=x=>/sa[ií]da/i.test(x.tipo),re=fin.filter(realiz),dop=sum(fin.filter(x=>sa(x)&&!['MATERIAL','EMBALAGEM','ENERGIA','FRETE','TAXAS','EVENTO','PAGAMENTO DE EMPRÉSTIMO','EMPRÉSTIMO RECEBIDO'].includes(String(x.categoria).toUpperCase())),'valor'),
  nV=rows('vendas').filter(x=>dIn(x.data,r)&&!isBlocked(x.canal)).length+rows('personalizados').filter(x=>eq(x.status,'ENTREGUE')&&dIn(x.data_entrega||x.prazo||x.data,r)).length;
  return{F,ent:sum(re.filter(x=>!sa(x)),'valor'),out:sum(re.filter(sa),'valor'),dop,custo:F.tot-F.luc,liq:F.liq-dop,nV,tk:nV?(F.dir+F.ped)/nV:0}}
 function serie(r){const n=ndays(r),o=[];if(n<=31){for(let i=0;i<n;i++){const d=addD(r[0],i);o.push([d.slice(8)+'/'+d.slice(5,7),fat([d,d]).tot])}}else{let m=r[0].slice(0,7);const m1=r[1].slice(0,7);while(m<=m1){o.push([m.slice(5)+'/'+m.slice(2,4),fat([m>r[0].slice(0,7)?m+'-01':r[0],m<m1?m+'-31':r[1]]).tot]);const d=new Date(m+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+1);m=d.toISOString().slice(0,7)}}return o}
