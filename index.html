@@ -285,9 +285,9 @@ body[data-vm=grid] .vg-off{display:none!important}body[data-vm=list] .vg-x{displ
 const MODULES=[
 {id:'produtos',label:'Produtos',icon:'▦',sheet:'PRODUTOS',desc:'Cadastro mestre de produtos e SKUs.',fields:[['sku','SKU','text',true],['produto','Produto','text',true],['categoria','Categoria'],['uso_produto','Destino do produto','select',['PARA VENDA','PEDIDO','USO NA LOJA','USO PESSOAL']],['custo_unitario','Custo unitário','number'],['estoque_minimo','Estoque mínimo','number'],['ativo','Ativo?','select',['SIM','NÃO']],['preco_padrao','Preço padrão','number'],['estoque_inicial','Estoque inicial','number'],['tempo_h','Tempo de impressão (h)','number'],['peso_g','Peso da peça (g)','number'],['horas_manuais','Horas manuais por peça (h)','number'],['setup_h','Setup do lote (h)','number'],['lote_un','Peças por lote','number'],['observacoes','Observações','textarea'],['motor','Motor','select',['GIRO','SOB DEMANDA','PERSONALIZADO','ATACADO']],['disponibilidade','Disponibilidade'],['nivel_servico','Nível serviço'],['cidade_foco','Cidade foco']]},
 {id:'lojas',label:'Lojas parceiras',icon:'⌂',sheet:'LOJAS',fields:[['codigo','Código','text',true],['loja_empresa','Loja / Empresa','text',true],['nicho','Nicho'],['responsavel','Responsável'],['telefone','Telefone / WhatsApp'],['cidade','Cidade'],['bairro','Bairro'],['rua','Rua'],['numero','Nº'],['data_inicio','Data de início','date'],['comissao','Comissão %','number'],['status','Status','select',['ATIVA','PAUSADA','ENCERRADA']],['proxima_visita','Próxima visita','date'],['ultimo_acerto','Último acerto','date'],['observacoes','Observações','textarea']]},
-{id:'vendas',label:'Vendas',icon:'↗',sheet:'VENDAS',fields:[['data','Data','date',true],['canal','Canal','select',['DIRETA','CONSIGNADA','ONLINE','ATACADO','PERSONALIZADO','EVENTO']],['loja_cliente','Loja / Cliente'],['sku_produto','SKU produto'],['produto','Produto'],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['status_pagamento','Pagamento','select',['RECEBIDO','PENDENTE']],['forma_pagamento','Forma de pagamento'],['vencimento','Vencimento (se pendente)','date'],['receita_bruta','Receita bruta','number'],['desconto','Desconto','number'],['taxa_canal','Taxa do canal','number'],['frete','Frete','number'],['imposto','Imposto (R$)','number'],['receita_liquida','Receita líquida','number'],['custo_unitario','Custo unitário','number'],['custo_total','Custo total','number'],['lucro','Lucro','number']]},
+{id:'vendas',label:'Vendas',icon:'↗',sheet:'VENDAS',fields:[['data','Data','date',true],['canal','Canal','select',['DIRETA','CONSIGNADA','ONLINE','ATACADO','PERSONALIZADO','EVENTO']],['loja_cliente','Loja / Cliente'],['sku_produto','SKU produto'],['produto','Produto'],['kit_id','Kit de venda (opcional)','select',[]],['quantidade','Quantidade','number'],['valor_unitario','Valor unitário','number'],['status_pagamento','Pagamento','select',['RECEBIDO','PENDENTE']],['forma_pagamento','Forma de pagamento'],['vencimento','Vencimento (se pendente)','date'],['receita_bruta','Receita bruta','number'],['desconto','Desconto','number'],['taxa_canal','Taxa do canal','number'],['frete','Frete','number'],['imposto','Imposto (R$)','number'],['receita_liquida','Receita líquida','number'],['custo_unitario','Custo unitário','number'],['custo_total','Custo total','number'],['lucro','Lucro','number']]},
 {id:'consignacoes',label:'Consignações',icon:'⇄',sheet:'CONSIGNAÇÕES',fields:[['loja_empresa','Loja / Empresa','text',true],['sku','SKU'],['produto','Produto'],['qtd_enviada','Qtd. enviada','number'],['qtd_vendida','Qtd. vendida','number'],['qtd_devolvida','Qtd. devolvida','number'],['estoque_loja','Estoque na loja','number'],['preco_unitario','Preço unit.','number'],['valor_bruto','Valor bruto','number'],['comissao_pct','Comissão %','number'],['comissao_valor','Comissão R$','number'],['a_receber','A receber','number'],['status_acerto','Status acerto','select',['PENDENTE','ACERTADO','PARCIAL']],['ultimo_envio','Último envio','date'],['ultimo_acerto','Último acerto','date'],['observacoes','Observações','textarea']]},
-{id:'personalizados',label:'Pedidos personalizados',icon:'✳',sheet:'PERSONALIZADOS',fields:[['pedido_sku','SKU pedido'],['data','Data','date'],['cliente','Cliente','text',true],['contato','Contato'],['produto_sku','Produto / SKU'],['personalizacao','Personalização','textarea'],['valor_total','Valor total','number'],['custo_estimado','Custo estimado','number'],['sinal','Sinal','number'],['saldo','Saldo','number'],['prazo','Prazo','date'],['data_entrega','Data de entrega','date'],['status','Status','select',['ORÇAMENTO','AGUARDANDO APROVAÇÃO','EM PRODUÇÃO','PRONTO','ENTREGUE','CANCELADO']],['observacoes','Observações','textarea'],['etapa','Etapa'],['atrasado','Atrasado?']]},
+{id:'personalizados',label:'Pedidos personalizados',icon:'✳',sheet:'PERSONALIZADOS',fields:[['pedido_sku','SKU pedido'],['data','Data','date'],['cliente','Cliente','text',true],['contato','Contato'],['produto_sku','Produto / SKU'],['kit_id','Kit de venda (opcional)','select',[]],['quantidade_kit','Quantidade de kits','number'],['personalizacao','Personalização','textarea'],['valor_total','Valor total','number'],['custo_estimado','Custo estimado','number'],['sinal','Sinal','number'],['saldo','Saldo','number'],['prazo','Prazo','date'],['data_entrega','Data de entrega','date'],['status','Status','select',['ORÇAMENTO','AGUARDANDO APROVAÇÃO','EM PRODUÇÃO','PRONTO','ENTREGUE','CANCELADO']],['observacoes','Observações','textarea'],['etapa','Etapa'],['atrasado','Atrasado?']]},
 {id:'movimentos',label:'Movimentos de estoque',icon:'⇅',sheet:'MOVIMENTOS',fields:[['data','Data','date',true],['tipo','Tipo','select',['ENTRADA','DEVOLUÇÃO','SAÍDA EVENTO','AJUSTE','PERDA']],['sku','SKU'],['produto','Produto'],['quantidade','Quantidade','number'],['origem','Origem / referência'],['observacoes','Observações','textarea']]},
 {id:'eventos',label:'Eventos',icon:'☆',sheet:'EVENTOS',fields:[['sku_evento','SKU evento'],['evento','Evento','text',true],['data','Data','date'],['cidade_local','Cidade / Local'],['estoque_levado','Estoque levado','number'],['unidades_vendidas','Unidades vendidas','number'],['receita','Receita','number'],['custos_evento','Custos do evento','number'],['lucro','Lucro','number'],['estoque_devolvido','Estoque devolvido','number'],['status','Status'],['observacoes','Observações','textarea']]},
 {id:'financeiro',label:'Financeiro',icon:'＄',sheet:'FINANCEIRO',fields:[['data','Data','date',true],['tipo','Tipo','select',['ENTRADA','SAÍDA']],['categoria','Categoria'],['descricao','Descrição','text',true],['valor','Valor (R$)','number',true],['forma_pagamento','Forma de pagamento'],['status','Status','select',['PENDENTE','RECEBIDO','PAGO','ATRASADO']],['vencimento','Vencimento','date'],['fonte_recurso','Quem pagou / fonte dos recursos','select',['CAIXA DA EMPRESA','BOLSO DO PROPRIETÁRIO — A RECUPERAR','BOLSO DO PROPRIETÁRIO — APORTE DEFINITIVO','TERCEIRO — A EMPRESA DEVE','FINANCIAMENTO DE TERCEIRO']],['classificacao_capital','Classificação do capital','select',['NÃO SE APLICA','INVESTIMENTO INICIAL','APORTE ADICIONAL','REINVESTIMENTO DA EMPRESA','DEVOLUÇÃO AO PROPRIETÁRIO']],['observacoes','Observações','textarea']]},
@@ -797,9 +797,9 @@ function pedidosV(){const S=['ORÇAMENTO','AGUARDANDO APROVAÇÃO','EM PRODUÇÃ
  $('#content').innerHTML=head('Pedidos personalizados',`<button class="btn" data-go="personalizados">Ver lista</button><button class="btn p" data-f="personalizados|">+ Novo pedido</button>`)+`<div class="kan">${S.map(s=>{let c=R.filter(r=>col(r)===s);if(s==='ENTREGUE')c=c.slice(0,6);return`<div class="kc"><h4>${s[0]+s.slice(1).toLowerCase()}<span class="ok">${R.filter(r=>col(r)===s).length}</span></h4>${c.map(r=>{const d=dt(r.prazo),late=d&&d<t&&s!=='ENTREGUE';return`<div class="kd" data-f="personalizados|${r._id}"><b>${esc(r.cliente)}</b><small>${produtoTexto(r.produto_sku,r)}</small><small>${num(r.valor_total)?money(r.valor_total):''}${num(r.saldo)?' · falta '+money(r.saldo):''}</small>${lucroIndicadoresHTML(r,'personalizados')}${d?`<small class="${late?'late':''}">Prazo ${d.split('-').reverse().slice(0,2).join('/')}${late?' (atrasado)':''}</small>`:''}${s!=='ENTREGUE'?`<button class="btn s" data-mv="${r._id}|${S[S.indexOf(s)+1]}">Avançar ›</button>`:''}</div>`}).join('')||'<small class="ok" style="padding:6px">Vazio</small>'}</div>`}).join('')}</div>`;
  document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[i,s]=b.dataset.mv.split('|');setRows('personalizados',R.map(r=>r._id===i?{...r,status:s,etapa:({'EM PRODUÇÃO':'IMPRESSÃO','PRONTO':'ENTREGA','ENTREGUE':'ENTREGA'})[s]??r.etapa,...(s==='ENTREGUE'?{data_entrega:todayS()}:{})}:r));syncRow('personalizados',i);toast('Pedido movido para '+s.toLowerCase());pedidosV()});wire()}
 /* ESTOQUE: calculado a partir dos lotes, movimentos, vendas e envios */
-function estoque(){const V=rows('vendas'),C=rows('consignacoes'),Mv=rows('movimentos'),Lt=rows('lotes');
+function estoque(){const V=rows('vendas'),C=rows('consignacoes'),Mv=rows('movimentos'),Lt=rows('lotes'),PK=rows('personalizados').filter(r=>eq(r.status,'ENTREGUE')&&r._kit_id&&Array.isArray(r._kit_componentes)&&!V.some(v=>String(v._pedido_id||v.pedido_id||'')===String(r._id)));
  return rows('produtos').map(p=>{const k=x=>eq(x,p.sku),sg={'ENTRADA':1,'DEVOLUÇÃO':1,'SAÍDA EVENTO':-1,'PERDA':-1,'AJUSTE':1};
-  const casa=num(p.estoque_inicial)+sum(Lt.filter(r=>k(r.sku_produto)),'qtd_produzida')+sum(Mv.filter(r=>k(r.sku)),r=>(sg[String(r.tipo).toUpperCase()]||1)*num(r.quantidade))-sum(V.filter(r=>k(r.sku_produto)&&!eq(r.canal,'CONSIGNADA')),'quantidade')-sum(V.filter(r=>!eq(r.canal,'CONSIGNADA')),r=>sum((Array.isArray(r._kit_componentes)?r._kit_componentes:[]).filter(c=>k(c.sku)),c=>num(c.quantidade)*num(r.quantidade)))-sum(C.filter(r=>k(r.sku)),'qtd_enviada')+sum(C.filter(r=>k(r.sku)),'qtd_devolvida'),min=num(p.estoque_minimo);
+  const casa=num(p.estoque_inicial)+sum(Lt.filter(r=>k(r.sku_produto)),'qtd_produzida')+sum(Mv.filter(r=>k(r.sku)),r=>(sg[String(r.tipo).toUpperCase()]||1)*num(r.quantidade))-sum(V.filter(r=>k(r.sku_produto)&&!eq(r.canal,'CONSIGNADA')),'quantidade')-sum(V.filter(r=>!eq(r.canal,'CONSIGNADA')),r=>sum((Array.isArray(r._kit_componentes)?r._kit_componentes:[]).filter(c=>k(c.sku)),c=>num(c.quantidade)*num(r.quantidade)))-sum(PK,r=>sum(r._kit_componentes.filter(c=>k(c.sku)),c=>num(c.quantidade)*Math.max(1,num(r.quantidade_kit)||num(r.quantidade)||1)))-sum(C.filter(r=>k(r.sku)),'qtd_enviada')+sum(C.filter(r=>k(r.sku)),'qtd_devolvida'),min=num(p.estoque_minimo);
   return{_id:p._id,produto:p.produto,sku:p.sku,casa,loja:sum(C.filter(r=>k(r.sku)&&!eq(r.status_acerto,'ACERTADO')),'estoque_loja'),min,uso:usoOf(p),low:min>0&&casa<=min&&!eq(p.ativo,'NÃO')&&!['PEDIDO','USO PESSOAL'].includes(usoOf(p))}})}
 function estoqueV(){const EA=estoque(),low=EA.filter(p=>p.low).length,tb=window._estTab||'all',E=tb==='all'?EA:EA.filter(p=>(p.uso||'NONE')===tb);
  $('#content').innerHTML=head('Estoque',vtog()+`<button class="btn" data-f='movimentos|' data-p='${JSON.stringify({tipo:"ENTRADA",data:todayS()})}'>+ Entrada</button><button class="btn" data-f="lotes|">+ Lote produzido</button><button class="btn" id="pscanestoque">🔎 Pesquisar produtos no sistema</button><button class="btn p" data-f="produtos|">+ Produto</button>`)+estTabs(EA,tb)+(E.length?`<div class="tw"><table data-gv><thead><tr><th>Produto</th><th>Em casa</th><th>Nas lojas</th><th>Mínimo</th><th>Situação</th><th>Preço</th><th>Lucro Virgem</th><th>Lucro sem Ajustes</th></tr></thead><tbody>${E.map(p=>{const prod=rows('produtos').find(x=>x._id===p._id)||acharProduto(p.sku),lm=prod?lucroIndicadoresRegistro(prod,'produtos'):null;return`<tr data-f="produtos|${p._id}"><td>${esc(p.produto)} <span class="ok">${esc(p.sku)}</span></td><td><b>${p.casa}</b></td><td>${p.loja}</td><td>${p.min||'—'}</td><td>${p.casa<=0?'<span class="pill r">Sem estoque</span>':p.low?'<span class="pill a">Repor</span>':'<span class="pill g">OK</span>'}</td><td>${num(prod&&prod.preco_padrao)?money(prod.preco_padrao):'—'}</td><td>${lm?money(lm.lucroVirgem):'—'}${lm?`<small class="ok">${f2(lm.margemVirgem)}% · ${lm.estimado?'estimado':'registrado'}</small>`:''}</td><td>${lm?money(lm.lucroSemAjustes):'—'}${lm?`<small class="ok">${f2(lm.margemSemAjustes)}% · ${lm.estimado?'estimado':'registrado'}</small>`:''}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty"><b>Cadastre seus produtos</b>O estoque é calculado sozinho a partir daqui.</div>')+`<p class="foot">${low?`${low} produto(s) para repor. `:''}Em casa = estoque inicial + lotes produzidos + entradas e devoluções − vendas diretas − envios para lojas − perdas e saídas para evento. Informe o estoque inicial no cadastro do produto.</p>`;
@@ -1296,7 +1296,8 @@ function form(id,rid=null,preset=null){if(id==='impressoes'||id==='v-nova')retur
  const fld=f=>{const[k,l,ty,x]=f,req=x===true,so=Array.isArray(x)?x:null;let v=old[k]??'';
   if(!rid&&!preset){if(ty==='date')v=k==='ultimo_acerto'?'':todayS();else if(REMEMBER.includes(k)&&L[k]&&!(MASTER[id]||[]).includes(k))v=L[k];else if(k==='status'&&so)v=so[0];else if(AUTO[id]&&AUTO[id][0]===k)v=nextId(m)}
   if(ty==='date')v=dt(v);if(ty==='number'&&v!=='')v=f2(num(v));if(id==='financeiro'&&!v){if(k==='fonte_recurso')v=(preset&&preset.fonte_recurso)||'CAIXA DA EMPRESA';if(k==='classificacao_capital')v=(preset&&preset.classificacao_capital)||'NÃO SE APLICA'}if(!rid){if(k==='status_pagamento'&&!v)v='RECEBIDO';if(id==='financeiro'&&k==='status'&&!(preset&&preset.status))v=old.tipo==='SAÍDA'?'PAGO':'RECEBIDO'}const auto=calcK.includes(k),stockDerived=id==='materiais'&&!!rid&&(['custo_unidade','estoque_atual'].includes(k)||(k==='unidade'&&typeof stockLotsFor==='function'&&stockLotsFor(old).length>0));let h;
-  if(ty==='textarea')h=`<textarea name="${k}">${esc(v)}</textarea>`;
+  if(k==='kit_id'&&['vendas','personalizados'].includes(id)){const kid=String(v||''),K=rows('kits').filter(x=>eq(x.ativo,'SIM')||eq(x._id,kid));h=`<select name="kit_id"><option value="">— Produto normal / sem kit —</option>${K.map(x=>`<option value="${esc(x._id)}" ${eq(kid,x._id)?'selected':''}>${esc((x.codigo_kit||'')+' · '+(x.nome||'Kit sem nome')+' · '+money(x.preco_venda))}</option>`).join('')}</select>`;}
+  else if(ty==='textarea')h=`<textarea name="${k}">${esc(v)}</textarea>`;
   else if(so&&so.length<=5&&!(id==='financeiro'&&['fonte_recurso','classificacao_capital'].includes(k))){const o=so.includes(v)||!v?so:[...so,v];h=`<input type="hidden" name="${k}" value="${esc(v)}"><div class="seg" data-seg="${k}">${o.map(z=>`<button type="button" class="${v===z?'on':''}">${esc(z)}</button>`).join('')}</div>`}
   else if(so){const o=so.includes(v)||!v?so:[...so,v];h=`<select name="${k}"><option value=""></option>${o.map(z=>`<option ${v===z?'selected':''}>${esc(z)}</option>`).join('')}</select>`}
   else{const op=opts(m,k)||(/sku|loja|empresa|contato_id|cidade|produto$|material|categoria|responsavel|nicho|cliente|fornecedor|concorrente|cor$/.test(k)?lookup(k):null),ms=(MASTER[id]||[]).includes(k),L2=!ms&&(LK.test(k)||SELK.test(k))&&ty!=='number'&&ty!=='date'?[...new Set([...(op||[]),...(LK.test(k)?(GLOBAL.test(k)?suggest(k):suggestM(id,k)):[]),...(v?[v]:[])])].filter(Boolean):[];
@@ -1305,7 +1306,7 @@ function form(id,rid=null,preset=null){if(id==='impressoes'||id==='v-nova')retur
     h=`<input name="${k}" ${ty==='date'?'type="date"':ty==='number'?'inputmode="decimal"':''} value="${esc(v)}" ${req?'required':''} ${op?`list="dl-${k}"`:''} ${auto?'data-auto="1"':''} ${stockDerived?'readonly title="Campo derivado pelos lotes. Para alterar estoque, registre uma compra ou um ajuste."':costLock(id,k,old,rid)?'readonly title="Custo calculado em Preços. Para mudar, edite lá."':''}>`}}
   const hint=id==='financeiro'&&k==='fonte_recurso'?'<small style="display:block;color:var(--mut);line-height:1.45;margin-top:6px">“Financiamento de terceiro” usa o saldo do empréstimo recebido: em uma saída paga, esse saldo diminui. A dívida só diminui quando você registra o pagamento do empréstimo. “Terceiro — a empresa deve” é para quando outra pessoa pagou o fornecedor diretamente, sem transferir o dinheiro para uma caixa sua.</small>':'';
   return`<div class="f ${ty==='textarea'?'full':''}"><label>${esc(l)}${req?' *':''}${auto?' (automático)':''}</label>${h}${hint}</div>`};
- const main=m.fields.filter((f,i)=>!calcK.includes(f[0])&&f[2]!=='textarea'&&(i<(m.id==='vendas'?10:8)||f[3]===true)),more=m.fields.filter(f=>!calcK.includes(f[0])&&f[2]!=='textarea'&&!main.includes(f)),ta=m.fields.filter(f=>f[2]==='textarea'),cf=m.fields.filter(f=>calcK.includes(f[0]));
+ const main=m.fields.filter((f,i)=>!calcK.includes(f[0])&&f[2]!=='textarea'&&(i<(m.id==='vendas'?10:8)||f[3]===true||['kit_id','quantidade_kit'].includes(f[0])||(m.id==='personalizados'&&['valor_total','custo_estimado','sinal','saldo'].includes(f[0])))),more=m.fields.filter(f=>!calcK.includes(f[0])&&f[2]!=='textarea'&&!main.includes(f)),ta=m.fields.filter(f=>f[2]==='textarea'),cf=m.fields.filter(f=>calcK.includes(f[0]));
  const indPanel=rid&&['vendas','personalizados','produtos','custos','matriz_precos','consignacoes'].includes(id)?`<div style="margin-bottom:12px">${lucroIndicadoresHTML(old,id)}</div>`:'';
  $('#form').innerHTML=`${indPanel}<div class="fg">${main.map(fld).join('')}${cf.length?`<div class="sec">Calculado automaticamente</div>${cf.map(fld).join('')}`:''}${ta.map(fld).join('')}${more.length?`<details><summary>Mais campos (${more.length})</summary><div class="fg">${more.map(fld).join('')}</div></details>`:''}</div>${dls.join('')}`;
  $('#mt').textContent=(rid?'Editar · ':'Novo · ')+m.label;$('#del').style.display=$('#dup').style.display=rid?'':'none';$('#ov').classList.add('on');
@@ -2954,4 +2955,114 @@ decorate(document);decorateDash();
  if(root)new MutationObserver(queue).observe(root,{childList:true,subtree:true,characterData:true});
 })();
 </script>
+<script>
+/* A+ Kits em Vendas e Pedidos: seleção, custo, validação de estoque e histórico. */
+(function(){
+ 'use strict';
+ const kitRows=()=>Array.isArray(db.kits)?db.kits:[];
+ const kitById=id=>kitRows().find(k=>String(k._id)===String(id));
+ const kitCostCurrent=k=>sum(kitParts(k),c=>num(custoSku(c.sku))*num(c.quantidade));
+ const kitSnapshot=k=>kitParts(k).map(c=>{const p=kitProduct(c.sku);return{sku:String(c.sku||''),produto:String(p&&p.produto||c.produto||c.sku||''),quantidade:Math.max(1,num(c.quantidade)),custo_unitario:num(custoSku(c.sku))}});
+ const kitSnapshotCost=parts=>sum(parts||[],c=>num(c.custo_unitario!=null?c.custo_unitario:custoSku(c.sku))*num(c.quantidade));
+ const orderCount=r=>Math.max(1,Math.floor(num(r&&r.quantidade_kit)||num(r&&r.quantidade)||1));
+ function releaseMapFor(moduleId,old){const m=new Map();if(!old)return m;const add=(sku,q)=>{if(sku&&num(q)>0)m.set(String(sku),(m.get(String(sku))||0)+num(q));};
+  if(moduleId==='vendas'){
+   if(Array.isArray(old._kit_componentes)&&old._kit_componentes.length)old._kit_componentes.forEach(c=>add(c.sku,num(c.quantidade)*Math.max(1,num(old.quantidade)||1)));
+   else if(old.sku_produto)add(old.sku_produto,Math.max(0,num(old.quantidade)));
+  }else if(moduleId==='personalizados'&&eq(old.status,'ENTREGUE')&&old._kit_id&&Array.isArray(old._kit_componentes)){
+   old._kit_componentes.forEach(c=>add(c.sku,num(c.quantidade)*orderCount(old)));
+  }
+  return m;
+ }
+ function kitStockProblems(parts,count,release=new Map()){
+  const need=new Map();(parts||[]).forEach(c=>{if(c&&c.sku)need.set(String(c.sku),(need.get(String(c.sku))||0)+num(c.quantidade)*count)});
+  const E=estoque(),problems=[];
+  for(const[sku,q]of need){const p=kitProduct(sku),e=p&&E.find(x=>x._id===p._id),available=num(e&&e.casa)+num(release.get(sku));
+   if(!p)problems.push(`O componente ${sku} não existe mais no cadastro.`);else if(available+0.0001<q)problems.push(`${p.produto}: precisa de ${q} unidade(s), mas há ${Math.max(0,available)} disponível(is).`);
+  }
+  return problems;
+ }
+ function showKitStockProblems(problems){if(!problems.length)return false;toast('Não foi possível salvar o kit porque falta estoque:\n'+problems.join(' · '));return true;}
+ function setField(F,name,value,force=true){const e=F&&F.elements&&F.elements[name];if(!e)return;if(force||!String(e.value||'').trim())e.value=value==null?'':String(value);}
+ function updateKitForm(F,formId){if(!F||!F.elements.kit_id)return;const id=String(F.elements.kit_id.value||''),previous=String(F.dataset.kitSelected||''),switched=id!==previous;
+  if(!id){F.dataset.kitSelected='';return;}
+  const kit=kitById(id);if(!kit){toast('O kit selecionado não existe mais. Atualize o cadastro de kits.');F.elements.kit_id.value='';F.dataset.kitSelected='';return;}
+  const parts=kitParts(kit);if(!parts.length){toast('Esse kit está sem componentes válidos. Corrija-o em Kits de venda antes de usá-lo.');return;}
+  if(formId==='vendas'){
+   if(F.elements.sku_produto)F.elements.sku_produto.value='';setField(F,'produto',kit.nome);
+   if(!num(F.elements.quantidade&&F.elements.quantidade.value))setField(F,'quantidade',1);
+   const price=F.elements.valor_unitario,shouldSet=switched||!price||!String(price.value||'').trim()||price.dataset.kitAutofill==='1';
+   if(price&&shouldSet){price.value=String(num(kit.preco_venda)).replace('.',',');price.dataset.kitAutofill='1';}
+   setField(F,'custo_unitario',kitCostCurrent(kit));
+   if(typeof link==='function')link(F.elements.quantidade||F.elements.kit_id);
+  }else if(formId==='personalizados'){
+   setField(F,'produto_sku',kit.codigo_kit||kit.nome);
+   if(!num(F.elements.quantidade_kit&&F.elements.quantidade_kit.value))setField(F,'quantidade_kit',1);
+   const q=Math.max(1,Math.floor(num(F.elements.quantidade_kit&&F.elements.quantidade_kit.value)||1));
+   const total=F.elements.valor_total,shouldSet=switched||!total||!String(total.value||'').trim()||total.dataset.kitAutofill==='1';
+   if(total&&shouldSet){total.value=String(Math.round(num(kit.preco_venda)*q*100)/100).replace('.',',');total.dataset.kitAutofill='1';}
+   setField(F,'custo_estimado',Math.round(kitCostCurrent(kit)*q*100)/100);
+   const custom=F.elements.personalizacao,summary=`Kit ${kit.nome}: ${kitFormatParts(parts)}`;
+   if(custom&&(switched||!String(custom.value||'').trim()||custom.dataset.kitAutofill==='1')){custom.value=summary;custom.dataset.kitAutofill='1';}
+   if(typeof link==='function')link(F.elements.quantidade_kit||F.elements.kit_id);
+  }
+  F.dataset.kitSelected=id;
+ }
+ const _formBeforeKit=form;
+ form=function(id,...args){const result=_formBeforeKit(id,...args);if(!['vendas','personalizados'].includes(id))return result;const F=document.getElementById('form');if(!F||!F.elements.kit_id)return result;
+  const oldId=args[0],old=oldId?rows(id).find(r=>r._id===oldId):null;
+  F.dataset.kitSelected=String(F.elements.kit_id.value||'');
+  const price=F.elements[id==='vendas'?'valor_unitario':'valor_total'];if(price)price.dataset.kitAutofill=(!old&&F.elements.kit_id.value)?'1':(old&&old._kit_preco_auto?'1':'0');
+  const main=F.querySelector(':scope > .fg');if(main){['kit_id','quantidade_kit','valor_total','custo_estimado','sinal','saldo'].forEach(name=>{const el=F.elements[name],field=el&&el.closest('.f');if(field&&field.parentElement!==main)main.appendChild(field);});}
+  const baseInput=F.oninput,baseChange=F.onchange;
+  function handler(e,base){const target=e.target,name=target&&target.name,sel=F.elements.kit_id;
+   if(e.type==='input'&&target&&(name==='valor_unitario'||name==='valor_total'))target.dataset.kitAutofill='0';
+   if(sel&&sel.value&&target&&['sku_produto','produto_sku','produto'].includes(name)&&String(target.value||'').trim()&&!F.dataset.kitApplying){sel.value='';F.dataset.kitSelected='';}
+   if(typeof base==='function')base.call(this,e);
+   if(name==='kit_id'){updateKitForm(F,id);}
+   else if((name==='quantidade_kit')&&sel&&sel.value)updateKitForm(F,id);
+   // When quantity changes on a kit order, keep the total synchronized only while it remains an automatic price.
+   if(id==='personalizados'&&name==='quantidade_kit'&&sel&&sel.value){const k=kitById(sel.value),tot=F.elements.valor_total;if(k&&tot&&tot.dataset.kitAutofill==='1'){const q=Math.max(1,Math.floor(num(target.value)||1));tot.value=String(Math.round(num(k.preco_venda)*q*100)/100).replace('.',',');}if(k&&F.elements.custo_estimado)F.elements.custo_estimado.value=String(Math.round(kitCostCurrent(k)*Math.max(1,Math.floor(num(target.value)||1))*100)/100).replace('.',',');if(typeof link==='function')link(F.elements.sinal||target);}
+  }
+  F.oninput=function(e){handler.call(this,e,baseInput)};F.onchange=function(e){handler.call(this,e,baseChange)};
+  return result;
+ };
+
+ // Enrich the ordinary save path with a stable kit link and a snapshot of the component costs at the time of the operation.
+ const _saveRecBeforeKit=saveRecImpl;
+ saveRecImpl=function(again){const moduleId=cur,recordId=ed,baseRead=read;
+  read=function(){const raw=baseRead();if(!raw||!['vendas','personalizados'].includes(moduleId))return raw;const o={...raw},old=recordId?rows(moduleId).find(r=>r._id===recordId):null,kid=String(o.kit_id||'').trim();
+   if(!kid){if(old&&old._kit_id){o._kit_id='';o._kit_codigo='';o._kit_componentes=[];o._kit_preco_auto=false;}return o;}
+   const kit=kitById(kid);if(!kit){toast('O kit selecionado não foi encontrado. Abra Kits de venda e confirme se ele continua cadastrado.');return null;}
+   const rawParts=kitParts(kit);if(!rawParts.length||rawParts.some(c=>!c.sku||!kitProduct(c.sku)||num(c.quantidade)<=0)){toast('A composição desse kit está incompleta. Corrija os componentes em Kits de venda antes de registrar a operação.');return null;}
+   const countRaw=moduleId==='personalizados'?(o.quantidade_kit===''?1:num(o.quantidade_kit)):num(o.quantidade),count=Math.floor(countRaw||1);
+   if(count<1||Math.abs(countRaw-count)>0.0001){toast(moduleId==='personalizados'?'A quantidade de kits deve ser um número inteiro maior que zero.':'A quantidade vendida de kits deve ser um número inteiro maior que zero.');return null;}
+   const parts=(old&&String(old._kit_id||'')===kid&&Array.isArray(old._kit_componentes)&&old._kit_componentes.length)?old._kit_componentes:kitSnapshot(kit),unitCost=kitSnapshotCost(parts),release=releaseMapFor(moduleId,old);
+   if(moduleId==='vendas'){
+    const problems=kitStockProblems(parts,count,release);if(showKitStockProblems(problems))return null;
+    const price=num(o.valor_unitario)>0?num(o.valor_unitario):num(kit.preco_venda);if(price<=0){toast('Informe um preço de venda maior que zero para o kit.');return null;}
+    const gross=r2(price*count),discount=Math.min(gross,Math.max(0,num(o.desconto))),feePct=liTaxaPagamentoPct(o.forma_pagamento),taxaPagamento=feePct==null?Math.max(0,num(o.taxa_pagamento)):r2((gross-discount)*feePct/100);
+    o.kit_id=kid;o._kit_id=kid;o._kit_codigo=kit.codigo_kit||'';o._kit_componentes=parts;o._kit_preco_auto=!!(document.querySelector('#form [name="valor_unitario"]')?.dataset.kitAutofill==='1');o.sku_produto='';o.produto=kit.nome;o.quantidade=count;o.valor_unitario=r2(price);o.custo_unitario=r2(unitCost);o.custo_total=r2(unitCost*count);o.receita_bruta=gross;o.imposto=Math.max(0,num(o.imposto));o.receita_liquida=r2(gross-discount-Math.max(0,num(o.taxa_canal))-Math.max(0,num(o.frete)));o.taxa_pagamento=taxaPagamento;o.lucro=r2(o.receita_liquida-o.custo_total-o.imposto);
+    ['lucro_virgem','lucro_sem_ajustes','margem_virgem','margem_sem_ajustes'].forEach(k=>delete o[k]);o.versao_lucros=0;const lm=lucroIndicadoresRegistro(o,'kits');if(lm){o.lucro_virgem=lm.lucroVirgem;o.lucro_sem_ajustes=lm.lucroSemAjustes;o.margem_virgem=lm.margemVirgem;o.margem_sem_ajustes=lm.margemSemAjustes;o.versao_lucros=3;o.lucros_estimados=true;o.fonte_lucros='Estimativa gravada no momento da venda do kit; custo dos componentes preservado.';}
+   }else{
+    const q=count,auto=!!(document.querySelector('#form [name="valor_total"]')?.dataset.kitAutofill==='1'),priceTotal=auto?r2(num(kit.preco_venda)*q):num(o.valor_total);
+    if(priceTotal<=0){toast('Informe um valor total maior que zero para o pedido do kit.');return null;}
+    const problems=eq(o.status,'ENTREGUE')?kitStockProblems(parts,q,release):[];if(showKitStockProblems(problems))return null;
+    o.kit_id=kid;o._kit_id=kid;o._kit_codigo=kit.codigo_kit||'';o._kit_componentes=parts;o._kit_preco_auto=auto;o.quantidade_kit=q;o.quantidade=q;o.produto_sku=kit.codigo_kit||kit.nome;o.produto=kit.nome;o.valor_total=r2(priceTotal);o.custo_estimado=r2(unitCost*q);o.sinal=Math.max(0,num(o.sinal));o.saldo=Math.max(0,r2(o.valor_total-o.sinal));
+    ['lucro_virgem','lucro_sem_ajustes','margem_virgem','margem_sem_ajustes'].forEach(k=>delete o[k]);o.versao_lucros=0;const lm=lucroIndicadoresRegistro(o,'personalizados');if(lm){o.lucro_virgem=lm.lucroVirgem;o.lucro_sem_ajustes=lm.lucroSemAjustes;o.margem_virgem=lm.margemVirgem;o.margem_sem_ajustes=lm.margemSemAjustes;o.versao_lucros=3;o.lucros_estimados=true;o.fonte_lucros='Estimativa gravada no momento do pedido do kit; custo dos componentes preservado.';}
+   }
+   return o;
+  };
+  try{return _saveRecBeforeKit(again)}finally{read=baseRead;}
+ };
+
+ // Do not prompt to create a fake single product after a kit sale/order.
+ const _aopAfterKit=aopAfterSave;
+ aopAfterSave=function(moduleId,row,isNew){if(row&&row._kit_id){if(moduleId==='personalizados')return setTimeout(()=>aopOpen('🎁 Pedido de kit registrado',`<p style="font-size:15px;margin-top:0"><b>${esc(row.cliente||'Cliente')}</b> · ${esc(row.produto||row._kit_codigo||'Kit')}</p><p>O pedido guarda a composição do kit. Ao marcar como entregue, o sistema confere e baixa os componentes do estoque.</p>`,[{t:'Agendar próximo passo',p:true,f:()=>{const d=aopDate(row.prazo||row.data_entrega),task=eq(row.status,'PRONTO')?'Entregar pedido de kit':'Acompanhar pedido de kit',id=aopAgenda({data:d,tipo:'ENTREGA',empresa:row.cliente||'',tarefa:task,prioridade:'MÉDIA',obs:'Origem: pedido de kit',chave:`AOP-PED-KIT-${row._id}`});toast(id?'Lembrete criado.':'Esse lembrete já existe.');page();bindGo()}},{t:'Agora não',f:()=>true}]),100);return;}return _aopAfterKit(moduleId,row,isNew);};
+
+ // Before the quick board advances a kit order to ENTREGUE, prevent delivery if the components are no longer available.
+ document.addEventListener('click',function(e){const b=e.target&&e.target.closest&&e.target.closest('[data-mv]');if(!b)return;const bits=String(b.dataset.mv||'').split('|'),rid=bits[0],next=bits[1];if(next!=='ENTREGUE')return;const r=rows('personalizados').find(x=>x._id===rid);if(!r||!r._kit_id)return;const kit=kitById(r._kit_id),parts=Array.isArray(r._kit_componentes)&&r._kit_componentes.length?r._kit_componentes:(kit?kitSnapshot(kit):[]),problems=kitStockProblems(parts,orderCount(r),releaseMapFor('personalizados',r));if(showKitStockProblems(problems)){e.preventDefault();e.stopImmediatePropagation();}},true);
+})();
+</script>
+
 </body></html>
