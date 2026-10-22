@@ -244,7 +244,25 @@ body[data-vm=grid] .vg-off{display:none!important}body[data-vm=list] .vg-x{displ
 .sz-ck{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;padding:4px 0;cursor:pointer}.sz-ck input{width:16px;height:16px;margin:2px 0 0;accent-color:var(--acc);flex:none}.sz-ck.d span{text-decoration:line-through;opacity:.65}
 
 .li-lucros{font-size:12px;line-height:1.45;max-width:100%;white-space:normal}.li-lucros small{display:block;white-space:normal}.li-lucros b{font-weight:700}.li-lucros .ok{opacity:.85}
-</style></head>
+
+/* ===== Ajustes finos de preenchimento de espaço ===== */
+#content .kpis, #content .k5, #content .njcg, #content .qk, #content .areas, #content .grid, #content .lnk, #content .quick, #content .vg {align-items:stretch;}
+#content .k5 > *, #content .kpis > *, #content .njcg > * {min-width:0;}
+#content .kc2, #content .kpi, #content .njc {height:100%;}
+#content .cashflow-preview {grid-column:1 / -1; min-width:0;}
+#content .g3 > .panel {min-width:0;}
+#content .fin-split {grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start;}
+#content .fin-box {min-width:0;}
+@media(max-width:900px){#content .fin-split{grid-template-columns:minmax(0,1fr)} #content .cashflow-preview{grid-column:1/-1}}
+</style>
+<style id="aplus-help-clean-style">
+/* Texto explicativo segue o padrão global de ajuda (? vermelho), sem poluir os painéis. */
+.aplus-help-hidden{display:none!important}
+#tipbox{max-height:min(45vh,360px);overflow:auto;white-space:pre-line;overflow-wrap:anywhere}
+.tipdot{flex:none}
+.aplus-note-action-only{background:transparent!important;border:0!important;padding:0!important;margin:0 0 10px!important;justify-content:flex-end!important}
+</style>
+</head>
 <body><div class="app"><div class="scrim" id="scrim"></div><aside class="sb" id="sb"><div class="brand"><span class="logo">A<i>+</i></span><div>Gestão<small>Controle do negócio</small></div></div><nav class="sn" id="tabs"></nav><div class="sbf"><span class="av">A+</span><div><b>Meu negócio</b><small>Dados salvos neste navegador</small></div></div></aside><main class="main"><header class="top"><button class="btn mn" id="burger" aria-label="Menu">☰</button><div class="grow"></div><button class="btn hm" id="pal">Buscar Ctrl+K</button><button class="btn" id="theme" aria-label="Tema">◐</button><div class="qa"><button class="btn p" id="qa">+ Registrar ▾</button><div class="qm" id="qm"></div></div><button id="imp" hidden></button><button id="add" hidden></button></header>
 <div class="hubwrap" id="hubbar"></div><section class="content" id="content"></section></main></div>
 <div class="ov" id="ov"><div class="modal"><div class="mh"><h2 id="mt"></h2><button class="btn s" id="mx">Fechar</button></div><div class="mb"><form id="form" autocomplete="off"></form></div>
@@ -690,7 +708,7 @@ function hoje(){const t=todayS(),rg=perRange(hp,t),pv=prevR(rg),soon=addD(t,3),T
  <div class="g3" style="margin-top:16px"><div class="panel"><h3>Meta do mês <button class="btn s" id="hmeta" style="float:right">${mt?'Editar':'Definir'}</button></h3>${mt?`<div class="rw" style="border:0"><span>Faturamento</span><b>${pc(mm,mt)}</b></div><div class="pg"><i style="width:${Math.min(100,mm/mt*100)}%"></i></div><div class="rw"><span>${money(mm)} de ${money(mt)}</span><span class="ok">faltam ${money(Math.max(0,mt-mm))}</span></div><div class="rw"><span>Dias restantes</span><b>${dim-dd}</b></div><div class="rw"><span>Projeção do mês</span><b style="color:${proj>=mt?'var(--acc)':'var(--warn)'}">${money(proj)}</b></div>`:'<p class="ok">Defina uma meta de faturamento para acompanhar o ritmo do mês.</p>'}</div>
  ${jPanel()}
  ${sazPanel()}
- <div class="panel"><h3>Fluxo de caixa · próximos 7 dias</h3><div class="rw"><span>A receber (inclui vencidos)</span><b style="color:var(--acc)">${money(ent7)}</b></div><div class="rw"><span>A pagar (inclui vencidos)</span><b style="color:var(--bad)">${money(sai7)}</b></div><div class="rw"><span>Saldo projetado</span><b style="color:${caixa+ent7-sai7>=0?'var(--acc)':'var(--bad)'}">${money(caixa+ent7-sai7)}</b></div></div></div>
+ <div class="panel cashflow-preview"><h3>Fluxo de caixa · próximos 7 dias</h3><div class="rw"><span>A receber (inclui vencidos)</span><b style="color:var(--acc)">${money(ent7)}</b></div><div class="rw"><span>A pagar (inclui vencidos)</span><b style="color:var(--bad)">${money(sai7)}</b></div><div class="rw"><span>Saldo projetado</span><b style="color:${caixa+ent7-sai7>=0?'var(--acc)':'var(--bad)'}">${money(caixa+ent7-sai7)}</b></div></div></div>
  ${dh('Atividade recente')}<div class="panel">${act.length?act.map(x=>`<button class="todo" data-f="${x.m}|${x.r._id}"><span>${esc(x.l)}</span><b class="ok">${fd(x.d)}</b></button>`).join(''):'<div class="empty"><b>Nada registrado ainda</b>Use “+ Registrar” para começar.</div>'}</div>`;
  document.querySelectorAll('[data-hp]').forEach(b=>b.onclick=()=>{hp=b.dataset.hp;hoje()});$('#hcmp').onchange=e=>{hcmp=e.target.checked;hoje()};$('#hmeta').onclick=()=>{const v=prompt('Meta de faturamento do mês (R$):',mt||'');if(v!==null){setMeta(t,num(v));hoje()}};document.querySelectorAll('[data-qk]').forEach(b=>b.onclick=()=>qkOpen(b.dataset.qk));{const ha=$('#hall');if(ha)ha.onclick=()=>{hAll=!hAll;hoje()}}document.querySelectorAll('[data-done]').forEach(b=>b.onclick=e=>{e.stopPropagation();markDone(b.dataset.done)});bkBind();wire()}
 /* LOJAS: consignação por parceiro, com acerto em um clique */
@@ -1128,8 +1146,15 @@ function lucroIndicadoresRegistro(r,ctx=''){
  if(!r)return null;
  const context=ctx||cur||'';
  if(num(r.versao_lucros)>=2&&liTem(r,'lucro_virgem')&&liTem(r,'lucro_sem_ajustes')){
-  const q=Math.max(1,num(r.qtd_pecas)||num(r.quantidade)||num(r.qtd_vendida)||1),revv=liTem(r,'receita_bruta')?Math.max(0,num(r.receita_bruta)-num(r.desconto)):Math.max(0,num(r.preco_total)||num(r.valor_total)||num(r.receita_liquida)||num(r.valor_bruto)||num(r.preco_venda)||num(r.valor_unitario)*q);
-  return{lucroVirgem:r2(r.lucro_virgem),lucroSemAjustes:r2(r.lucro_sem_ajustes),margemVirgem:liTem(r,'margem_virgem')?num(r.margem_virgem):(revv?r2(num(r.lucro_virgem)/revv*100):0),margemSemAjustes:liTem(r,'margem_sem_ajustes')?num(r.margem_sem_ajustes):(revv?r2(num(r.lucro_sem_ajustes)/revv*100):0),receita:revv,unidades:q,...liFonte(r.fonte_lucros||(r.lucros_estimados?'Estimativa gravada na venda; custos de componentes usam os parâmetros atuais':'Registrado no trabalho'),!!r.lucros_estimados)};
+  // Um lucro dos critérios não pode ser inferior ao lucro completo se ambos usam a mesma venda:
+  // o lucro completo ainda desconta falhas, depreciação, desgaste e mão de obra. Evita aceitar
+  // métricas zeradas/stale importadas de versões anteriores quando a venda tem lucro positivo.
+  const lucroCompletoConhecido=liTem(r,'lucro')&&num(r.lucro)>0;
+  const metricasInconsistentes=lucroCompletoConhecido&&(num(r.lucro_virgem)+0.02<num(r.lucro)||num(r.lucro_sem_ajustes)+0.02<num(r.lucro));
+  if(!metricasInconsistentes){
+   const q=Math.max(1,num(r.qtd_pecas)||num(r.quantidade)||num(r.qtd_vendida)||1),revv=liTem(r,'receita_bruta')?Math.max(0,num(r.receita_bruta)-num(r.desconto)):Math.max(0,num(r.preco_total)||num(r.valor_total)||num(r.receita_liquida)||num(r.valor_bruto)||num(r.preco_venda)||num(r.valor_unitario)*q);
+   return{lucroVirgem:r2(r.lucro_virgem),lucroSemAjustes:r2(r.lucro_sem_ajustes),margemVirgem:liTem(r,'margem_virgem')?num(r.margem_virgem):(revv?r2(num(r.lucro_virgem)/revv*100):0),margemSemAjustes:liTem(r,'margem_sem_ajustes')?num(r.margem_sem_ajustes):(revv?r2(num(r.lucro_sem_ajustes)/revv*100):0),receita:revv,unidades:q,...liFonte(r.fonte_lucros||(r.lucros_estimados?'Estimativa gravada na venda; custos de componentes usam os parâmetros atuais':'Registrado no trabalho'),!!r.lucros_estimados)};
+  }
  }
  if(r._job){try{const c=njCalc(r._job);if(c&&Number.isFinite(Number(c.lucroVirgem))&&Number.isFinite(Number(c.lucroSemAjustes)))return{lucroVirgem:r2(c.lucroVirgem),lucroSemAjustes:r2(c.lucroSemAjustes),margemVirgem:num(c.margemVirgem),margemSemAjustes:num(c.margemSemAjustes),receita:r2(c.preco),unidades:Math.max(1,num(c.pieces)||1),...liFonte('Recalculado pela composição da impressão',true)}}catch{}}
  const link=r._imp||r.impressao_id||r._impressao_id;
@@ -2185,21 +2210,37 @@ function migLucrosV3(){
  }catch(e){console.error('A+ Gestão: não foi possível atualizar estimativas de lucro antigas',e)}
 }
 function migLucrosKatanaEEntregas(){
- const key='aplus_mig_lucros_pedidos_entregues_v1';try{if(localStorage.getItem(key))return}catch{}
+ // Reexecuta a verificação mesmo depois da importação de um backup. A versão anterior
+ // usava uma chave persistente e podia ignorar registros importados posteriormente.
+ const key='aplus_mig_lucros_pedidos_entregues_v2';
  let changed=0;
  try{
-  const atualiza=(id,ctx)=>{const old=rows(id),next=old.map(r=>{
-   if(num(r.versao_lucros)>=3&&liTem(r,'lucro_virgem')&&liTem(r,'lucro_sem_ajustes'))return r;
-   const v=lucroIndicadoresRegistro(r,ctx);if(!v||!Number.isFinite(Number(v.lucroVirgem))||!Number.isFinite(Number(v.lucroSemAjustes)))return r;
-   changed++;return{...r,lucro_virgem:r2(v.lucroVirgem),lucro_sem_ajustes:r2(v.lucroSemAjustes),margem_virgem:r2(v.margemVirgem),margem_sem_ajustes:r2(v.margemSemAjustes),versao_lucros:3,lucros_estimados:v.estimado!==false,fonte_lucros:v.fonte||(v.estimado?'Recalculado da composição salva com parâmetros atuais':'Registrado no trabalho')};
-  });if(next.some((r,i)=>r!==old[i]))setRows(id,next)};
-  // Impression first so linked orders can use its complete pair of indicators.
+  const needsRepair=(r)=>{
+   if(num(r.versao_lucros)<3||!liTem(r,'lucro_virgem')||!liTem(r,'lucro_sem_ajustes'))return true;
+   if(liTem(r,'lucro')&&num(r.lucro)>0&&(num(r.lucro_virgem)+0.02<num(r.lucro)||num(r.lucro_sem_ajustes)+0.02<num(r.lucro)))return true;
+   const link=r._imp||r.impressao_id||r._impressao_id;
+   const im=link&&rows('impressoes').find(x=>x._id===link);
+   if(im&&liTem(im,'lucro')&&num(im.lucro)>0&&(num(r.lucro_virgem)+0.02<num(im.lucro)||num(r.lucro_sem_ajustes)+0.02<num(im.lucro)))return true;
+   return false;
+  };
+  const atualiza=(id,ctx)=>{
+   const old=rows(id),next=old.map(r=>{
+    if(!needsRepair(r))return r;
+    const copy={...r};delete copy.versao_lucros;delete copy.lucro_virgem;delete copy.lucro_sem_ajustes;delete copy.margem_virgem;delete copy.margem_sem_ajustes;
+    const v=lucroIndicadoresRegistro(copy,ctx);
+    if(!v||!Number.isFinite(Number(v.lucroVirgem))||!Number.isFinite(Number(v.lucroSemAjustes)))return r;
+    changed++;return{...r,lucro_virgem:r2(v.lucroVirgem),lucro_sem_ajustes:r2(v.lucroSemAjustes),margem_virgem:r2(v.margemVirgem),margem_sem_ajustes:r2(v.margemSemAjustes),versao_lucros:3,lucros_estimados:v.estimado!==false,fonte_lucros:v.fonte||(v.estimado?'Recalculado da composição salva com parâmetros atuais':'Registrado no trabalho')};
+   });
+   if(next.some((r,i)=>r!==old[i]))setRows(id,next);
+  };
+  // Primeiro imprime, para que os pedidos entregues possam herdar a composição completa.
   atualiza('impressoes','impressoes');
   atualiza('personalizados','personalizados');
   try{localStorage.setItem(key,'1')}catch{}
-  if(changed)console.info('A+ Gestão: '+changed+' registro(s) atualizados com Lucro Virgem e Lucro sem Ajustes.');
+  if(changed)console.info('A+ Gestão: '+changed+' registro(s) reparados com Lucro Virgem e Lucro sem Ajustes.');
  }catch(e){console.error('A+ Gestão: não foi possível completar os indicadores de pedidos entregues',e)}
 }
+
 const _prodReparadas=repararOrdensProducao();
 migV4();migV5();migLucrosV3();migLucrosKatanaEEntregas();go('v-hoje');snapAuto();
 if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
@@ -2695,4 +2736,204 @@ let q=0;new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;d
 decorate(document);decorateDash();
 })();
 
-</script></body></html>
+</script>
+<script>
+/* ===== A+ UI: grades equilibradas v2 — sem cartões órfãos ===== */
+(function(){
+  'use strict';
+  // Mantemos limites mínimos por tipo de cartão, mas distribuímos as linhas de forma independente.
+  // A grade de 60 trilhas permite linhas com 2, 3, 4, 5 ou 6 cartões preencherem 100% da largura.
+  const TRACKS=60;
+  const specs = [
+    ['.kpis',190,5], ['.k5',205,5], ['.qk',170,6], ['.areas',300,4],
+    ['.grid',290,4], ['.lnk',190,6], ['.quick',150,6], ['.vg',255,4], ['.njcg',130,6]
+  ];
+  const scheduled = new WeakSet();
+  function schedule(el){
+    if(!el || scheduled.has(el)) return;
+    scheduled.add(el);
+    requestAnimationFrame(()=>{
+      scheduled.delete(el);
+      balance(el);
+    });
+  }
+  function balance(el){
+    if(!el || !el.isConnected) return;
+    const cs=getComputedStyle(el);
+    if(cs.display!=='grid') return;
+    const cards=[...el.children].filter(ch=>{
+      if(ch.hidden || ch.getAttribute('aria-hidden')==='true') return false;
+      const st=getComputedStyle(ch);
+      return st.display!=='none' && st.visibility!=='collapse';
+    });
+    const n=cards.length, spec=specs.find(([sel])=>el.matches(sel));
+    if(!spec || !n) return;
+    const minW=spec[1], cap=spec[2]||6, gap=parseFloat(cs.columnGap)||parseFloat(cs.gap)||12;
+    const width=el.clientWidth;
+    const maxCols=Math.max(1,Math.min(n,cap,Math.floor((width+gap)/(minW+gap))));
+    const rowCount=Math.ceil(n/maxCols);
+    const base=Math.floor(n/rowCount), extra=n%rowCount;
+    const rowSizes=Array.from({length:rowCount},(_,i)=>base+(i<extra?1:0));
+    // Distribui os cartões igualmente entre as linhas. Cada linha usa a largura inteira;
+    // quando sobra só um cartão, ele cresce até as bordas em vez de ficar isolado à esquerda.
+    el.style.setProperty('--aplus-balanced-cols',String(maxCols));
+    el.style.setProperty('grid-template-columns',`repeat(${TRACKS}, minmax(0, 1fr))`,'important');
+    let idx=0;
+    rowSizes.forEach(count=>{
+      const span=TRACKS/count;
+      for(let i=0;i<count && idx<cards.length;i++,idx++){
+        cards[idx].style.gridColumn=`span ${span}`;
+        cards[idx].style.minWidth='0';
+      }
+    });
+  }
+  function balanceAll(root=document){
+    for(const [sel] of specs){
+      if(root.nodeType===1 && root.matches && root.matches(sel)) schedule(root);
+      root.querySelectorAll?.(sel).forEach(schedule);
+    }
+  }
+  function resetAndBalance(){
+    document.querySelectorAll(specs.map(s=>s[0]).join(',')).forEach(el=>{
+      el.style.removeProperty('grid-template-columns');
+      el.style.removeProperty('--aplus-balanced-cols');
+      [...el.children].forEach(ch=>{ch.style.removeProperty('grid-column');ch.style.removeProperty('min-width')});
+      schedule(el);
+    });
+  }
+  balanceAll();
+  window.addEventListener('resize',resetAndBalance,{passive:true});
+  const content=document.getElementById('content')||document.body;
+  new MutationObserver(()=>balanceAll(content)).observe(content,{childList:true,subtree:true});
+  document.addEventListener('click',()=>requestAnimationFrame(()=>balanceAll()),true);
+})();
+</script>
+<script id="aplus-help-cleanup">
+/* ===== A+ UI: centralizar descrições no popup ? existente ===== */
+(function(){
+ 'use strict';
+ const HIDDEN='aplus-help-hidden';
+ const HELP_SCOPE='.panel,.lc,.ar,.njm,.njprice,.hero,.modal,article,#content';
+ const HEADINGS='h2,h3,h4,.pt,.njmh,.ph h2';
+ const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
+ const dotText=d=>String(d&&d.dataset.tip||'').trim();
+ const hasControl=el=>!!el.querySelector('button,input,select,textarea,a,[role="button"]');
+ function hostFor(el){
+   const field=el.closest('.f');
+   if(field){const label=field.querySelector('label');if(label)return label;}
+   let cur=el.parentElement;
+   while(cur&&cur!==document.body&&cur.id!=='content'){
+     if(cur.matches('.panel,.lc,.ar,.njm,.njprice,.hero,.modal,article')){
+       const hs=[...cur.querySelectorAll(HEADINGS)].filter(h=>h!==el&&!h.contains(el)&&((h.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING)!==0));
+       if(hs.length)return hs[hs.length-1];
+     }
+     cur=cur.parentElement;
+   }
+   // Textos de rodapé fora de um cartão pertencem à página, não ao último cartão da grade.
+   return document.querySelector('#content .ph h2')||document.querySelector('#content h2')||document.querySelector('.top .brand');
+ }
+ function addHelp(host,text){
+   if(!host||!text)return;
+   let d=[...host.children].find(x=>x.classList&&x.classList.contains('tipdot'));
+   if(!d){
+     d=document.createElement('span');d.className='tipdot';d.tabIndex=0;d.setAttribute('role','img');d.textContent='?';
+     host.appendChild(d);
+   }
+   const old=dotText(d);
+   if(!old.split(/\n\n/).includes(text)&&!old.includes(text))d.dataset.tip=old?[old,text].join('\n\n'):text;
+   d.setAttribute('aria-label','Ajuda: '+String(d.dataset.tip||text).slice(0,220));
+ }
+ function shouldKeepFoot(el,t){
+   if(el.style.color&&/(var\(--warn\)|var\(--bad\)|red|orange)/i.test(el.style.color))return true;
+   if(/^(?:⚠|Atenção\b|Faltam\b|Estoque insuficiente\b|Erro\b|Não foi possível\b|Sem estoque\b|Nenhum(?:a)?\b)/i.test(t))return true;
+   if(/^Per[ií]odo\s*:/i.test(t))return true; // dado de contexto atual, não texto de ajuda
+   return false;
+ }
+ function hideAsHelp(el,text,keepPrefix=''){
+   text=norm(text);if(!text||el.dataset.aplusHelpified==='1')return;
+   addHelp(hostFor(el),text);
+   el.dataset.aplusHelpified='1';
+   if(keepPrefix){el.textContent=keepPrefix;}
+   else el.classList.add(HIDDEN);
+ }
+ function cleanupFoot(el){
+   if(el.dataset.aplusHelpified==='1')return;
+   let t=norm(el.textContent);if(!t||shouldKeepFoot(el,t))return;
+   // Um aviso dinâmico de reposição permanece visível; somente a explicação de cálculo vai para o popup.
+   const split=t.match(/^((?:\d+\s+)?produto\(s\) para repor\.\s*)(Em casa\s*=.*)$/i);
+   if(split){hideAsHelp(el,split[2],split[1]);return;}
+   hideAsHelp(el,t);
+ }
+ function cleanupNote(el){
+   if(el.dataset.aplusHelpified==='1')return;
+   const t=norm(el.textContent);if(!t)return;
+   if(/^Marque os que realmente são produtos\./i.test(t)){
+     const copy=[...el.children].find(ch=>ch.tagName==='SPAN');
+     if(copy){addHelp(hostFor(el),norm(copy.textContent));copy.classList.add(HIDDEN);el.dataset.aplusHelpified='1';el.classList.add('aplus-note-action-only');return;}
+   }
+   if(hasControl(el))return;
+   // Confirmações, avisos operacionais, erros e alertas importantes continuam visíveis.
+   if(/^(?:⚠|Margem\s*\+|Encontrei\s+\d+\s+registro|Arquivo sem dados|Não encontrei|Este navegador não permite|Restaurar esta cópia|Este trabalho não precisa)/i.test(t))return;
+   if(t.length<95&&!/^Como funciona:/i.test(t))return;
+   if(!/^Como funciona:|^Marque os que realmente são produtos\.|^Uma compra registra o custo real|^Somente produtos ativos/i.test(t))return;
+   hideAsHelp(el,t);
+ }
+ const OK_STARTS=[
+   /^Separe o catálogo conforme a finalidade/i,
+   /^A compra paga diretamente por você/i,
+   /^Importante: “devolvido a você”/i,
+   /^Escolha pelo menos dois produtos diferentes/i,
+   /^Uma compra registra o custo real/i,
+   /^Importante: se uma despesa antiga/i,
+   /^Os kits aparecem com selo/i,
+   /^A referência de lucro usa/i,
+   /^As datas se repetem todo ano/i,
+   /^Missões com ○ são automáticas/i,
+   /^“Acertar” marca as consignações/i,
+   /^Lotes esgotados permanecem como histórico/i,
+   /^Bobinas antigas sem custo de compra/i,
+   /^Os movimentos são um livro de auditoria/i
+ ];
+ function cleanupExplanatoryParagraph(el){
+   if(el.dataset.aplusHelpified==='1'||hasControl(el))return;
+   const t=norm(el.textContent);if(!t)return;
+   if(/Google|plano gratuito|chave gratuita|podem usar esse conteúdo/i.test(t))return; // divulgação de privacidade permanece explícita
+   if(OK_STARTS.some(re=>re.test(t)))hideAsHelp(el,t);
+   else if(el.matches('#content .panel>p.ok')&&t.length>=110&&/(?:o sistema|use |usa |ajuda|cadastr|quando|ao |serve para|para que|indica|mostra|permite|somente|apenas|não precisa|calcule|preencha|informe|registra|selecione|funciona|escolha|campo)/i.test(t)&&!/^(?:⚠|Erro|Nenhum|Digite|Tudo em ordem|Período|Não foi possível)/i.test(t))hideAsHelp(el,t);
+ }
+ function cleanupFieldHints(el){
+   if(el.dataset.aplusHelpified==='1'||(el.id&&el.id!=='stock-unit-hint')||el.hasAttribute('data-tip')||el.closest('#jv'))return;
+   const t=norm(el.textContent);if(t.length<38)return;
+   const field=el.closest('.f');if(!field)return;
+   const label=field.querySelector('label');if(!label)return;
+   hideAsHelp(el,t);
+ }
+ function cleanupMetricSubcopy(el){
+   if(el.dataset.aplusHelpified==='1'||el.closest('#jv'))return;
+   const card=el.closest('.kc2');if(!card)return;
+   const smalls=[...card.querySelectorAll(':scope>small')];
+   if(el===smalls[0])return;
+   const t=norm(el.textContent);if(t.length<33)return;
+   // Valores de contexto como percentuais e períodos curtos continuam visíveis.
+   if(/^(?:\d+[.,]?\d*%|Período:|Hoje|Ontem|Esta semana|Este mês)/i.test(t))return;
+   // O subtítulo explica a métrica; seu ? fica ao lado do nome do indicador, não no título geral da página.
+   const label=smalls[0];
+   if(label){addHelp(label,t);el.dataset.aplusHelpified='1';el.classList.add(HIDDEN);}
+ }
+ let scheduled=false;
+ function sweep(){
+   scheduled=false;
+   const root=document.body;
+   root.querySelectorAll('p.foot').forEach(cleanupFoot);
+   root.querySelectorAll('.note').forEach(cleanupNote);
+   root.querySelectorAll('p.ok').forEach(cleanupExplanatoryParagraph);
+   root.querySelectorAll('.f>small.ok,.f small.ok').forEach(cleanupFieldHints);
+   root.querySelectorAll('.kc2>small').forEach(cleanupMetricSubcopy);
+ }
+ function queue(){if(scheduled)return;scheduled=true;requestAnimationFrame(sweep)}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',queue,{once:true});else queue();
+ const root=document.body;
+ if(root)new MutationObserver(queue).observe(root,{childList:true,subtree:true,characterData:true});
+})();
+</script>
+</body></html>
