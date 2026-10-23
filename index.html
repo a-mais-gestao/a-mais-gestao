@@ -106,7 +106,7 @@ html[data-theme=dark] body{background:radial-gradient(900px 520px at 78% -8%,#7a
 .sn button:hover{background:#ffffff12;color:#fff}.sn button.on{background:linear-gradient(135deg,#f0261a,#c8130a);color:#ffffff;font-weight:700;box-shadow:0 6px 18px #f0261a33}.sn .ni{width:22px;text-align:center;font-size:16px}
 .sbf{display:flex;gap:10px;align-items:center;border-top:1px solid #ffffff14;padding:14px 6px 2px;margin-top:14px;color:#fff}.sbf small{display:block;color:#a1a1aa;font-size:11.5px}.av{width:34px;height:34px;border-radius:50%;background:#f0261a26;color:#f0261a;display:grid;place-items:center;font-weight:800;font-size:12px}
 .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:12px 32px;min-height:64px;gap:10px;color:var(--ink)}.grow{flex:1}.mn{display:none}
-.content{padding:26px 32px 60px;max-width:1280px;margin:0 auto}
+.content{padding:26px 32px 60px;width:100%;max-width:none;margin:0}
 .btn{background:var(--inp);border:1px solid var(--line);border-radius:11px;padding:9px 15px;color:var(--ink);transition:.15s}.btn:hover{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--inp))}
 .top .btn{background:var(--inp);border-color:var(--line);color:var(--ink)}
 .btn.p,.top .btn.p{background:linear-gradient(135deg,#f0261a,#c8130a);border:0;color:#ffffff;font-weight:700;box-shadow:0 8px 22px #c8130a4d}.btn.p:hover{filter:brightness(1.08);background:linear-gradient(135deg,#f0261a,#c8130a)}
@@ -137,21 +137,22 @@ th{background:color-mix(in srgb,var(--card) 92%,#000);font-weight:600}.pill.g{ba
 .scrim{display:none}::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#ffffff26;border-radius:9px}
 @media(max-width:900px){.sb{position:fixed;left:0;top:0;transform:translateX(-102%);transition:transform .22s;width:270px}body.mo .sb{transform:none;box-shadow:0 0 60px #000a}body.mo .scrim{display:block;position:fixed;inset:0;background:#0008;z-index:25}.mn{display:inline-block}.top{padding:10px 14px;flex-wrap:nowrap}.content{padding:18px 14px 90px}.ph h2,.pt{font-size:24px}.g3 .panel[style*=span]{grid-column:auto!important}}
 
-.hubwrap{max-width:1280px;margin:0 auto;padding:22px 32px 0}.hubwrap:empty{display:none}
+.hubwrap{width:100%;max-width:none;margin:0;padding:22px 32px 0}.hubwrap:empty{display:none}
 .hubin{background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 12%,var(--card)),var(--card) 70%);border:1px solid var(--line);border-radius:20px;padding:18px 20px 12px}
 .hubt{display:flex;gap:14px;align-items:center;margin-bottom:12px}.hubt>span{width:46px;height:46px;border-radius:14px;background:color-mix(in srgb,var(--acc) 18%,transparent);display:grid;place-items:center;font-size:22px}.hubt b{font-size:21px;font-weight:800;letter-spacing:-.02em;display:block}.hubt small{color:var(--mut);font-size:13.5px}
-.hubtabs{display:flex;gap:4px;overflow:auto;background:var(--inp);border:1px solid var(--line);border-radius:14px;padding:5px;width:fit-content;max-width:100%}
-.hubtabs button{border:0;background:none;color:var(--mut);padding:8px 14px;border-radius:10px;white-space:nowrap;font-weight:500;display:flex;gap:7px;align-items:center}.hubtabs button:hover{color:var(--ink)}
+.hubtabs{display:flex;gap:4px;overflow:visible;flex-wrap:wrap;background:var(--inp);border:1px solid var(--line);border-radius:14px;padding:5px;width:100%;max-width:none}
+.hubtabs button{border:0;background:none;color:var(--mut);padding:8px 14px;border-radius:10px;white-space:nowrap;font-weight:500;display:flex;gap:7px;align-items:center;flex:0 1 auto}.hubtabs button:hover{color:var(--ink)}
 .hubtabs button.on{background:linear-gradient(135deg,#f0261a,#c8130a);color:#ffffff;font-weight:700}.hubtabs em{font-style:normal;font-size:11px;background:#ffffff1c;padding:1px 7px;border-radius:99px}.hubtabs .on em{background:#ffffff26}
 .hubwrap+.content{padding-top:18px}.hubwrap~.content .ph:first-child h2{font-size:20px}
-@media(max-width:900px){.hubwrap{padding:14px 14px 0}.hubt b{font-size:18px}}
+@media(max-width:900px){.hubwrap{padding:14px 14px 0}.hubt b{font-size:18px}.hubtabs{flex-wrap:nowrap;overflow-x:auto;width:100%}.hubtabs button{flex:none}}
 .hubrow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.vsw{display:flex;gap:2px;background:var(--inp);border:1px solid var(--line);border-radius:12px;padding:4px}.vsw button{border:0;background:none;color:var(--mut);padding:6px 13px;border-radius:9px;font-weight:500;white-space:nowrap}.vsw button.on{background:#0b1626;color:#fff;font-weight:600;box-shadow:inset 0 0 0 1px #ffffff26}html[data-theme=light] .vsw button.on{background:var(--acc)}.hubin{padding-bottom:16px}
 /* ===== Nova Impressão ===== */
-.njt{display:flex;gap:4px;overflow:auto;background:var(--inp);border:1px solid var(--line);border-radius:14px;padding:5px;margin:0 0 16px;max-width:100%}
+.njt{display:flex;gap:4px;overflow:visible;flex-wrap:wrap;background:var(--inp);border:1px solid var(--line);border-radius:14px;padding:5px;margin:0 0 16px;width:100%;max-width:none}
 .njt button{border:0;background:none;color:var(--mut);padding:9px 10px;border-radius:10px;white-space:nowrap;font-weight:500;display:flex;gap:7px;align-items:center;justify-content:center;flex:1 1 auto}
 .njt button i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:#ffffff14}
 .njt button:hover{color:var(--ink)}.njt button.on{background:linear-gradient(135deg,#f0261a,#c8130a);color:#ffffff;font-weight:700}.njt button.on i{background:#ffffff26}
 .njt em{font-style:normal;font-size:11px;background:#ffffff1c;padding:1px 7px;border-radius:99px}.njt .on em{background:#ffffff26}
+@media(max-width:900px){.njt{flex-wrap:nowrap;overflow-x:auto}.njt button{flex:none}}
 .njchip{background:var(--inp);border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-size:14px;color:var(--mut)}.njchip b{color:var(--acc);font-size:16px}
 .njnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px}.njnav .btn[disabled]{opacity:.4;cursor:default}
 .njhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
@@ -279,6 +280,7 @@ body[data-vm=grid] .vg-off{display:none!important}body[data-vm=list] .vg-x{displ
 #content .fin-split {grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start;}
 #content .fin-box {min-width:0;}
 @media(max-width:900px){#content .fin-split{grid-template-columns:minmax(0,1fr)} #content .cashflow-preview{grid-column:1/-1}}
+@media(min-width:1800px){.content,.hubwrap{padding-left:40px;padding-right:40px}}
 </style>
 <style id="aplus-help-clean-style">
 /* Texto explicativo segue o padrão global de ajuda (? vermelho), sem poluir os painéis. */
@@ -1164,7 +1166,7 @@ function table(){const m=mod(cur),R=rows(cur),q=($('#q')?.value||'').toLowerCase
  const ch=$('#chips');if(ch){const c={};R.forEach(r=>{const s=r.status;if(s)c[s]=(c[s]||0)+1});ch.innerHTML=`<button class="chip ${flt?'':'on'}" data-s="">Todos</button>`+Object.entries(c).map(([s,n])=>`<button class="chip ${flt===s?'on':''}" data-s="${esc(s)}">${esc(s)} (${n})</button>`).join('');ch.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{flt=b.dataset.s;table()})}
  $('#tw').className=vmode()==='grid'?'vg-wrap':'tw';$('#tw').innerHTML=F.length?(vmode()==='grid'?vgHtml(m,F):`<table><thead><tr><th style="width:36px"><input type="checkbox" id="sa" aria-label="Selecionar todos"></th>${C.map(f=>`<th data-k="${f[0]}">${esc(f[1])}${sk===f[0]?sd>0?' ▲':' ▼':''}</th>`).join('')}</tr></thead><tbody>${F.map(r=>`<tr data-e="${esc(r._id)}"><td><input type="checkbox" data-sel="${esc(r._id)}" ${selIds.has(r._id)?'checked':''}></td>${C.map(f=>`<td>${cell(r[f[0]],f,r)}</td>`).join('')}</tr>`).join('')}</tbody>${C.some(f=>f[2]==='number'&&SUM.test(f[0]))?`<tfoot><tr><td></td>${C.map((f,i)=>`<td>${f[2]==='number'&&SUM.test(f[0])&&!/pct|%/.test(f[1])?money(F.reduce((a,r)=>a+num(r[f[0]]),0)):i?'':'Total'}</td>`).join('')}</tr></tfoot>`:''}</table>`):`<div class="empty"><b>${R.length?'Nada encontrado':'Nenhum registro ainda'}</b>${R.length?'Tente outra busca ou filtro.':'Clique em “+ Novo” ou importe um backup Excel.'}</div>`;
  document.querySelectorAll('th[data-k]').forEach(h=>h.onclick=()=>{sd=sk===h.dataset.k?-sd:1;sk=h.dataset.k;table()});document.querySelectorAll('[data-e]').forEach(t=>t.onclick=()=>form(cur,t.dataset.e));document.querySelectorAll('.vg-card[data-e]').forEach(c=>c.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target===c){e.preventDefault();form(cur,c.dataset.e)}});const gs=$('#gs');if(gs){gs.onchange=()=>{sk=gs.value||null;sd=1;table()};const gd=$('#gd');if(gd)gd.onclick=()=>{sd=-sd;table()}}bindSel(F)}
-/* A+ ajuste 2026-10-23: venda, matriz e embalagem auditadas. */
+/* A+ ajuste 2026-10-23: venda, matriz, embalagem e venda rápida auditadas. */
 /* ---------- PRECIFICAÇÃO: custo real (material + energia + máquina + trabalho + falhas) e preço por margem líquida ---------- */
 const PRC_DEF={custo_kg:89.9,potencia:150,kwh:.84,impressora:4500,vida:20000,fixo_h:0,desgaste_h:.3,hora:20,rolo:25,emb_rolo:10,falhas:10,imposto:8,cartao:4,anuncio:10,margem:30,lojista:60},
 PRC_LAB=[['custo_kg','Filamento (R$/kg)'],['potencia','Potência padrão (W) — usada se a mesa não tiver impressora cadastrada'],['kwh','Custo do kWh (R$)'],['impressora','Valor da impressora (R$)'],['vida','Vida útil da impressora (h)'],['fixo_h','Custo fixo por hora de impressão (R$/h; 0 = não ratear)'],['desgaste_h','Desgaste por hora de impressão: bico, correia, mesa (R$/h)'],['hora','Sua hora de trabalho (R$/h)'],['rolo','Valor do rolo de embalagem (R$)'],['emb_rolo','Embalagens por rolo'],['falhas','Reserva para falhas (% sobre material, energia e máquina)'],['imposto','Imposto (% do preço)'],['cartao','Taxa do cartão (% do preço)'],['anuncio','Anúncio / marketplace (% do preço; 0 se não usa)'],['margem','Margem LÍQUIDA desejada (% do preço)'],['lojista','Preço lojista (% do preço final)']];
@@ -1620,7 +1622,7 @@ function qkSale(){const P=rows('produtos').filter(p=>!eq(p.ativo,'NÃO')&&p.sku&
  <div class="qrow"><label>Valor unitário (R$)</label><input id="qv" class="qin" inputmode="decimal"></div>
  <div class="qrow"><label>Pagamento</label><div class="chips big" id="qf">${fp.map(x=>`<button type="button" class="chip ${x===pay?'on':''}" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div></div><p class="qtot" id="qtot"></p>`;
  const g=id=>document.getElementById(id),tot=()=>{g('qtot').textContent='Total: '+money(num(g('qq').value)*num(g('qv').value))},
- pick=v=>{sku=v;const p=P.find(x=>x.sku===v);g('qd').style.display=p?'none':'';if(p){const mx=rows('matriz_precos').find(r=>eq(r.sku,v)),pr=num(mx&&mx.preco_balcao)||num(p.preco_padrao);g('qv').value=pr?String(pr).replace('.',','):''}tot()};
+ pick=v=>{sku=v;const p=P.find(x=>x.sku===v);g('qd').style.display=p?'none':'';if(p){const mx=rows('matriz_precos').find(r=>eq(r.sku,v)),pr=num(p.preco_padrao)||num(mx&&mx.preco_balcao);g('qv').value=pr?String(pr).replace('.',','):''}tot()};
  qkChips(g('qp'),1,v=>{if(g('qmore'))g('qmore').value='';pick(v)});if(g('qmore'))g('qmore').onchange=e=>{g('qp').querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));pick(e.target.value)};
  qkChips(g('qf'),1,v=>{pay=v});
  g('qm1').onclick=()=>{g('qq').value=String(Math.max(1,num(g('qq').value)-1));tot()};g('qp1').onclick=()=>{g('qq').value=String(num(g('qq').value)+1);tot()};['qq','qv'].forEach(i=>g(i).oninput=tot);pick('');
