@@ -651,19 +651,36 @@ const realiz=r=>!['PENDENTE','ATRASADO','CANCELADO'].includes(String(r.status||'
 const FIN_SRC_COMPANY='CAIXA DA EMPRESA',FIN_SRC_OWNER_REC='BOLSO DO PROPRIETÁRIO — A RECUPERAR',FIN_SRC_OWNER_FINAL='BOLSO DO PROPRIETÁRIO — APORTE DEFINITIVO',FIN_SRC_THIRD='TERCEIRO — A EMPRESA DEVE',FIN_SRC_LOAN='FINANCIAMENTO DE TERCEIRO';
 const FIN_CAP_NONE='NÃO SE APLICA',FIN_CAP_INITIAL='INVESTIMENTO INICIAL',FIN_CAP_ADDITIONAL='APORTE ADICIONAL',FIN_CAP_REINVEST='REINVESTIMENTO DA EMPRESA',FIN_CAP_RETURN='DEVOLUÇÃO AO PROPRIETÁRIO';
 const finFonte=r=>String(r&&r.fonte_recurso||FIN_SRC_COMPANY).trim().toUpperCase();
-// O financiamento recebido fica em uma caixa virtual própria. Só entra no caixa da empresa
-// quando a origem do recurso é o próprio caixa empresarial ou um aporte transferido para ele.
+// Suporta lançamentos pagos por mais de uma fonte sem duplicar a despesa. _rateioFontes
+// contém parcelas da mesma saída; quando o valor é editado, preservamos proporcionalmente o rateio.
+const finSourceParts=r=>{
+ const target=Math.max(0,num(r&&r.valor)),raw=Array.isArray(r&&r._rateioFontes)?r._rateioFontes:[];
+ const valid=raw.map(p=>({fonte_recurso:String(p&&p.fonte_recurso||FIN_SRC_COMPANY).trim().toUpperCase(),valor:Math.max(0,num(p&&p.valor))})).filter(p=>p.valor>0);
+ const original=sum(valid,'valor');
+ if(valid.length>1&&original>0&&target>0){let left=r2(target);return valid.map((p,i)=>{const value=i===valid.length-1?r2(left):Math.min(left,r2(target*p.valor/original));left=r2(left-value);return{fonte_recurso:p.fonte_recurso,valor:value};}).filter(p=>p.valor>0);}
+ return[{fonte_recurso:finFonte(r),valor:target}];
+};
+const finAmountBySource=(r,source)=>sum(finSourceParts(r).filter(p=>p.fonte_recurso===String(source||'').trim().toUpperCase()),'valor');
+const finHasSource=(r,source)=>finAmountBySource(r,source)>0.005;
+const finSourceLabel=source=>source===FIN_SRC_OWNER_REC?'seu bolso · a recuperar':source===FIN_SRC_OWNER_FINAL?'seu bolso · aporte definitivo':source===FIN_SRC_LOAN?'financiamento de terceiro':source===FIN_SRC_THIRD?'terceiro pagou diretamente':source===FIN_SRC_COMPANY?'caixa da empresa':source;
+const finRateioLabel=r=>{const parts=finSourceParts(r);return Array.isArray(r&&r._rateioFontes)&&parts.length>1?parts.map(p=>`${money(p.valor)} de ${finSourceLabel(p.fonte_recurso)}`).join(' + '):''};
+// O caixa da empresa não muda quando a despesa foi paga diretamente por você/terceiros
+// ou saiu da caixa virtual do empréstimo. Cada parcela respeita sua própria fonte.
 const finForaDoCaixa=r=>{
  const src=finFonte(r);
  if(src===FIN_SRC_LOAN)return true;
  return finSaida(r)&&[FIN_SRC_OWNER_REC,FIN_SRC_OWNER_FINAL,FIN_SRC_THIRD].includes(src);
 };
 const finImpactaCaixa=r=>!finForaDoCaixa(r);
-const finDeltaCaixa=r=>!realiz(r)?0:(finImpactaCaixa(r)?(finSaida(r)?-num(r.valor):num(r.valor)):0);
+const finDeltaCaixa=r=>{
+ if(!realiz(r))return 0;const parts=finSourceParts(r);
+ if(finSaida(r))return -sum(parts.filter(p=>![FIN_SRC_OWNER_REC,FIN_SRC_OWNER_FINAL,FIN_SRC_THIRD,FIN_SRC_LOAN].includes(p.fonte_recurso)),'valor');
+ return sum(parts.filter(p=>p.fonte_recurso!==FIN_SRC_LOAN),'valor');
+};
 const finDeltaCaixaTerceiros=r=>{
- if(!realiz(r)||finFonte(r)!==FIN_SRC_LOAN)return 0;
- if(finSaida(r))return -num(r.valor);
- return /EMPRÉSTIMO RECEBIDO/i.test(String(r.categoria||''))?num(r.valor):0;
+ if(!realiz(r))return 0;const loanPart=finAmountBySource(r,FIN_SRC_LOAN);if(loanPart<=0)return 0;
+ if(finSaida(r))return -loanPart;
+ return /EMPRÉSTIMO RECEBIDO/i.test(String(r.categoria||''))?loanPart:0;
 };
 const saldoCaixaAtual=()=>sum(rows('financeiro').filter(realiz),finDeltaCaixa);
 const saldoCaixaTerceirosAtual=()=>sum(rows('financeiro').filter(realiz),finDeltaCaixaTerceiros);
@@ -980,22 +997,22 @@ function finLoanStats(){
 }
 function finCapitalStats(){
  const F=rows('financeiro').filter(r=>!eq(r.status,'CANCELADO'));
- const paidOwner=F.filter(r=>realiz(r)&&finSaida(r)&&[FIN_SRC_OWNER_REC,FIN_SRC_OWNER_FINAL].includes(finFonte(r)));
- const ownerRecoverableSpend=sum(paidOwner.filter(r=>finFonte(r)===FIN_SRC_OWNER_REC),'valor');
- const ownerDefinitiveSpend=sum(paidOwner.filter(r=>finFonte(r)===FIN_SRC_OWNER_FINAL),'valor');
+ const realOut=F.filter(r=>realiz(r)&&finSaida(r));
+ const ownerRecoverableSpend=sum(realOut,r=>finAmountBySource(r,FIN_SRC_OWNER_REC));
+ const ownerDefinitiveSpend=sum(realOut,r=>finAmountBySource(r,FIN_SRC_OWNER_FINAL));
  const ownerDeposits=F.filter(r=>realiz(r)&&!finSaida(r)&&/APORTE DO PROPRIETÁRIO/i.test(r.categoria||''));
- const ownerRecoverableDeposit=sum(ownerDeposits.filter(r=>finFonte(r)===FIN_SRC_OWNER_REC),'valor');
- const ownerDefinitiveDeposit=sum(ownerDeposits.filter(r=>finFonte(r)===FIN_SRC_OWNER_FINAL),'valor');
+ const ownerRecoverableDeposit=sum(ownerDeposits,r=>finAmountBySource(r,FIN_SRC_OWNER_REC));
+ const ownerDefinitiveDeposit=sum(ownerDeposits,r=>finAmountBySource(r,FIN_SRC_OWNER_FINAL));
  const ownerInvested=ownerRecoverableSpend+ownerDefinitiveSpend+ownerRecoverableDeposit+ownerDefinitiveDeposit;
  const recoverable=ownerRecoverableSpend+ownerRecoverableDeposit;
  const returned=sum(F.filter(r=>realiz(r)&&finSaida(r)&&/DEVOLUÇÃO AO PROPRIETÁRIO/i.test(r.categoria||'')),'valor');
  const owed=Math.max(0,recoverable-returned),overReturn=Math.max(0,returned-recoverable);
- const initial=sum(F.filter(r=>realiz(r)&&[FIN_SRC_OWNER_REC,FIN_SRC_OWNER_FINAL].includes(finFonte(r))&&String(r.classificacao_capital||'')===FIN_CAP_INITIAL),'valor');
- const additional=sum(F.filter(r=>realiz(r)&&[FIN_SRC_OWNER_REC,FIN_SRC_OWNER_FINAL].includes(finFonte(r))&&String(r.classificacao_capital||'')===FIN_CAP_ADDITIONAL),'valor');
+ const initial=sum(F.filter(r=>realiz(r)&&String(r.classificacao_capital||'')===FIN_CAP_INITIAL),r=>finAmountBySource(r,FIN_SRC_OWNER_REC)+finAmountBySource(r,FIN_SRC_OWNER_FINAL));
+ const additional=sum(F.filter(r=>realiz(r)&&String(r.classificacao_capital||'')===FIN_CAP_ADDITIONAL),r=>finAmountBySource(r,FIN_SRC_OWNER_REC)+finAmountBySource(r,FIN_SRC_OWNER_FINAL));
  const reinvested=sum(F.filter(r=>realiz(r)&&finSaida(r)&&finFonte(r)===FIN_SRC_COMPANY&&String(r.classificacao_capital||'')===FIN_CAP_REINVEST),'valor');
  const assetPurchases=sum(F.filter(r=>realiz(r)&&finSaida(r)&&( /^ATIVO \/ EQUIPAMENTO$/i.test(String(r.categoria||'')) || /^IMPRESSORA$/i.test(String(r.categoria||'')) || (/^INVESTIMENTO$/i.test(String(r.categoria||''))&&/tablet xiaomi redmi pad 2|compra da impressora bambu lab a1 combo/i.test(String(r.descricao||''))))),'valor');
  const loan=finLoanStats();
- const otherDirect=sum(F.filter(r=>realiz(r)&&finSaida(r)&&finFonte(r)===FIN_SRC_THIRD),'valor')-sum(F.filter(r=>realiz(r)&&finSaida(r)&&/PAGAMENTO DE DÍVIDA A TERCEIRO/i.test(r.categoria||'')),'valor');
+ const otherDirect=sum(realOut,r=>finAmountBySource(r,FIN_SRC_THIRD))-sum(F.filter(r=>realiz(r)&&finSaida(r)&&/PAGAMENTO DE DÍVIDA A TERCEIRO/i.test(r.categoria||'')),r=>finAmountBySource(r,FIN_SRC_THIRD));
  const otherThird=Math.max(0,otherDirect);
  const payable=sum(F.filter(r=>finSaida(r)&&['PENDENTE','ATRASADO'].includes(String(r.status||'').toUpperCase())&&! [FIN_SRC_OWNER_REC,FIN_SRC_OWNER_FINAL,FIN_SRC_THIRD].includes(finFonte(r))&&!/PAGAMENTO DE EMPRÉSTIMO|PAGAMENTO DE DÍVIDA A TERCEIRO/i.test(r.categoria||'')),'valor');
  const thirdTotal=Math.max(0,loan.div)+otherThird+payable;
@@ -1003,8 +1020,8 @@ function finCapitalStats(){
  return{ownerInvested,recoverable,returned,owed,overReturn,initial,additional,reinvested,assetPurchases,loanBalance:Math.max(0,loan.div),loanPending:loan.pendPag,otherThird,payable,thirdTotal,op,roiOwner:ownerInvested?op/ownerInvested*100:0,returnPct:recoverable?Math.min(100,returned/recoverable*100):0,ownerDefinitive:ownerDefinitiveSpend+ownerDefinitiveDeposit};
 }
 function finRow(r){
-  const out=finSaida(r),loan=finCatLoan(r),cls=loan?'loan':out?'out':'in',st=String(r.status||'');
-  return `<div class="fin-row ${cls}" data-fin="${esc(r._id)}"><div class="fd"><b>${esc(r.descricao||r.categoria||'Lançamento')}</b><small>${dt(r.data)?dt(r.data).split('-').reverse().join('/'):'—'} · ${esc(r.categoria||'Sem categoria')} · ${esc(st)}</small></div><span class="fv">${out?'−':'+'} ${money(r.valor)}</span></div>`;
+  const out=finSaida(r),loan=finCatLoan(r),cls=loan?'loan':out?'out':'in',st=String(r.status||''),rateio=finRateioLabel(r);
+  return `<div class="fin-row ${cls}" data-fin="${esc(r._id)}"><div class="fd"><b>${esc(r.descricao||r.categoria||'Lançamento')}</b><small>${dt(r.data)?dt(r.data).split('-').reverse().join('/'):'—'} · ${esc(r.categoria||'Sem categoria')} · ${esc(st)}${rateio?`<br><span style="color:var(--warn)">Pagamento dividido: ${esc(rateio)}</span>`:''}</small></div><span class="fv">${out?'−':'+'} ${money(r.valor)}</span></div>`;
 }
 function financeiroV(){
   const F=rows('financeiro').filter(r=>!eq(r.status,'CANCELADO')),t=todayS(),S=finLoanStats(),C=finCapitalStats(),real=F.filter(realiz),ent=sum(real.filter(r=>!finSaida(r)),'valor'),out=sum(real.filter(r=>finSaida(r)&&finImpactaCaixa(r)),'valor'),q=String($('#finq')?.value||'').toLowerCase();
@@ -1311,8 +1328,8 @@ function bulkField(){const m=mod(cur),k=$('#bf').value,f=m.fields.find(x=>x[0]==
  $('#bv').innerHTML='<label>Novo valor (vazio = limpar o campo)</label>'+(f[2]==='textarea'?'<textarea id="bvi"></textarea>':so?`<select id="bvi"><option value=""></option>${so.map(z=>`<option>${esc(z)}</option>`).join('')}</select>`:`<input id="bvi" ${f[2]==='date'?'type="date"':f[2]==='number'?'inputmode="decimal"':''} ${op.length?'list="bdl"':''}><datalist id="bdl">${op.map(z=>`<option value="${esc(z)}">`).join('')}</datalist>`)}
 function bulkApply(){const m=mod(cur),k=$('#bf').value,f=m.fields.find(x=>x[0]===k),cf=CALC[cur]||[];let v=$('#bvi').value.trim();if(f[2]==='number'&&v!=='')v=num(v);
  if(!confirm(`Alterar "${f[1]}" para ${v===''?'(vazio)':'"'+v+'"'} em ${selIds.size} registro(s)?`))return;
- const current=rows(cur),next=current.map(r=>{if(!selIds.has(r._id))return r;const x={...r,[k]:v};if(cf.length)calc(cur,q=>num(x[q]),q=>String(x[q]??''),(q,z)=>{x[q]=z});return x});
- if(cur==='financeiro'){const oldTouches=current.some(r=>selIds.has(r._id)&&finFonte(r)===FIN_SRC_LOAN),newTouches=next.some(r=>selIds.has(r._id)&&finFonte(r)===FIN_SRC_LOAN);if((oldTouches||newTouches)&&sum(next.filter(realiz),finDeltaCaixaTerceiros)< -0.005){toast('A alteração deixaria a caixa do empréstimo negativa. Ajuste primeiro os gastos ou o valor do empréstimo.');return}}
+ const current=rows(cur),next=current.map(r=>{if(!selIds.has(r._id))return r;const x={...r,[k]:v};if(cur==='financeiro'&&k==='fonte_recurso'&&Array.isArray(r._rateioFontes)&&String(v||'').trim().toUpperCase()!==finFonte(r))x._rateioFontes=null;if(cf.length)calc(cur,q=>num(x[q]),q=>String(x[q]??''),(q,z)=>{x[q]=z});return x});
+ if(cur==='financeiro'){const oldTouches=current.some(r=>selIds.has(r._id)&&finHasSource(r,FIN_SRC_LOAN)),newTouches=next.some(r=>selIds.has(r._id)&&finHasSource(r,FIN_SRC_LOAN));if((oldTouches||newTouches)&&sum(next.filter(realiz),finDeltaCaixaTerceiros)< -0.005){toast('A alteração deixaria a caixa do empréstimo negativa. Ajuste primeiro os gastos ou o valor do empréstimo.');return}}
  setRows(cur,next);
  if(['vendas','personalizados','eventos','producao'].includes(cur))[...selIds].forEach(i=>syncRow(cur,i,1));selIds.clear();$('#bov').classList.remove('on');toast('Alteração aplicada');table()}
 $('#bok').onclick=bulkApply;$('#bx').onclick=()=>$('#bov').classList.remove('on');
@@ -1333,7 +1350,7 @@ function form(id,rid=null,preset=null){if(id==='impressoes'||id==='v-nova')retur
    if(L2.length)h=`<select name="${k}"><option value=""></option>${L2.map(z=>`<option ${v===z?'selected':''}>${esc(z)}</option>`).join('')}<option value="__new">➕ Novo…</option></select>`;
    else{if(op)dls.push(`<datalist id="dl-${k}">${op.map(z=>`<option value="${esc(z)}">`).join('')}</datalist>`);
     h=`<input name="${k}" ${ty==='date'?'type="date"':ty==='number'?'inputmode="decimal"':''} value="${esc(v)}" ${req?'required':''} ${op?`list="dl-${k}"`:''} ${auto?'data-auto="1"':''} ${stockDerived?'readonly title="Campo derivado pelos lotes. Para alterar estoque, registre uma compra ou um ajuste."':costLock(id,k,old,rid)?'readonly title="Custo calculado em Preços. Para mudar, edite lá."':''}>`}}
-  const hint=id==='financeiro'&&k==='fonte_recurso'?'<small style="display:block;color:var(--mut);line-height:1.45;margin-top:6px">“Financiamento de terceiro” usa o saldo do empréstimo recebido: em uma saída paga, esse saldo diminui. A dívida só diminui quando você registra o pagamento do empréstimo. “Terceiro — a empresa deve” é para quando outra pessoa pagou o fornecedor diretamente, sem transferir o dinheiro para uma caixa sua.</small>':'';
+  const hint=id==='financeiro'&&k==='fonte_recurso'?(Array.isArray(old._rateioFontes)&&old._rateioFontes.length>1?`<small style="display:block;color:var(--warn);line-height:1.45;margin-top:6px">Este lançamento tem pagamento dividido: ${esc(finRateioLabel(old))}. Se alterar a fonte “Quem pagou”, o rateio dividido será removido; se alterar somente o valor, as proporções serão recalculadas.</small>`:'<small style="display:block;color:var(--mut);line-height:1.45;margin-top:6px">“Financiamento de terceiro” usa o saldo do empréstimo recebido: em uma saída paga, esse saldo diminui. A dívida só diminui quando você registra o pagamento do empréstimo. “Terceiro — a empresa deve” é para quando outra pessoa pagou o fornecedor diretamente, sem transferir o dinheiro para uma caixa sua.</small>') : '';
   return`<div class="f ${ty==='textarea'?'full':''}"><label>${esc(l)}${req?' *':''}${auto?' (automático)':''}</label>${h}${hint}</div>`};
  const main=m.fields.filter((f,i)=>!calcK.includes(f[0])&&f[2]!=='textarea'&&(i<(m.id==='vendas'?10:8)||f[3]===true||['kit_id','quantidade_kit'].includes(f[0])||(m.id==='personalizados'&&['valor_total','custo_estimado','sinal','saldo'].includes(f[0])))),more=m.fields.filter(f=>!calcK.includes(f[0])&&f[2]!=='textarea'&&!main.includes(f)),ta=m.fields.filter(f=>f[2]==='textarea'),cf=m.fields.filter(f=>calcK.includes(f[0]));
  const indPanel=rid&&['vendas','personalizados','produtos','custos','matriz_precos','consignacoes'].includes(id)?`<div style="margin-bottom:12px">${lucroIndicadoresHTML(old,id)}</div>`:'';
@@ -1511,10 +1528,10 @@ function aopPedido(r){
 }
 function aopAfterSave(modulo,row,isNew){if(!isNew||!row)return;if(modulo==='vendas'){const nome=String(row.produto||'').trim(),sku=String(row.sku_produto||'').trim();if(nome&&!aopProdutoExiste(nome,sku))return setTimeout(()=>aopOpen('💰 Venda registrada',`<p style="font-size:15px;margin-top:0"><b>${esc(nome)}</b> foi vendido, mas ainda não existe no cadastro de Produtos.</p><p>Quer aproveitar os dados desta venda e salvar o produto agora?</p>`,[{t:'Salvar como produto',p:true,f:()=>{aopCadastrarProduto({nome,sku,preco:num(row.valor_unitario),custo:num(row.custo_unitario),observacoes:'Cadastro criado a partir de uma venda.'});return false}},{t:'Agora não',f:()=>true}]),120)}if(modulo==='movimentos'){const nome=String(row.produto||'').trim(),sku=String(row.sku||'').trim();if(nome&&!aopProdutoExiste(nome,sku))return setTimeout(()=>aopOpen('📦 Produto novo detectado',`<p style="font-size:15px;margin-top:0">Você registrou <b>${esc(nome)}</b> em um movimento de estoque, mas ele ainda não está cadastrado.</p>`,[{t:'Salvar como produto',p:true,f:()=>{aopCadastrarProduto({nome,sku,observacoes:'Cadastro criado a partir de um movimento de estoque.'});return false}},{t:'Agora não',f:()=>true}]),120)}if(modulo==='prospeccao'){const nome=String(row.empresa||row.responsavel_contato||'').trim(),ex=aopContatoExiste(nome,'');if(nome&&!ex)return setTimeout(()=>aopCadastrarContato({nome,fone:''}),120)}if(modulo==='consignacoes')return setTimeout(()=>aopConsignacao(row),120);if(modulo==='personalizados')return setTimeout(()=>aopPedido(row),120);if(modulo==='producao')return setTimeout(()=>aopOpen('⚙️ Produção registrada',`<p style="font-size:15px;margin-top:0"><b>${esc(row.produto||row.sku_produto||'Ordem de produção')}</b> foi registrada.</p><p>Quer deixar o próximo passo na Agenda para não depender da memória?</p><div class="f"><label>Prazo / próxima conferência</label><input id="aoprod" type="date" value="${aopDate(row.prazo)}"></div>`,[{t:'Criar lembrete',p:true,f:()=>{const d=document.getElementById('aoprod').value||aopDate(),id=aopAgenda({data:d,tipo:'TAREFA',empresa:'',tarefa:`Conferir produção: ${row.produto||row.sku_produto||row.op}`,prioridade:'MÉDIA',obs:`Origem: OP ${row.op||''}`,chave:`AOP-OP-${row._id}`});toast(id?'Lembrete criado.':'Esse lembrete já existe.');page();bindGo()}},{t:'Agora não',f:()=>true}]),120)}
 
-function saveRecImpl(again){let o=read();if(!o)return;const m=mod(cur),L=LAST();if(cur==='financeiro'&&finSaida(o)&&[FIN_SRC_OWNER_REC,FIN_SRC_OWNER_FINAL,FIN_SRC_THIRD].includes(finFonte(o))&&!realiz(o)){return toast('Essa origem indica que o gasto já foi pago diretamente pelo proprietário/terceiro. Marque PAGO; se ainda não foi pago, selecione CAIXA DA EMPRESA para manter a conta a pagar corretamente.')};
+function saveRecImpl(again){let o=read();if(!o)return;const m=mod(cur),L=LAST();if(cur==='financeiro'&&ed){const prior=rows('financeiro').find(r=>r._id===ed);if(prior&&Array.isArray(prior._rateioFontes)&&finFonte(o)!==finFonte(prior))o._rateioFontes=null;}if(cur==='financeiro'&&finSaida(o)&&[FIN_SRC_OWNER_REC,FIN_SRC_OWNER_FINAL,FIN_SRC_THIRD].includes(finFonte(o))&&!realiz(o)){return toast('Essa origem indica que o gasto já foi pago diretamente pelo proprietário/terceiro. Marque PAGO; se ainda não foi pago, selecione CAIXA DA EMPRESA para manter a conta a pagar corretamente.')};
  if(cur==='financeiro'&&finFonte(o)===FIN_SRC_LOAN&&!finSaida(o)&&!/EMPRÉSTIMO RECEBIDO/i.test(String(o.categoria||'')))return toast('Para adicionar dinheiro à caixa de financiamento, use a categoria “EMPRÉSTIMO RECEBIDO”.');
  if(cur==='financeiro'){
-  const prev=ed?rows('financeiro').find(r=>r._id===ed):null, touchesLoanPool=finFonte(o)===FIN_SRC_LOAN||(prev&&finFonte(prev)===FIN_SRC_LOAN), candidate={...o,_id:ed||'__novo_financeiro__'};
+  const prev=ed?rows('financeiro').find(r=>r._id===ed):null, candidate={...(prev||{}),...o,_id:ed||'__novo_financeiro__'}, touchesLoanPool=finHasSource(candidate,FIN_SRC_LOAN)||(prev&&finHasSource(prev,FIN_SRC_LOAN));
   if(touchesLoanPool){const pool=saldoCaixaTerceirosProjetado(candidate,ed||null);if(pool< -0.005)return toast('Saldo insuficiente na caixa do empréstimo. Com esse lançamento, ela ficaria em '+money(pool)+'. Confira o valor já disponível ou escolha a origem correta.');}
  }
  REMEMBER.forEach(k=>o[k]&&(L[k]=o[k]));afterDbCommit(()=>{try{localStorage.setItem('aplus_last',JSON.stringify(L))}catch{}});if(cur==='vendas'&&isBlocked(o.canal)&&!confirm(`Vendas com canal ${o.canal} NÃO entram no Faturamento do dashboard nem no caixa.\n\n• CONSIGNADA: registre o envio em Consignações; o dinheiro entra no acerto da loja.\n• EVENTO: registre a receita no módulo Eventos.\n\nSalvar mesmo assim?`))return;if(cur==='producao'){
