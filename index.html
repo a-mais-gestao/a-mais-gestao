@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0a0a0d"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"><title>A+ Gestão</title><!-- Nova Impressão auditada: perdas reais informadas e fonte física obrigatória na conclusão -->
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0d"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"><title>A+ Gestão</title><!-- A+ MOBILE 2026-10-24: navegação inferior, safe-area, formulários touch, proteção de edição e compartilhamento de backup. -->
+<!-- Nova Impressão auditada: perdas reais informadas e fonte física obrigatória na conclusão -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f1f4f2;--card:#fff;--ink:#14231f;--mut:#667a74;--line:#dde5e1;--side:#16302b;--acc:#d6130a;--on:#fff;--acc2:#e6f7f1;--warn:#b7791f;--warn2:#fdf3dc;--bad:#c92a3b;--bad2:#fde8ea;--r:12px}
@@ -327,9 +328,104 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
 .stock-internal-card .si-kpis small {display:block;color:var(--mut);font-size:11px}
 .stock-internal-card .si-kpis b {display:block;overflow-wrap:anywhere}
 @media(max-width:680px){.stock-material-row{align-items:stretch;flex-direction:column}.stock-material-row select,.stock-material-row .btn{width:100%}}
+
+/* ===== A+ MOBILE 2026-10-24 ===== */
+.save-state{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);white-space:nowrap;padding:5px 9px;border-radius:99px;background:var(--inp,var(--card));border:1px solid var(--line)}
+.save-state.dirty{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line));background:var(--warn2)}
+.save-state.saving{color:var(--acc)}
+.mobile-nav{display:none}
+@media(max-width:700px){
+ html{-webkit-text-size-adjust:100%;scroll-padding-bottom:100px}
+ body{overscroll-behavior-y:none;padding-bottom:calc(78px + env(safe-area-inset-bottom));}
+ button,input,select,textarea{font-size:16px}
+ button,.btn{touch-action:manipulation}
+ .btn{min-height:44px;padding:9px 12px}
+ .btn.s{min-height:40px;padding:7px 10px;font-size:14px}
+ .top{min-height:56px;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top));gap:7px}
+ .top .grow{display:none}
+ .top #theme{display:none}
+ .top .qa{margin-left:auto}
+ .top #qa{min-height:42px;padding:8px 11px}
+ .save-state{max-width:132px;overflow:hidden;text-overflow:ellipsis;font-size:11px;padding:5px 7px}
+ .content{padding:12px 10px calc(118px + env(safe-area-inset-bottom));max-width:none}
+ .hubwrap{padding:10px 10px 0}
+ .hubt{margin-bottom:8px}
+ .hubt>span{width:38px;height:38px;border-radius:11px;font-size:19px}
+ .hubt b{font-size:17px}
+ .hubt small{display:none}
+ .hubtabs{scroll-snap-type:x proximity;padding-bottom:3px}
+ .hubtabs button{min-height:40px;scroll-snap-align:start}
+ .ph{align-items:stretch;margin-bottom:10px;gap:8px}
+ .ph h2{font-size:21px;flex-basis:100%;line-height:1.25}
+ .ph>.btn,.ph>.qa,.ph>button{flex:1 1 auto}
+ .hero{padding:18px 16px;border-radius:16px;margin-bottom:14px}
+ .hero h1,.hero h2{font-size:23px!important}
+ .qk{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+ .qk button{min-height:82px;padding:12px;font-size:14px;border-radius:13px}
+ .qk small{font-size:11px;line-height:1.25;margin-top:4px}
+ .kpis,.k5{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .kpi,.kc2{padding:11px;border-radius:13px;min-width:0}
+ .kpi b,.kc2 b{font-size:19px;overflow-wrap:anywhere}
+ .kpi small,.kc2 small{font-size:11px}
+ .panel,.lc,.ar{padding:13px;border-radius:14px}
+ .panel h3{font-size:15px}
+ .g2,.g3,.fg,.cols,.fin-loan-grid{grid-template-columns:minmax(0,1fr)!important}
+ .row2{grid-template-columns:1fr}
+ .bar{gap:7px}
+ .bar input{min-width:0;width:100%;flex-basis:100%;min-height:44px}
+ .chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+ .chip{flex:none;min-height:36px;padding:7px 11px}
+ .tw{max-height:none;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:13px}
+ table{min-width:680px}
+ th,td{padding:10px 9px}
+ .stock-one-scroll table{min-width:0}
+ .rw{gap:7px;align-items:flex-start}
+ .rw>span:first-child{min-width:0}
+ .todo{padding:12px 4px;align-items:flex-start}
+ .todo b{font-size:13px}
+ .modal{width:100%;height:100dvh;max-height:none;border-radius:0;display:flex;flex-direction:column}
+ .ov{align-items:stretch;padding:0}
+ .mh{padding:calc(12px + env(safe-area-inset-top)) 12px 10px}
+ .mh h2{font-size:17px}
+ .mb{padding:4px 12px 16px;max-height:none;flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+ .mf{padding:10px 10px calc(10px + env(safe-area-inset-bottom));gap:7px;border-radius:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .mf .btn{width:100%}
+ .mf #sv,.mf .btn.p{grid-column:auto}
+ #form .fg{grid-template-columns:1fr}
+ .f input,.f select,.f textarea{min-height:44px;width:100%}
+ .f textarea{min-height:92px}
+ .qm{position:fixed;left:10px;right:10px;top:auto;bottom:calc(82px + env(safe-area-inset-bottom));min-width:0;max-height:60dvh;overflow:auto;border-radius:16px;padding:8px;box-shadow:0 -12px 35px #0005;z-index:60}
+ .qm button{min-height:48px;font-size:15px}
+ #jv-btn{right:12px;bottom:calc(88px + env(safe-area-inset-bottom));width:46px;height:46px}
+ #jv{left:8px;right:8px;bottom:calc(84px + env(safe-area-inset-bottom));width:auto;height:min(72dvh,600px)}
+ .toast{bottom:calc(88px + env(safe-area-inset-bottom));width:calc(100vw - 24px);text-align:center}
+ .pv-bar{left:10px;right:10px;bottom:calc(84px + env(safe-area-inset-bottom))}
+ .mobile-nav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;z-index:55;left:0;right:0;bottom:0;height:calc(68px + env(safe-area-inset-bottom));padding:6px 6px env(safe-area-inset-bottom);background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(16px);border-top:1px solid var(--line);box-shadow:0 -8px 26px #0002}
+ .mobile-nav button{border:0;background:none;color:var(--mut);display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:11px;font-weight:650}
+ .mobile-nav button span{font-size:20px;line-height:1}
+ .mobile-nav button small{font-size:10px;white-space:nowrap}
+ .mobile-nav button.on{color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
+ .mobile-nav .mobile-primary{color:#fff;background:var(--acc);margin:-14px 3px 3px;border-radius:16px;box-shadow:0 7px 20px color-mix(in srgb,var(--acc) 35%,transparent)}
+ .mobile-nav .mobile-primary span{font-size:25px}
+ .mobile-nav .mobile-primary small{color:#fff}
+ .njer{grid-template-columns:1fr 1fr!important;align-items:end}
+ .njer>*{min-width:0}
+ .njfr{grid-template-columns:38px minmax(0,1fr) 70px 32px}
+ .njfr>*{min-width:0}
+ .njprice,.njm{padding:12px}
+ .njpt{align-items:flex-start}
+ .njbig{font-size:22px}
+ .res-split-row{grid-template-columns:minmax(0,1fr)!important}
+ .res-split-row>[data-res-remove]{width:100%}
+}
+@media(max-width:380px){
+ .qk,.kpis,.k5{grid-template-columns:1fr}
+ .save-state{display:none}
+}
+
 </style>
 </head>
-<body><div class="app"><div class="scrim" id="scrim"></div><aside class="sb" id="sb"><div class="brand"><span class="logo">A<i>+</i></span><div>Gestão<small>Controle do negócio</small></div></div><nav class="sn" id="tabs"></nav><div class="sbf"><span class="av">A+</span><div><b>Meu negócio</b><small>Dados salvos neste navegador</small></div></div></aside><main class="main"><header class="top"><button class="btn mn" id="burger" aria-label="Menu">☰</button><div class="grow"></div><button class="btn hm" id="pal">Buscar Ctrl+K</button><button class="btn" id="theme" aria-label="Tema">◐</button><div class="qa"><button class="btn p" id="qa">+ Registrar ▾</button><div class="qm" id="qm"></div></div><button id="imp" hidden></button><button id="add" hidden></button></header>
+<body><div class="app"><div class="scrim" id="scrim"></div><aside class="sb" id="sb"><div class="brand"><span class="logo">A<i>+</i></span><div>Gestão<small>Controle do negócio</small></div></div><nav class="sn" id="tabs"></nav><div class="sbf"><span class="av">A+</span><div><b>Meu negócio</b><small>Salvo automaticamente neste aparelho</small></div></div></aside><main class="main"><header class="top"><button class="btn mn" id="burger" aria-label="Menu">☰</button><div class="grow"></div><span class="save-state" id="save-state" aria-live="polite">✓ Salvo neste aparelho</span><button class="btn hm" id="pal">Buscar Ctrl+K</button><button class="btn" id="theme" aria-label="Tema">◐</button><div class="qa"><button class="btn p" id="qa">+ Registrar ▾</button><div class="qm" id="qm"></div></div><button id="imp" hidden></button><button id="add" hidden></button></header>
 <div class="hubwrap" id="hubbar"></div><section class="content" id="content"></section></main></div>
 <div class="ov" id="ov"><div class="modal"><div class="mh"><h2 id="mt"></h2><button class="btn s" id="mx">Fechar</button></div><div class="mb"><form id="form" autocomplete="off"></form></div>
 <div class="mf"><span class="ok hm" style="margin-right:auto">Ctrl+Enter salva e abre outro</span><button class="btn" id="del" type="button">Excluir</button><button class="btn" id="dup" type="button">Duplicar</button><button class="btn" id="sn" type="button">Salvar e novo</button><button class="btn p" id="sv" type="button">Salvar</button></div></div></div>
@@ -346,6 +442,13 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
 <label>Voz do navegador (reserva)</label><select id="jv-voz"></select><label>Tom da voz do navegador: <span id="jv-pv"></span></label><input id="jv-pitch" type="range" min="0.1" max="1.2" step="0.05"><label>Velocidade (antiga): <span id="jv-rv"></span></label><input id="jv-rate" type="range" min="0.6" max="1.4" step="0.05"></details>
 <p class="ok" style="font-size:12px">O Jarvis envia ao Google um resumo dos seus números (sem telefones). No plano gratuito o Google pode usar esse conteúdo.</p></div>
 <div id="jv-log"></div><div id="jv-q"></div><form id="jv-f"><button type="button" class="btn" id="jv-mic" aria-label="Falar">🎤</button><input id="jv-in" placeholder="Pergunte algo, senhor…" autocomplete="off"><button class="btn p">Enviar</button></form></section>
+<nav class="mobile-nav" id="mobile-nav" aria-label="Ações rápidas">
+<button type="button" data-mob-go="v-hoje"><span>🏠</span><small>Início</small></button>
+<button type="button" data-mob-go="v-receber-pedidos"><span>📦</span><small>Receber</small></button>
+<button type="button" class="mobile-primary" id="mob-register"><span>＋</span><small>Registrar</small></button>
+<button type="button" data-mob-go="v-recursos-empresa"><span>🧰</span><small>Recursos</small></button>
+<button type="button" id="mob-backup"><span>☁️</span><small>Backup</small></button>
+</nav>
 <div class="toast" id="toast"></div>
 <script>
 const MODULES=[
@@ -396,8 +499,8 @@ function dbSaveFailureMessage(err){const name=String(err&&err.name||'Erro'),deta
 function showDbSaveFailure(err){console.error('A+ Gestão: transação desfeita',err,err&&err._aplusStorageStats||dbStorageStats());toast(dbSaveFailureMessage(err));const e=$('#toast');if(e){clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on','act'),9500)}}
 function save(){
  if(dbTxDepth){dbTxDirty=true;return true}
- try{persistDbCandidate(db);lastGoodDb=cloneData(db);return true}
- catch(e){db=cloneData(lastGoodDb);showDbSaveFailure(e);return false}
+ try{mobileSetSaveState('saving','Salvando…');persistDbCandidate(db);lastGoodDb=cloneData(db);mobileSetSaveState('saved','✓ Salvo neste aparelho');mobileFormDirty=false;return true}
+ catch(e){db=cloneData(lastGoodDb);mobileSetSaveState('dirty','⚠ Não salvo');showDbSaveFailure(e);return false}
 }
 const setRows=(id,r)=>{db[id]=r;return save()};
 function withDbTransaction(fn){
@@ -407,8 +510,8 @@ function withDbTransaction(fn){
  dbTxDepth=0;let committed=!err;
  if(committed&&dbTxDirty){try{persistDbCandidate(db);lastGoodDb=cloneData(db)}catch(e){err=e;committed=false}}
  const queuedToasts=dbTxToasts.slice(),queuedEffects=dbTxEffects.slice();dbTxToasts=[];dbTxEffects=[];dbTxDirty=false;
- if(!committed){db=before;lastGoodDb=cloneData(before);showDbSaveFailure(err);try{page();bindGo()}catch{}}
- else{queuedToasts.forEach(t=>toast(t));queuedEffects.forEach(f=>{try{f()}catch(e){console.error('A+ Gestão: pós-salvamento',e)}})}
+ if(!committed){db=before;lastGoodDb=cloneData(before);mobileSetSaveState('dirty','⚠ Não salvo');showDbSaveFailure(err);try{page();bindGo()}catch{}}
+ else{mobileSetSaveState('saved','✓ Salvo neste aparelho');mobileFormDirty=false;queuedToasts.forEach(t=>toast(t));queuedEffects.forEach(f=>{try{f()}catch(e){console.error('A+ Gestão: pós-salvamento',e)}})}
  return committed?result:false;
 }
 function afterDbCommit(fn){if(dbTxDepth)dbTxEffects.push(fn);else fn()}
@@ -677,7 +780,7 @@ function nav(){const H=hubOf(cur);if(H)hubLast[H]=cur;const T0=tabOf2(cur);if(T0
  const item=h=>h==='hoje'?['v-hoje','Dashboard','🏠']:['hub:'+h,HUBS[h].t,HUBS[h].i],on=h=>h==='hoje'?cur==='v-hoje':H===h;
  $('#tabs').innerHTML=NAVG.map(g=>(g[0]?`<div class="gl" style="color:${g[2]}">${g[0]}</div>`:'')+g[1].map(h=>{const i=item(h);return`<button data-go="${i[0]}" class="${on(h)?'on':''}"><span class="ni">${i[2]}</span>${i[1]}</button>`}).join('')).join('');
  const hb=$('#hubbar');if(H&&(HUBS[H].tabs.length>1||T0[2])){const o=HUBS[H];hb.innerHTML=`<div class="hubin"><div class="hubt"><span>${o.i}</span><div><b>${o.t}</b><small>${o.d}</small></div></div><div class="hubrow"><div class="hubtabs">${o.tabs.map(t=>{const n=t[2]?rows(t[0]).length+rows(t[2]).length:VIEWS[t[0]]?'':rows(t[0]).length,go1=t[2]&&pairLast[t[0]]||t[0];return`<button data-go="${go1}" class="${T0===t?'on':''}">${t[1]}${n?`<em>${n}</em>`:''}</button>`}).join('')}</div>${T0&&T0[2]?`<div class="vsw">${[[T0[0],T0[3]],[T0[2],T0[4]]].map(v=>`<button data-go="${v[0]}" class="${cur===v[0]?'on':''}">${v[1]}</button>`).join('')}</div>`:''}</div></div>`}else hb.innerHTML='';
- document.body.classList.remove('mo')}
+ document.body.classList.remove('mo');mobileNavSync()}
 function bindGo(){document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go))}
 function go(id){if(id.startsWith('hub:')){const h=id.slice(4);id=hubLast[h]||HUBS[h].tabs[0][0]}cur=id;sk=null;flt='';selIds.clear();nav();page();bindGo();scrollTo(0,0)}
 function page(){fixLinks();VIEWS[cur]?VIEWS[cur]():list()}
@@ -1675,7 +1778,7 @@ if(!ed&&AUTO[cur]){const autoKey=AUTO[cur][0];if(!String(o[autoKey]||'').trim())
  if(ed)R=R.map(r=>r._id===ed?{...r,...o}:r);else R=[{...o,_id:sid,_criadoEm:new Date().toISOString()},...R];const prv=ed?rows(cur).find(r=>r._id===ed):null;cascade(cur,ed,o);const ok=setRows(cur,R);if(ok){const mg=syncRow(cur,sid);toast(mg||(cur==='produtos'&&autoPreco(o,prv)?'Produto salvo · custo e preços calculados automaticamente':ed?'Registro atualizado':'Registro salvo'))}
  {const savedMod=cur,savedNew=!ed,savedRow={...o,_id:sid};const c=cur;try{if(bk)cur=bk;nav();page();bindGo();if(again){cur=c;ed=null;form(c)}else{bk=null;$('#ov').classList.remove('on');ed=null}}catch(e){console.error('A+ Gestão: registro salvo, mas houve erro ao atualizar a tela',e);bk=null;ed=null;$('#ov').classList.remove('on');if(ok)toast('Registro salvo. Houve um erro apenas ao atualizar a tela; recarregue a página se necessário.')} if(savedNew&&ok)afterDbCommit(()=>setTimeout(()=>aopAfterSave(savedMod,savedRow,true),100))}}
 function saveRec(again){return withDbTransaction(()=>saveRecImpl(again))}
-$('#sv').onclick=()=>saveRec(0);$('#sn').onclick=()=>saveRec(1);$('#mx').onclick=()=>{$('#ov').classList.remove('on');ed=null;if(bk){cur=bk;bk=null}};
+$('#sv').onclick=()=>saveRec(0);$('#sn').onclick=()=>saveRec(1);$('#mx').onclick=()=>{if(mobileFormDirty&&!confirm('Há alterações que ainda não foram salvas. Fechar mesmo assim?'))return;mobileFormDirty=false;mobileSetSaveState('saved','✓ Salvo neste aparelho');$('#ov').classList.remove('on');ed=null;if(bk){cur=bk;bk=null}};
 $('#form').onsubmit=e=>{e.preventDefault();saveRec(0)};
 $('#del').onclick=()=>{const m0=cur,r0=ed;if(!r0)return;delUndo(m0,new Set([r0]),'Registro excluído.');$('#ov').classList.remove('on');ed=null;if(bk){cur=bk;bk=null}nav();page();bindGo()};
 $('#dup').onclick=()=>{const o=read();if(o){ed=null;const a=AUTO[cur];a&&(o[a[0]]='');form(cur,null,o);toast('Cópia pronta para editar')}};
@@ -1762,7 +1865,16 @@ function applyBackupConfig(c){if(!c||typeof c!=='object')return;const map={preco
  Object.entries(map).forEach(([field,key])=>{if(Object.prototype.hasOwnProperty.call(c,field)){try{if(c[field]==null)localStorage.removeItem(key);else localStorage.setItem(key,String(c[field]))}catch(e){throw e}}});
  if(Object.prototype.hasOwnProperty.call(c,'assistente')){try{const old=JSON.parse(localStorage.getItem('aplus_jv')||'{}'),incoming=JSON.parse(c.assistente||'{}');const merged={...old,...incoming};if(old.key&&!incoming.key)merged.key=old.key;else delete merged.key;localStorage.setItem('aplus_jv',JSON.stringify(merged))}catch(e){throw e}}
 }
-function exportJson(){try{const payload={app:'aplus_gestao',versao:3,exportadoEm:new Date().toISOString(),dados:db,config:backupConfig()},b=new Blob([JSON.stringify(payload)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`A_Mais_Gestao_Backup_${todayS()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e4);try{localStorage.setItem('aplus_last_backup',new Date().toISOString())}catch{}toast('Backup JSON gerado. As preferências do aplicativo foram incluídas; a chave privada da API não é exportada.')}catch(e){toast('Não foi possível gerar o backup JSON. Verifique o armazenamento.')}}
+function backupPayload(){return{app:'aplus_gestao',versao:3,exportadoEm:new Date().toISOString(),dados:db,config:backupConfig()}}
+function backupMarkNow(){try{localStorage.setItem('aplus_last_backup',new Date().toISOString())}catch{}}
+function exportJson(){try{const payload=backupPayload(),b=new Blob([JSON.stringify(payload)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`A_Mais_Gestao_Backup_${todayS()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e4);backupMarkNow();toast('Backup JSON gerado. As preferências do aplicativo foram incluídas; a chave privada da API não é exportada.')}catch(e){toast('Não foi possível gerar o backup JSON. Verifique o armazenamento.')}}
+async function mobileShareBackup(){
+ try{
+  const name=`A_Mais_Gestao_Backup_${todayS()}.json`,file=new File([JSON.stringify(backupPayload())],name,{type:'application/json'});
+  if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share({title:'Backup A+ Gestão',text:'Backup completo do A+ Gestão',files:[file]});backupMarkNow();toast('Backup compartilhado. Salve em Arquivos, Drive ou outro local seguro.');return}
+  exportJson();
+ }catch(e){if(e&&e.name==='AbortError')return;console.warn('Compartilhamento de backup indisponível',e);exportJson()}
+}
 function readJson(fl){const rd=new FileReader();rd.onload=ev=>{try{const J0=JSON.parse(ev.target.result),d=J0.dados||{};impCfg=J0.config||null;impFull=J0.app==='aplus_gestao'&&!!J0.dados;imp={};MODULES.forEach(m=>{if(impFull)imp[m.id]=Array.isArray(d[m.id])?d[m.id]:[];else if(Array.isArray(d[m.id]))imp[m.id]=d[m.id]});const n=Object.values(imp).reduce((a,r)=>a+r.length,0);$('#ipv').innerHTML=n?`<div class="note"><span>Encontrei <b>${n} registro(s)</b> em ${Object.keys(imp).length} módulo(s) (backup JSON).</span></div>`:'<div class="note">Arquivo sem dados reconhecidos.</div>';$('#iok').disabled=!(n||impCfg)}catch{toast('JSON inválido.')}};rd.readAsText(fl)}
 addEventListener('storage',e=>{if(e.key===DBKEY){try{db=JSON.parse(e.newValue)||{};lastGoodDb=cloneData(db)}catch{}if(!$('#ov').classList.contains('on'))page()}});
 const XLSX_INTERNAL_HEADER='__APLUS_INTERNAL__',XLSX_META_CHUNK=30000;
@@ -1779,6 +1891,36 @@ $('#file').onchange=e=>{const fl=e.target.files[0];if(!fl)return;impCfg=null;imp
  const n=Object.values(imp).reduce((a,r)=>a+r.length,0);$('#ipv').innerHTML=n?`<div class="note"><span>Encontrei <b>${n} registro(s)</b> em ${Object.keys(imp).length} módulo(s): ${Object.keys(imp).map(i=>`${mod(i).label} (${imp[i].length})`).join(', ')}. Colunas antigas não reconhecidas também serão preservadas.</span></div>`:'<div class="note">Não encontrei registros reconhecidos. Use um backup exportado pelo A+ Gestão.</div>';$('#iok').disabled=!(n||impCfg)}catch{toast('Não consegui ler este arquivo. Confira se é um .xlsx válido.')}};rd.readAsArrayBuffer(fl)};
 $('#imp').onclick=()=>$('#iov').classList.add('on');$('#ix').onclick=()=>{$('#iov').classList.remove('on');$('#file').value='';$('#ipv').innerHTML='';$('#iok').disabled=true;imp=null};
 $('#iok').onclick=()=>{if(!imp||!confirm('Substituir os módulos encontrados e restaurar as configurações disponíveis?'))return;snapSave('antes de importar');const oldCfg=backupConfig(),ok=withDbTransaction(()=>{db=impFull?{}:{...db};Object.entries(imp).forEach(([i,r])=>{db[i]=r});save();if(impCfg)applyBackupConfig(impCfg);return true});if(!ok){try{applyBackupConfig(oldCfg)}catch(e){console.error('Não foi possível restaurar todas as preferências anteriores',e)}return toast('Importação cancelada. Os dados anteriores foram preservados; confira as preferências e o espaço de armazenamento.')}aplusPostLoadRepair();impFull=false;$('#ix').click();nav();page();bindGo();toast('Importação concluída; módulos, configurações e vínculos foram revisados.')};
+
+/* ---------- experiência mobile e proteção contra perda de dados ---------- */
+let mobileFormDirty=false,mobileSafetyLast=0;
+function mobileSetSaveState(kind,text){
+ const e=document.getElementById('save-state');if(!e)return;
+ e.classList.remove('dirty','saving');if(kind==='dirty')e.classList.add('dirty');if(kind==='saving')e.classList.add('saving');e.textContent=text||'✓ Salvo neste aparelho';
+}
+function mobileNavSync(){
+ const H=hubOf(cur);document.querySelectorAll('#mobile-nav [data-mob-go]').forEach(b=>{
+   const id=b.dataset.mobGo,on=(id==='v-hoje'&&cur==='v-hoje')||(id==='v-receber-pedidos'&&cur==='v-receber-pedidos')||(id==='v-recursos-empresa'&&cur==='v-recursos-empresa');
+   b.classList.toggle('on',on);
+ });
+}
+document.addEventListener('input',e=>{
+ if(e.target&&e.target.closest&&e.target.closest('#form')){mobileFormDirty=true;mobileSetSaveState('dirty','● Alterações não salvas')}
+});
+document.addEventListener('change',e=>{
+ if(e.target&&e.target.closest&&e.target.closest('#form')){mobileFormDirty=true;mobileSetSaveState('dirty','● Alterações não salvas')}
+});
+addEventListener('beforeunload',e=>{if(!mobileFormDirty)return;e.preventDefault();e.returnValue='';});
+document.querySelectorAll('#mobile-nav [data-mob-go]').forEach(b=>b.onclick=()=>go(b.dataset.mobGo));
+const mobRegister=document.getElementById('mob-register');if(mobRegister)mobRegister.onclick=e=>{e.stopPropagation();document.getElementById('qm').classList.toggle('on')};
+const mobBackup=document.getElementById('mob-backup');if(mobBackup)mobBackup.onclick=mobileShareBackup;
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState!=='hidden')return;
+ const now=Date.now();if(now-mobileSafetyLast<30*60*1000)return;mobileSafetyLast=now;
+ try{const n=Object.values(db).reduce((a,r)=>a+(Array.isArray(r)?r.length:0),0);if(n)snapSave('proteção mobile ao sair do app')}catch(e){console.warn('Cópia de proteção mobile',e)}
+});
+mobileNavSync();
+
 /* ---------- busca rápida (Ctrl+K) ---------- */
 let pi=0,pr=[];function pal(){const q=nz($('#pq').value);pr=[...Object.keys(VL),...MODULES.map(m=>m.id)].filter(id=>!q||nz(lab(id)).includes(q)||nz(id).includes(q));pi=0;drawPal()}
 const drawPal=()=>{$('#pl').innerHTML=pr.map((id,i)=>`<button class="${i===pi?'on':''}" data-p="${id}">${ICON[id]} ${lab(id)}</button>`).join('');document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>pick(b.dataset.p,0))};
