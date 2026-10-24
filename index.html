@@ -423,6 +423,93 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
  .save-state{display:none}
 }
 
+
+/* ===== A+ MOBILE LEVE · correção 2026-10-24 ===== */
+@media(max-width:900px){
+ html,body{max-width:100%;overflow-x:hidden}
+ body{padding-bottom:calc(72px + env(safe-area-inset-bottom))!important}
+ .app{min-height:100dvh;width:100%;overflow:visible}
+ .main{width:100%;max-width:100%;overflow:visible}
+ .content{padding-bottom:calc(92px + env(safe-area-inset-bottom))!important}
+
+ .mobile-nav{
+   display:grid!important;
+   position:fixed!important;
+   left:0!important;right:0!important;bottom:0!important;top:auto!important;
+   width:100%!important;
+   height:calc(66px + env(safe-area-inset-bottom))!important;
+   padding:5px 5px env(safe-area-inset-bottom)!important;
+   z-index:100!important;
+   background:var(--card)!important;
+   border-top:1px solid var(--line)!important;
+   box-shadow:0 -2px 10px #0002!important;
+   backdrop-filter:none!important;
+   -webkit-backdrop-filter:none!important;
+   transform:none!important;
+ }
+ .mobile-nav button{min-height:54px!important}
+ .mobile-nav .mobile-primary{margin:-9px 3px 2px!important;box-shadow:0 3px 10px #0003!important}
+
+ .sb{
+   position:fixed!important;
+   inset:0 auto 0 0!important;
+   height:100dvh!important;
+   max-height:100dvh!important;
+   overflow-y:auto!important;
+   overflow-x:hidden!important;
+   overscroll-behavior:contain!important;
+   -webkit-overflow-scrolling:touch;
+   z-index:120!important;
+   transform:translate3d(-102%,0,0)!important;
+   transition:transform .16s ease-out!important;
+ }
+ body.mo{overflow:hidden!important;touch-action:none}
+ body.mo .app{height:100dvh!important;overflow:hidden!important}
+ body.mo .sb{transform:translate3d(0,0,0)!important;touch-action:pan-y!important}
+ body.mo .scrim{
+   display:block!important;
+   position:fixed!important;
+   inset:0!important;
+   z-index:110!important;
+   background:#0009!important;
+   touch-action:none!important;
+ }
+ body.mo .mobile-nav{visibility:hidden!important;pointer-events:none!important}
+
+ .top{
+   position:sticky!important;
+   top:0!important;
+   z-index:90!important;
+   min-height:54px!important;
+   background:#10201c!important;
+   box-shadow:none!important;
+ }
+ .hubwrap{position:relative;z-index:1}
+
+ .ov{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ .panel,.lc,.ar,.kpi,.kc2,.qk button,.tw,.kd,.modal,
+ .hubin,.njm,.njprice,.nums div,.lnk button{box-shadow:none!important}
+ .panel,.lc,.ar,.kpi,.kc2,.qk button,.tw,.kd,.njm,.njprice{background:var(--card)!important}
+ .kc2:hover,.ccard:hover,#content .k5 .kc2:hover{transform:none!important;box-shadow:none!important}
+ *{scroll-behavior:auto!important}
+ .panel,.lc,.ar,.stock-internal-card{content-visibility:auto;contain-intrinsic-size:1px 220px}
+
+ .qm{
+   position:fixed!important;
+   left:8px!important;right:8px!important;
+   top:auto!important;
+   bottom:calc(72px + env(safe-area-inset-bottom))!important;
+   max-height:58dvh!important;
+   overflow-y:auto!important;
+   z-index:130!important;
+   box-shadow:0 -4px 16px #0005!important;
+ }
+ .tw:not(.stock-one-scroll){max-height:none!important;overflow-x:auto!important;overflow-y:visible!important}
+ #jv-btn{bottom:calc(78px + env(safe-area-inset-bottom))!important}
+ .toast{bottom:calc(76px + env(safe-area-inset-bottom))!important}
+}
+@media(min-width:901px){.mobile-nav{display:none!important}}
+
 </style>
 </head>
 <body><div class="app"><div class="scrim" id="scrim"></div><aside class="sb" id="sb"><div class="brand"><span class="logo">A<i>+</i></span><div>Gestão<small>Controle do negócio</small></div></div><nav class="sn" id="tabs"></nav><div class="sbf"><span class="av">A+</span><div><b>Meu negócio</b><small>Salvo automaticamente neste aparelho</small></div></div></aside><main class="main"><header class="top"><button class="btn mn" id="burger" aria-label="Menu">☰</button><div class="grow"></div><span class="save-state" id="save-state" aria-live="polite">✓ Salvo neste aparelho</span><button class="btn hm" id="pal">Buscar Ctrl+K</button><button class="btn" id="theme" aria-label="Tema">◐</button><div class="qa"><button class="btn p" id="qa">+ Registrar ▾</button><div class="qm" id="qm"></div></div><button id="imp" hidden></button><button id="add" hidden></button></header>
@@ -780,7 +867,7 @@ function nav(){const H=hubOf(cur);if(H)hubLast[H]=cur;const T0=tabOf2(cur);if(T0
  const item=h=>h==='hoje'?['v-hoje','Dashboard','🏠']:['hub:'+h,HUBS[h].t,HUBS[h].i],on=h=>h==='hoje'?cur==='v-hoje':H===h;
  $('#tabs').innerHTML=NAVG.map(g=>(g[0]?`<div class="gl" style="color:${g[2]}">${g[0]}</div>`:'')+g[1].map(h=>{const i=item(h);return`<button data-go="${i[0]}" class="${on(h)?'on':''}"><span class="ni">${i[2]}</span>${i[1]}</button>`}).join('')).join('');
  const hb=$('#hubbar');if(H&&(HUBS[H].tabs.length>1||T0[2])){const o=HUBS[H];hb.innerHTML=`<div class="hubin"><div class="hubt"><span>${o.i}</span><div><b>${o.t}</b><small>${o.d}</small></div></div><div class="hubrow"><div class="hubtabs">${o.tabs.map(t=>{const n=t[2]?rows(t[0]).length+rows(t[2]).length:VIEWS[t[0]]?'':rows(t[0]).length,go1=t[2]&&pairLast[t[0]]||t[0];return`<button data-go="${go1}" class="${T0===t?'on':''}">${t[1]}${n?`<em>${n}</em>`:''}</button>`}).join('')}</div>${T0&&T0[2]?`<div class="vsw">${[[T0[0],T0[3]],[T0[2],T0[4]]].map(v=>`<button data-go="${v[0]}" class="${cur===v[0]?'on':''}">${v[1]}</button>`).join('')}</div>`:''}</div></div>`}else hb.innerHTML='';
- document.body.classList.remove('mo');mobileNavSync()}
+ mobileMenu(false);mobileNavSync()}
 function bindGo(){document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go))}
 function go(id){if(id.startsWith('hub:')){const h=id.slice(4);id=hubLast[h]||HUBS[h].tabs[0][0]}cur=id;sk=null;flt='';selIds.clear();nav();page();bindGo();scrollTo(0,0)}
 function page(){fixLinks();VIEWS[cur]?VIEWS[cur]():list()}
@@ -1915,11 +2002,12 @@ document.querySelectorAll('#mobile-nav [data-mob-go]').forEach(b=>b.onclick=()=>
 const mobRegister=document.getElementById('mob-register');if(mobRegister)mobRegister.onclick=e=>{e.stopPropagation();document.getElementById('qm').classList.toggle('on')};
 const mobBackup=document.getElementById('mob-backup');if(mobBackup)mobBackup.onclick=mobileShareBackup;
 document.addEventListener('visibilitychange',()=>{
- if(document.visibilityState!=='hidden')return;
- const now=Date.now();if(now-mobileSafetyLast<30*60*1000)return;mobileSafetyLast=now;
- try{const n=Object.values(db).reduce((a,r)=>a+(Array.isArray(r)?r.length:0),0);if(n)snapSave('proteção mobile ao sair do app')}catch(e){console.warn('Cópia de proteção mobile',e)}
+ if(document.visibilityState!=='hidden'||mobileFormDirty)return;
+ const now=Date.now();if(now-mobileSafetyLast<2*60*60*1000)return;mobileSafetyLast=now;
+ try{const n=Object.values(db).reduce((a,r)=>a+(Array.isArray(r)?r.length:0),0);if(n)snapSave('proteção mobile periódica')}catch(e){console.warn('Cópia de proteção mobile',e)}
 });
 mobileNavSync();
+addEventListener('resize',()=>{if(innerWidth>900&&document.body.classList.contains('mo'))mobileMenu(false)},{passive:true});
 
 /* ---------- busca rápida (Ctrl+K) ---------- */
 let pi=0,pr=[];function pal(){const q=nz($('#pq').value);pr=[...Object.keys(VL),...MODULES.map(m=>m.id)].filter(id=>!q||nz(lab(id)).includes(q)||nz(id).includes(q));pi=0;drawPal()}
@@ -1930,7 +2018,19 @@ $('#pq').onkeydown=e=>{if(e.key==='ArrowDown'){pi=Math.min(pr.length-1,pi+1);dra
 document.onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();$('#pal').click()}else if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&$('#ov').classList.contains('on')){e.preventDefault();saveRec(1)}else if(e.key==='Escape')document.querySelectorAll('.ov.on').forEach(o=>o.classList.remove('on'))};
 document.querySelectorAll('.ov').forEach(o=>o.onmousedown=e=>{if(e.target===o)o.classList.remove('on')});
 
-const th=localStorage.getItem('aplus_theme')||'dark';document.getElementById('burger').onclick=()=>document.body.classList.toggle('mo');document.getElementById('scrim').onclick=()=>document.body.classList.remove('mo');document.documentElement.dataset.theme=th;
+const th=localStorage.getItem('aplus_theme')||'dark';
+function mobileMenu(open){
+ const on=!!open;
+ document.body.classList.toggle('mo',on);
+ const b=document.getElementById('burger');
+ if(b)b.setAttribute('aria-expanded',on?'true':'false');
+}
+document.getElementById('burger').setAttribute('aria-expanded','false');
+document.getElementById('burger').onclick=e=>{e.preventDefault();e.stopPropagation();mobileMenu(!document.body.classList.contains('mo'))};
+document.getElementById('scrim').onclick=e=>{e.preventDefault();mobileMenu(false)};
+document.getElementById('sb').addEventListener('click',e=>{if(e.target.closest('button'))mobileMenu(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('mo'))mobileMenu(false)});
+document.documentElement.dataset.theme=th;
 $('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('aplus_theme',t)};
 navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
 /* ---------- JARVIS ---------- */
