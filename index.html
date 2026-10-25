@@ -831,7 +831,12 @@ document.addEventListener('click',e=>{if(cur!=='v-hoje'||e.target.closest('.tipd
  $('#kgo').onclick=()=>{close();go(d.go)};ov.classList.add('on')})})();
 /* ===== Automação: taxa do canal e recálculo de preços ===== */
 function canalTaxa(c,b){const C=rows('canais').find(x=>eq(x.canal,c)&&!eq(x.ativo,'NÃO'));return C?r2(b*num(C.taxa_pct)/100+num(C.taxa_fixa)):null}
-function autoPreco(o,prv){if(!o.sku||!(num(o.tempo_h)>0&&num(o.peso_g)>0))return false;if(prv&&['tempo_h','peso_g','horas_manuais','setup_h','lote_un'].every(k=>num(prv[k])===num(o[k])))return false;
+function autoPreco(o,prv){if(!o.sku||!(num(o.tempo_h)>0&&num(o.peso_g)>0))return false;
+ // Campos numéricos são apresentados com 2 casas decimais no formulário. Comparar o valor
+ // bruto gerava falsos positivos (ex.: 15,866666 g salvo → 15,87 g exibido), e recalculava
+ // o preço mesmo quando a pessoa só alterava preco_padrao. Compare na mesma precisão da UI.
+ const same=(k,a,b)=>k==='lote_un'?Math.max(1,Math.round(num(a)||1))===Math.max(1,Math.round(num(b)||1)):r2(num(a))===r2(num(b));
+ if(prv&&['tempo_h','peso_g','horas_manuais','setup_h','lote_un'].every(k=>same(k,prv[k],o[k])))return false;
  const p=rows('produtos').find(r=>eq(r.sku,o.sku));if(!p)return false;const x=pcO(p),r=precif(x,PRC());if(!r.ok)return false;pcApply(p.sku,p.produto,x,r);return true}
 try{if(!localStorage.getItem('aplus_canais_seed')){if(!rows('canais').length)setRows('canais',['DIRETA','ONLINE','ATACADO','PERSONALIZADO'].map(c=>({_id:uid(),_criadoEm:new Date().toISOString(),canal:c,taxa_pct:0,taxa_fixa:0,ativo:'SIM',observacoes:'Preencha a taxa deste canal (ex.: marketplace). Ela entra sozinha nas vendas.'})));localStorage.setItem('aplus_canais_seed','1')}}catch{}
 /* ===== Catálogo de produtos (vitrine) ===== */
@@ -2528,8 +2533,9 @@ function migV4(){
   const cod=((String(r.observacoes||'').match(/Nova impress[aã]o\s+(IMP-\d+)/i)||[])[1]),im=(r._imp&&I.find(i=>i._id===r._imp))||(cod&&I.find(i=>eq(i.codigo,cod)));
   if(im&&num(im.custo_total)>0&&Math.abs(num(x.custo_estimado)-num(im.custo_total))>.005)x={...x,custo_estimado:r2(im.custo_total)};
   if(x!==r)n++;return x});if(n){setRows('personalizados',R);L.push('Pedidos: etapa/custo acertados em '+n+' pedido(s).')}}
- /* recalcula todos os produtos com o filamento e a impressora reais */
- {const P=PRC(),Lp=rows('produtos').filter(p=>num(p.tempo_h)>0&&num(p.peso_g)>0&&['PARA VENDA','PEDIDO',''].includes(usoOf(p)));let n=0;Lp.forEach(p=>{const o=pcO(p),r=precif(o,P);if(r.ok){pcApply(p.sku,p.produto,o,r);n++}});if(n)L.push('Preços: '+n+' produto(s) recalculado(s) (filamento R$ '+f2(P.custo_kg)+'/kg).')}
+ /* Não recalcular preços de venda durante a migração. O recálculo em lote só deve ocorrer
+    quando a pessoa aciona explicitamente “Recalcular todos os produtos” em Precificação.
+    Antes, este bloco gravava o preço sugerido por cima do preço escolhido manualmente. */
  localStorage.setItem('aplus_mig_v4','1');
  if(L.length)setTimeout(()=>alert('Correções aplicadas (uma única vez):\n\n• '+L.join('\n• ')+'\n\nUma cópia dos dados de antes foi guardada em Mais › Backup e dados.'),600);
  }catch(e){console.error('migV4',e)}}
