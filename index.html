@@ -1099,7 +1099,7 @@ function syncRow(id,sid,q){const r=rows(id).find(x=>x._id===sid);if(!r)return'';
   return ok&&(rc>0||cs>0)?'Evento salvo · valores lançados no caixa':''}
  if(id==='producao'){const lt=rows('lotes'),ex=lt.find(x=>x._op===sid),go=eq(r.status,'CONCLUÍDA')&&num(r.qtd_produzida)>0&&r.sku_produto&&!r._imp;
   if(!go){if(ex)setRows('lotes',lt.filter(x=>x._op!==sid));return''}
-  const o={data:ex?ex.data:t,lote:ex?ex.lote:nextId(mod('lotes')),sku_produto:r.sku_produto,produto:r.produto||'',qtd_planejada:num(r.qtd_planejada),qtd_produzida:num(r.qtd_produzida),qtd_perdida:num(r.qtd_perdida),percentual_perda:num(r.qtd_planejada)?num(r.qtd_perdida)/num(r.qtd_planejada)*100:0,observacoes:'Origem: ordem '+(r.op||'')};
+  const o={data:ex?ex.data:t,lote:ex?ex.lote:nextId(mod('lotes')),sku_produto:r.sku_produto,produto:r.produto||((rows('produtos').find(x=>eq(x.sku,r.sku_produto))||{}).produto)||r.sku_produto||'',qtd_planejada:num(r.qtd_planejada),qtd_produzida:num(r.qtd_produzida),qtd_perdida:num(r.qtd_perdida),percentual_perda:num(r.qtd_planejada)?num(r.qtd_perdida)/num(r.qtd_planejada)*100:0,observacoes:'Origem: ordem '+(r.op||'')};
   if(ex)setRows('lotes',lt.map(x=>x._op===sid?{...x,...o}:x));else setRows('lotes',[{...o,_op:sid,_id:uid(),_criadoEm:new Date().toISOString()},...lt]);
   return'Ordem concluída · quantidade produzida somada ao estoque'}
  return''}
@@ -2125,7 +2125,7 @@ stockBobinaReturned=b=>{const p=stockBobinaPurchase(b);return !!b&&(eq(b.status,
 stockBobinaUnavailable=b=>{const p=stockBobinaPurchase(b);return !!b&&(stockBobinaInTransit(b)||stockBobinaReturned(b)||!!(p&&eq(p.status_estoque,'CANCELADO')))},
 stockBobinaAvailable=b=>!stockBobinaUnavailable(b)&&bobP(b)>0,
 fmtH=h=>{h=Math.max(0,h);const t=Math.round(h*60),d=Math.floor(t/1440),hh=Math.floor(t%1440/60),mm=t%60;return(d?d+'d ':'')+(hh?hh+'h':'')+(mm?(hh?' ':'')+mm+'min':'')||'0min'},
-njMesa=()=>({id:uid(),plateId:uid(),nome:'',impressora:(njReg()[0]||{}).nome||'',modo:'SEQ',modoPecas:'SEQUENCIAL',d:'',h:'',m:'',qtd:'1',falhaG:'',multi:false,fils:[njFil()],pesoUnitProduto:0,tempoBaseUnit:0,tempoOrigemAuto:false,tempoManual:false,tempoQtdAvisada:false}),
+njMesa=()=>({id:uid(),plateId:uid(),sku:'',nome:'',impressora:(njReg()[0]||{}).nome||'',modo:'SEQ',modoPecas:'SEQUENCIAL',d:'',h:'',m:'',qtd:'1',falhaG:'',multi:false,fils:[njFil()],pesoUnitProduto:0,tempoBaseUnit:0,tempoOrigemAuto:false,tempoManual:false,tempoQtdAvisada:false}),
 njFil=()=>({id:uid(),key:(njFilOpts()[0]||{key:'D'}).key,g:'',pesoBaseUnit:0,pesoOrigemAuto:false});
 function njNovo(){const P=PRC();return{_versaoFilamentoLote:2,id:'',codigo:'',tipo:'ENCOMENDA',status:'ORCAMENTO',cliente:{id:'',nome:'',whatsapp:'',endereco:''},mesas:[njMesa()],usaExtras:true,extras:[],emb:false,embCusto:'0',prepH:'',prepM:'',posH:'',posM:'',entrega:'RETIRADA',entregaValor:'0',pagto:'PIX',modoPreco:'MARGEM',margem:'50',precoFinal:'',imposto:f2(P.imposto),sinal:'',lancaSinal:true,prazo:'',obs:'',testResult:'',testFailureReason:'',recoveredExtras:[]}}
 /* ---- filamentos: bobinas (FIFO por material+cor), materiais FILAMENTO e preço padrão ---- */
@@ -2146,7 +2146,76 @@ function njPlateId(m){return String(m&&m.plateId||m&&m.id||'')}
 function njPlateGroups(J){const map=new Map();(J&&J.mesas||[]).forEach((m,i)=>{const k=njPlateId(m);if(!map.has(k))map.set(k,[]);map.get(k).push({m,i})});return map}
 function njPlateMembers(J,m){const g=njPlateGroups(J).get(njPlateId(m))||[];return g.map(x=>x.m)}
 function njPlateWeight(m){let w=num(m&&m.pesoUnitProduto);if(!(w>0)){const p=rows('produtos').find(x=>eq(x.produto,m&&m.nome));w=num(p&&p.peso_g)}return w>0?w:0}
-function njUpdatePlateFilamentEstimate(J,plateId){const groups=njPlateGroups(J),g=groups.get(String(plateId));if(!g||!g.length)return;const leader=g[0].m,f=leader.fils&&leader.fils[0];if(!f||!f.pesoOrigemAuto)return;const total=g.reduce((n,x)=>n+njPlateWeight(x.m)*Math.max(1,num(x.m.qtd)||1),0);if(total>0)f.g=f2(total).replace(/\./g,',');}
+/* Rateio aproximado da placa: usa o peso cadastrado; quando faltar em alguma peça,
+   estima pela mediana dos pesos conhecidos da própria placa. Se nenhum peso existir,
+   distribui por quantidade. O total do fatiador continua sendo a quantidade física baixada. */
+function njPlateWeights(entries){const raw=entries.map(({m})=>njPlateWeight(m)),known=raw.filter(w=>w>0).sort((a,b)=>a-b);let fallback=1,source='QUANTIDADE';if(known.length){const mid=Math.floor(known.length/2);fallback=known.length%2?known[mid]:(known[mid-1]+known[mid])/2;source='MEDIANA_DA_PLACA';}return raw.map(w=>({unit:w>0?w:fallback,source:w>0?'PESO_CADASTRADO':source,known:w>0}));}
+function njUpdatePlateFilamentEstimate(J,plateId){const groups=njPlateGroups(J),g=groups.get(String(plateId));if(!g||!g.length)return;const leader=g[0].m,f=leader.fils&&leader.fils[0];if(!f||!f.pesoOrigemAuto)return;const weights=njPlateWeights(g),total=g.reduce((n,x,i)=>n+weights[i].unit*Math.max(1,num(x.m.qtd)||1),0);if(total>0)f.g=f2(total).replace(/\./g,',');}
+function njConsumoSamples(){
+ const out=[];
+ rows('impressoes').forEach(imp=>(Array.isArray(imp._consumoPorProduto)?imp._consumoPorProduto:[]).forEach(x=>{
+  if(!x||!x.sku||!(num(x.consumoAtribuidoPorUnidade_g)>0))return;
+  out.push({...x,_impressaoId:imp._id,_codigoImpressao:imp.codigo,_dataImpressao:imp.data});
+ }));
+ return out;
+}
+/* As placas mistas guardam o consumo atribuído por rateio, mas não são amostras independentes
+   para recalibrar o peso de referência: só conhecemos o total da placa, não o peso de cada SKU. */
+function njCalibracaoStats(sku,nome,excludeId){
+ const byPrint=new Map();
+ njConsumoSamples().forEach(x=>{
+  if(excludeId&&x._impressaoId===excludeId)return;
+  if(!x.qualificadoParaReferencia)return;
+  const sameSku=sku&&x.sku&&eq(x.sku,sku),sameName=!sku&&eq(x.produto,nome);
+  if(!sameSku&&!sameName)return;
+  const k=String(x._impressaoId||'')+'|'+String(x.sku||nome);
+  if(!byPrint.has(k))byPrint.set(k,{total:0,qtd:0,amostras:[]});
+  const b=byPrint.get(k),q=Math.max(1,num(x.qtd)||1);
+  b.total+=num(x.consumoAtribuidoTotal_g)||num(x.consumoAtribuidoPorUnidade_g)*q;
+  b.qtd+=q;b.amostras.push(x);
+ });
+ const samples=[...byPrint.values()].map(b=>b.total/Math.max(1,b.qtd)).filter(x=>x>0);
+ const sorted=samples.slice().sort((a,b)=>a-b),n=sorted.length;
+ const med=n?(n%2?sorted[(n-1)/2]:(sorted[n/2-1]+sorted[n/2])/2):0;
+ return{count:n,median:med,mean:n?samples.reduce((a,b)=>a+b,0)/n:0,samples};
+}
+function njBuildConsumptionLog(J,c,id,st,failedTest){
+ const grouped=njPlateGroups(J),validStatus=st==='CONCLUIDA'&&!failedTest;
+ return (c.mes||[]).map(cm=>{
+  const m=(J.mesas||[]).find(x=>x.id===cm.id)||{},group=grouped.get(njPlateId(m))||[{m}],shared=group.length>1;
+  const p=(m.sku&&rows('produtos').find(x=>eq(x.sku,m.sku)))||rows('produtos').find(x=>eq(x.produto,cm.nome||m.nome));
+  const activeF=(m.multi?m.fils:(m.fils||[]).slice(0,1))||[];
+  const manualSingleColor=!shared&&!m.multi&&activeF.length===1&&activeF.every(f=>f.pesoOrigemAuto!==true&&num(f.g)>0);
+  const reference=num(m.pesoUnitProduto)>0?num(m.pesoUnitProduto):num(p&&p.peso_g);
+  const qty=Math.max(1,num(cm.q)||num(m.qtd)||1),unit=num(cm.gT)>0?num(cm.gT)/qty:num(cm.g)||0;
+  const qualified=!!(validStatus&&p&&p.sku&&manualSingleColor&&unit>0);
+  return{
+   sku:(p&&p.sku)||m.sku||'',produto:cm.nome||m.nome||'',qtd:qty,
+   pesoReferencia_g:Math.round(reference*1000)/1000,
+   consumoAtribuidoTotal_g:Math.round(num(cm.gT)*1000)/1000,
+   consumoAtribuidoPorUnidade_g:Math.round(unit*1000)/1000,
+   metodo:shared?'RATEIO_ESTIMADO_PLACA':manualSingleColor?'FATIADOR_MANUAL':(m.multi?'MULTICOLOR_ESTIMADO':'ESTIMATIVA_CADASTRO'),
+   placaMista:shared,impressao_id:id,qualificadoParaReferencia:qualified,
+   criterioAmostra:qualified?'Placa de um único produto; filamento manual do fatiador; cor única':'Apenas histórico/estimativa; não usado para recalibrar referência'
+  };
+ });
+}
+function njCalibrationPanel(){
+ if(!NJ)return'';
+ const candidates=[],seen=new Set();
+ (NJ.mesas||[]).forEach(m=>{
+  const p=(m.sku&&rows('produtos').find(x=>eq(x.sku,m.sku)))||rows('produtos').find(x=>eq(x.produto,m.nome));
+  if(!p||!p.sku||seen.has(p.sku))return;seen.add(p.sku);candidates.push({p,m});
+ });
+ if(!candidates.length)return `<div class="note" style="margin-top:14px"><span><b>Calibração do consumo</b><br>Selecione produtos cadastrados para acompanhar o consumo estimado por impressão. Placas mistas ficam no histórico como rateios estimados, mas não contam como amostras independentes para alterar o peso de referência.</span></div>`;
+ return `<div class="panel" style="margin-top:14px;border-color:var(--line)"><h3 style="margin-bottom:6px">⚖️ Calibração do peso de referência</h3><p class="ok" style="margin:0 0 12px">O peso de referência do cadastro permanece separado do consumo atribuído em cada impressão. O sistema registra todos os rateios, mas só sugere uma atualização após <b>5 impressões concluídas de um único produto, com filamento de cor única informado manualmente pelo fatiador</b>. Placas mistas não contam para essa sugestão, porque só informam o total compartilhado.</p>${candidates.map(({p,m})=>{
+  const st=njCalibracaoStats(p.sku,p.produto,NJ.id),ref=Math.max(0,num(p.peso_g)),delta=ref>0?(st.median-ref)/ref*100:0;
+  const desc=st.count>=5?`Mediana observada: <b>${f2(st.median)} g/un.</b> · Média: ${f2(st.mean)} g/un. · Diferença para a referência: ${delta>=0?'+':''}${f2(delta)}%.`:
+   st.count?`Consumo médio observado: <b>${f2(st.mean)} g/un.</b> · Mediana: ${f2(st.median)} g/un. · ${st.count}/5 impressões válidas.`:
+   `Nenhuma amostra independente ainda. As impressões mistas são salvas como rateios estimados, mas não usadas para alterar o peso de referência.`;
+  return `<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px"><div style="font-weight:700">${esc(p.produto)} <small class="ok">(${esc(p.sku)})</small></div><div class="ok" style="margin:4px 0 8px">Peso de referência atual: <b>${f2(ref)} g</b><br>${desc}</div>${st.count>=5?`<button type="button" class="btn s" data-nja="calibrar:${esc(p.sku)}">Usar mediana como nova referência (${f2(st.median)} g)</button><small class="ok" style="display:block;margin-top:6px">Só altera o peso de referência do cadastro. Não altera os históricos nem recalcula preços/custos automaticamente.</small>`:`<small class="ok">A recomendação aparece após 5 impressões independentes válidas. Cada impressão conta uma vez, não cada peça.</small>`}</div>`;
+ }).join('')}</div>`;
+}
 function njCalc(J){const P=PRC(),need={},needGood={},needFail={},needGoodCost={},needFailCost={},groups=njPlateGroups(J);
  const mes=J.mesas.map((m,i)=>{const key=njPlateId(m),members=groups.get(key)||[{m,i}],leader=members[0].m,shared=members.length>1,isLeader=leader.id===m.id,
   hrs=Math.max(0,num(leader.d))*24+Math.max(0,num(leader.h))+Math.max(0,num(leader.m))/60,
@@ -2160,7 +2229,7 @@ function njCalc(J){const P=PRC(),need={},needGood={},needFail={},needGoodCost={}
   return{id:m.id,plateId:key,sharedPlate:shared,isPlateLeader:isLeader,plateCount:members.length,nome:m.nome.trim()||'Produto '+(i+1),hrs,hrsUnit:lote?hrs/q:hrs,modePecas,lote,q,g:gUnit,gInput,gT:gTotal,hrsT,plateHrs:hrsT,fil,fal:failCost,failG,failGTotal:failG,en,des,dep,custo:fil+en+des+dep+failCost,inf,weightShare:1};});
  /* Uma placa compartilhada consome o filamento uma única vez. O tempo da máquina também é contado uma vez e seus custos são rateados entre os produtos pelo peso estimado (peso unitário × quantidade); se não houver pesos, usa-se a quantidade. */
  groups.forEach(entries=>{if(entries.length<2)return;const ids=entries.map(x=>x.m.id),rowsForPlate=mes.filter(x=>ids.includes(x.id)),lead=rowsForPlate[0];if(!lead)return;
-  const weights=entries.map(({m})=>{const q=Math.max(1,num(m.qtd)||1),w=njPlateWeight(m);return Math.max(0,w*q)});let wTotal=weights.reduce((a,b)=>a+b,0);if(!(wTotal>0)){for(let i=0;i<weights.length;i++)weights[i]=Math.max(1,num(entries[i].m.qtd)||1);wTotal=weights.reduce((a,b)=>a+b,0)}
+  const unitWeights=njPlateWeights(entries),weights=entries.map(({m},i)=>unitWeights[i].unit*Math.max(1,num(m.qtd)||1));let wTotal=weights.reduce((a,b)=>a+b,0);if(!(wTotal>0)){for(let i=0;i<weights.length;i++)weights[i]=Math.max(1,num(entries[i].m.qtd)||1);wTotal=weights.reduce((a,b)=>a+b,0)}
   const total={fil:lead.fil,fal:lead.fal,gT:lead.gT,failG:lead.failG,en:lead.en,des:lead.des,dep:lead.dep,hrsT:lead.hrsT,custo:lead.custo,inf:lead.inf.slice()};
   rowsForPlate.forEach((r,i)=>{const share=wTotal?weights[i]/wTotal:1/rowsForPlate.length;r.weightShare=share;r.fil=total.fil*share;r.fal=total.fal*share;r.gT=total.gT*share;r.failG=total.failG*share;r.en=total.en*share;r.des=total.des*share;r.dep=total.dep*share;r.hrsT=total.hrsT*share;r.plateHrs=total.hrsT;r.hrsUnit=r.q>0?r.hrsT/r.q:0;r.plateTotalG=total.gT;r.plateTotalFil=total.fil;r.g=r.q>0?r.gT/r.q:0;r.gInput=r.gT;r.inf=total.inf;r.custo=r.fil+r.fal+r.en+r.des+r.dep;});
  });
@@ -2175,7 +2244,7 @@ function njCalc(J){const P=PRC(),need={},needGood={},needFail={},needGoodCost={}
   lucroSemAjustes=preco-fil-en-ext-emb-ent-tPay-tImp,lucroSemAjustesUnit=pieces?lucroSemAjustes/pieces:0,margemSemAjustes=preco?lucroSemAjustes/preco*100:0,
   gT=sum(mes,'gT'),sh=mes.map(m=>m.custo),shT=sum(sh,x=>x);mes.forEach((m,i)=>m.share=shT?m.custo/shT:1/Math.max(mes.length,1));
  const alerts=[];Object.entries(need).forEach(([k,gNeed])=>{if(num(gNeed)<=0)return;const info=njFilInfo(k);if(k==='D')alerts.push('Filamento padrão sem lote/estoque rastreável: serve para orçamento, mas para concluir a impressão selecione uma bobina ou material cadastrado.');else if(info.avail!=null&&gNeed>info.avail+0.0001)alerts.push(`Estoque insuficiente de ${info.label}: precisa de ${f2(gNeed)} g e há ${f2(info.avail)} g.`)});
- groups.forEach(entries=>{const leader=entries[0]&&entries[0].m;if(entries.length>1)entries.forEach(({m})=>{if(!(njPlateWeight(m)>0))alerts.push(`Informe o peso por unidade de ${String(m.nome||'um produto')} para ratear o custo da placa com mais precisão; enquanto isso, será usado o rateio por quantidade.`);});if(leader&&((entries.length>1)||(leader.modoPecas||'SEQUENCIAL')==='LOTE')&&entries.reduce((n,x)=>n+Math.max(1,num(x.m.qtd)||1),0)>1&&leader.tempoOrigemAuto&&!leader.tempoManual)alerts.push(`O tempo da placa de ${String(leader.nome||'produto')} ainda é uma estimativa baseada no tempo cadastrado de uma unidade. Informe o tempo total real do fatiador antes de concluir a impressão.`);});
+ groups.forEach(entries=>{const leader=entries[0]&&entries[0].m;if(entries.length>1){const known=entries.filter(({m})=>njPlateWeight(m)>0).length;entries.forEach(({m})=>{if(!(njPlateWeight(m)>0))alerts.push(known?`O produto ${String(m.nome||'sem nome')} não tem peso cadastrado. Para o rateio automático, o sistema estimará o peso pela mediana dos outros produtos desta placa; confira se os modelos têm tamanhos parecidos.`:`Nenhum produto desta placa tem peso cadastrado. O sistema dividirá o consumo por quantidade até você informar pesos unitários.`);});}if(leader&&((entries.length>1)||(leader.modoPecas||'SEQUENCIAL')==='LOTE')&&entries.reduce((n,x)=>n+Math.max(1,num(x.m.qtd)||1),0)>1&&leader.tempoOrigemAuto&&!leader.tempoManual)alerts.push(`O tempo da placa de ${String(leader.nome||'produto')} ainda é uma estimativa baseada no tempo cadastrado de uma unidade. Informe o tempo total real do fatiador antes de concluir a impressão.`);});
  if(num(J.margem)<0&&J.modoPreco==='MARGEM')alerts.push('A margem não pode ser negativa.');if(tx>=1)alerts.push('Taxas de pagamento e imposto somam 100% ou mais; não é possível calcular um preço por margem.');
  return{mes,need,needGood,needFail,needGoodCost,needFailCost,fil,en,des,fal,mo,hMo,emb,ext,extEmbalagemExtra,extVirgem,ent,direto,dep,tPay,tImp,indireto,custo,preco,lucro,rent,lucroVirgem,lucroVirgemUnit,margemVirgem,lucroSemAjustes,lucroSemAjustesUnit,margemSemAjustes,gT,hMaq,el,pieces,pay,payLab:pg[3],alerts,base,tx,margemPreco:num(J.margem)};
 }
@@ -2210,7 +2279,7 @@ function njStockShortages(J,c,oldRow){
 /* ---- abrir / novo ---- */
 function njNormalizeLoteFilamento(J){if(!J)return J;const ver=num(J._versaoFilamentoLote);if(ver<2){(J.mesas||[]).forEach(m=>{if((m.modoPecas||'SEQUENCIAL')!=='LOTE')return;const q=Math.max(1,num(m.qtd)||1);(m.fils||[]).forEach(f=>{if(num(f.g)>0)f.g=String(Math.round(num(f.g)*q*1000)/1000).replace('.',',');f.pesoBaseUnit=0;f.pesoOrigemAuto=false;});});J._versaoFilamentoLote=2;}return J}
 function njOpen(rid){if(!rid){NJ=njNovo();NJT=0;NJERR=false;NJSAVED=false}else{const r=rows('impressoes').find(x=>x._id===rid);if(!r)return toast('Registro não encontrado');
- if(r._job){NJ=njNormalizeLoteFilamento(JSON.parse(JSON.stringify(r._job)));NJ.id=r._id}else{NJ=njNovo();NJ.id=r._id;NJ.codigo=r.codigo||'';NJ.tipo=['ENCOMENDA','ESTOQUE','TESTE','LOJA','PESSOAL'].includes(r.tipo)?r.tipo:'ENCOMENDA';NJ.status=(NJ_ST.find(s=>s[2]===r.status)||NJ_ST[0])[0];NJ.cliente.nome=r.cliente||'';
+ if(r._job){NJ=njNormalizeLoteFilamento(JSON.parse(JSON.stringify(r._job)));NJ.id=r._id;(NJ.mesas||[]).forEach(m=>{const p=(m.sku&&rows('produtos').find(x=>eq(x.sku,m.sku)))||rows('produtos').find(x=>eq(x.produto,m.nome));if(p){m.sku=m.sku||p.sku;if(!(num(m.pesoUnitProduto)>0))m.pesoUnitProduto=Math.max(0,num(p.peso_g));}})}else{NJ=njNovo();NJ.id=r._id;NJ.codigo=r.codigo||'';NJ.tipo=['ENCOMENDA','ESTOQUE','TESTE','LOJA','PESSOAL'].includes(r.tipo)?r.tipo:'ENCOMENDA';NJ.status=(NJ_ST.find(s=>s[2]===r.status)||NJ_ST[0])[0];NJ.cliente.nome=r.cliente||'';
   const m=NJ.mesas[0],qLegacy=Math.max(1,num(r.qtd_pecas)||1);m.nome=r.produtos||'';m.qtd=String(qLegacy);m.modoPecas=qLegacy>1?'LOTE':'SEQUENCIAL';m.fils[0].g=r.peso_total_g?f2(num(r.peso_total_g)):'';m.h=r.tempo_total_h?f2(num(r.tempo_total_h)):'';NJ._versaoFilamentoLote=2;NJ.modoPreco='PRECO';NJ.precoFinal=r.preco_total?f2(num(r.preco_total)):'';NJ.obs=r.observacoes||''}
  NJT=4;NJERR=false;NJSAVED=!!r._job}
  go('v-nova')}
@@ -2241,7 +2310,7 @@ function njCli(){const C=NJ.cliente;return`<div class="njsec"><div class="f"><la
 function njFilRow(m,f){const o=njFilOpts(),has=o.some(x=>x.key===f.key),L=has?o:[...o,njFilInfo(f.key)],lote=(m.modoPecas||'SEQUENCIAL')==='LOTE',ph=lote?'g totais desta cor na placa':'g por unidade';
  return`<div class="njfr"><span class="njdot">🎨</span><select data-njp="fil.${m.id}.${f.id}.key">${L.map(x=>`<option value="${esc(x.key)}" ${x.key===f.key?'selected':''}>${esc(x.label)}${x.avail!=null?' · '+f2(x.avail)+' g':''}</option>`).join('')}</select>${njInp(`fil.${m.id}.${f.id}.g`,f.g,ph,`inputmode="decimal" aria-label="${lote?'Filamento total desta cor na mesa':'Filamento por unidade desta cor'}" title="${lote?'Informe os gramas totais desta cor usados na placa inteira; não multiplique pela quantidade de peças.':'Informe os gramas desta cor por peça; o sistema multiplicará pela quantidade.'}"`)}<span class="ok">g</span>${m.multi&&m.fils.length>1?`<button type="button" class="btn s njx" data-nja="delFil:${m.id}:${f.id}" aria-label="Remover cor">🗑</button>`:'<span></span>'}</div>`}
 function njPickProd(id,sku){const m=NJ.mesas.find(x=>x.id===id),p=rows('produtos').find(x=>eq(x.sku,sku));if(!m||!p)return;
- m.nome=p.produto||m.nome;m.pesoUnitProduto=Math.max(0,num(p.peso_g));
+ m.sku=p.sku||m.sku||'';m.nome=p.produto||m.nome;m.pesoUnitProduto=Math.max(0,num(p.peso_g));
  const members=njPlateMembers(NJ,m),shared=members.length>1;
  if(!shared){m.tempoBaseUnit=Math.max(0,num(p.tempo_h));m.tempoOrigemAuto=m.tempoBaseUnit>0;m.tempoManual=false;njSetMesaTimeHours(m,m.tempoBaseUnit);}
  if(!shared&&num(p.peso_g)>0&&m.fils[0]){const unitG=num(p.peso_g),q=Math.max(1,num(m.qtd)||1),isLot=(m.modoPecas||'SEQUENCIAL')==='LOTE';m.fils[0].g=f2(unitG*(isLot?q:1));m.fils[0].pesoBaseUnit=unitG;m.fils[0].pesoOrigemAuto=true;}
@@ -2279,12 +2348,12 @@ function njAddProductToPlate(id){const m=NJ.mesas.find(x=>x.id===id);if(!m)retur
  const n=njMesa();n.plateId=plate;n.modoPecas='LOTE';n.modo=leader.modo;n.impressora=leader.impressora;n.d=leader.d;n.h=leader.h;n.m=leader.m;n.fils=[];n.multi=false;n.falhaG='';n.tempoManual=leader.tempoManual;n.tempoOrigemAuto=leader.tempoOrigemAuto;n.tempoBaseUnit=leader.tempoBaseUnit;n.pesoUnitProduto=0;
  const lastIdx=Math.max(...members.map(x=>NJ.mesas.findIndex(y=>y.id===x.id)));NJ.mesas.splice(lastIdx+1,0,n);
  if(leader.fils&&leader.fils[0]&&leader.fils[0].pesoOrigemAuto)njUpdatePlateFilamentEstimate(NJ,plate);
- NJSAVED=false;njRender();toast('Produto adicionado à mesma placa. Informe o filamento total por cor e o tempo total da placa conforme o fatiador.');}
+ NJSAVED=false;njRender();toast('Produto adicionado à mesma placa. O sistema rateia o filamento total por peso × quantidade; pesos ausentes usam a mediana dos demais. Informe o total real de filamento e o tempo da placa pelo fatiador.');}
 function njMesaH(m,i){const pr=njPrinters(),members=njPlateMembers(NJ,m),shared=members.length>1,leader=members[0]||m,isLeader=leader.id===m.id,leaderIndex=NJ.mesas.findIndex(x=>x.id===leader.id),plateNo=leaderIndex+1,shown=m.multi?m.fils:(m.fils||[]).slice(0,1),plateLabel=shared?`Placa #${plateNo}`:`Mesa #${i+1}`;
  const prodSelect=(PL=>PL.length?`<div class="f"><label>Usar produto já cadastrado</label><select data-njp="mesa.${m.id}.__prod"><option value="">— escolher (preenche nome, peso, tempo e filamento) —</option>${PL.map(p=>`<option value="${esc(p.sku)}" ${nz(p.produto)===nz(m.nome)?'selected':''}>${esc(p.sku)} · ${esc(p.produto)}</option>`).join('')}</select></div>`:'')(rows('produtos').filter(p=>p.sku&&p.produto&&!eq(p.ativo,'NÃO')));
  const machineFields=shared&&!isLeader?`<div class="note" style="margin-top:12px"><span>🔗 <b>Esta peça compartilha a ${plateLabel}</b> com os demais produtos. Impressora, tempo, energia, depreciação e desgaste são definidos uma única vez na primeira linha da placa.</span></div>`:`<div class="g2" style="margin-top:12px"><div class="f"><label>Impressora</label><select data-njp="mesa.${m.id}.impressora">${pr.map(p=>`<option ${p===(m.impressora||'Impressora padrão')?'selected':''}>${esc(p)}</option>`).join('')}<option value="__new">➕ Cadastrar impressora…</option></select><small class="ok">${(pn=>pn.reg?`${f2(pn.pot)} W · ${money(pn.valor)} · vida ${f2(pn.vida)} h`:'Sem cadastro: usa os valores de Preços › Calculadora')(njPrn(m.impressora))}</small></div><div class="f"><label>Modo de Execução</label>${i===0?'<div class="seg"><button type="button" class="on" disabled>Primeira mesa</button></div><small class="ok">Começa assim que o trabalho inicia</small>':njSeg(`mesa.${m.id}.modo`,m.modo,[['SEQ','Sequencial'],['PAR','Paralelo']])+`<small class="ok">${m.modo==='PAR'?'Roda junto com a mesa anterior':'Aguarda mesa anterior terminar'}</small>`}</div></div>`;
  const batchFields=shared?(isLeader?`<div class="f" style="margin-top:12px"><label>Modo desta placa</label><div class="njok">✓ Produtos diferentes na mesma placa · cálculo de máquina compartilhado</div><small class="ok">O tempo e o consumo total de filamento são informados uma vez nesta primeira linha.</small></div>`:''):`<div class="f" style="margin-top:12px"><label>Como as unidades serão impressas</label><div class="seg"><button type="button" data-nja="batchMode:${m.id}:LOTE" class="${(m.modoPecas||'SEQUENCIAL')==='LOTE'?'on':''}">Várias na mesma mesa/placa</button><button type="button" data-nja="batchMode:${m.id}:SEQUENCIAL" class="${(m.modoPecas||'SEQUENCIAL')==='SEQUENCIAL'?'on':''}">Uma por vez</button></div><small class="ok">${(m.modoPecas||'SEQUENCIAL')==='LOTE'?'Informe os gramas totais de cada cor usados na placa inteira. O sistema NÃO multiplica esse valor pela quantidade. O tempo, a energia e o desgaste também contam uma vez para a placa.':'Informe os gramas por unidade; o sistema multiplica pela quantidade. Tempo, energia e desgaste também são calculados para cada execução.'}</small></div>`;
- const qtyWeightField=`<div class="f"><label>Quantidade de peças deste produto na placa *</label>${njInp(`mesa.${m.id}.qtd`,m.qtd,'1','inputmode="numeric"')}<small class="ok"><b>Informe quantas unidades reais saem desta mesa.</b> Ex.: se há 15 chaveiros na placa, coloque 15. Este número divide os custos totais para calcular o valor por unidade.</small></div>${shared?`<div class="f"><label>Peso unitário para rateio (g)</label>${njInp(`mesa.${m.id}.pesoUnitProduto`,m.pesoUnitProduto||'','Ex.: 6,26','inputmode="decimal"')}<small class="ok">Usado para dividir o filamento e os custos da placa entre os produtos, conforme peso × quantidade. Vem do cadastro quando disponível.</small></div>`:''}`;
+ const qtyWeightField=`<div class="f"><label>Quantidade de peças deste produto na placa *</label>${njInp(`mesa.${m.id}.qtd`,m.qtd,'1','inputmode="numeric"')}<small class="ok"><b>Informe quantas unidades reais saem desta mesa.</b> Ex.: se há 15 chaveiros na placa, coloque 15. Este número divide os custos totais para calcular o valor por unidade.</small></div>${shared?`<div class="f"><label>Peso unitário para rateio (g)</label>${njInp(`mesa.${m.id}.pesoUnitProduto`,m.pesoUnitProduto||'','Ex.: 6,26','inputmode="decimal"')}<small class="ok">O peso vem do cadastro quando disponível. Se faltar em alguns produtos, o sistema estima pela mediana dos demais pesos desta placa; se nenhum tiver peso, divide por quantidade. O total de gramas informado pelo fatiador é rateado por peso estimado × quantidade.</small></div>`:''}`;
  const timeAndWeight=`<div class="f"><label>${(m.modoPecas||'SEQUENCIAL')==='LOTE'?'Tempo total da mesa/placa':'Tempo por unidade'}</label><div class="g3t"><div>${njInp(`mesa.${m.id}.d`,m.d,'0','inputmode="numeric"')}<small>dias</small></div><div>${njInp(`mesa.${m.id}.h`,m.h,'0','inputmode="numeric"')}<small>horas</small></div><div>${njInp(`mesa.${m.id}.m`,m.m,'0','inputmode="numeric"')}<small>minutos</small></div></div><small class="ok">${shared?'Tempo único para todos os produtos desta placa; use o total do fatiador.':(m.modoPecas||'SEQUENCIAL')==='LOTE'?'Tempo por unidade cadastrado é só uma estimativa. Substitua pelo tempo total da placa do fatiador.':'Este tempo será multiplicado pela quantidade de unidades.'}</small></div>`;
  return`<div class="njm"><div class="njmh"><b>${shared?(isLeader?`${plateLabel} · ${members.length} produtos`:`Produto adicional · mesma ${plateLabel}`):`Mesa #${i+1}`}</b><span>${isLeader?`<button type="button" class="btn s" data-nja="samePlate:${m.id}">＋ Outro produto nesta placa</button>`:''} <button type="button" class="btn s" data-nja="dupMesa:${m.id}">⧉ ${shared?'Duplicar em outra mesa':'Duplicar'}</button> ${NJ.mesas.length>1?`<button type="button" class="btn s njx" data-nja="delMesa:${m.id}" aria-label="Remover mesa/produto">🗑</button>`:''}</span></div>
  ${prodSelect}
@@ -2294,7 +2363,7 @@ function njMesaH(m,i){const pr=njPrinters(),members=njPlateMembers(NJ,m),shared=
  ${shared&&!isLeader?`<div class="note" style="margin-top:10px"><span>O filamento usado pela placa é informado uma única vez na primeira linha. Não adicione os mesmos gramas aqui.</span></div>`:`<div class="f" style="margin-top:10px"><label>Filamento perdido em falhas (g, total ${shared?'da placa':'desta mesa'})</label>${njInp(`mesa.${m.id}.falhaG`,m.falhaG??'','0','inputmode="decimal"')}<small class="ok">Informe somente a perda real total. ${shared?'Como os produtos compartilham a placa, registre esta perda uma única vez.':'Deixe 0/vazio se não houve perda.'} Entra no custo e na baixa do estoque.</small></div>`}
  ${shared&&!isLeader?'':`<div class="njmc"><span>🎨</span><div><b>Impressão Multicolorida</b><small>${m.multi?m.fils.length+' cores':'Cor única'}</small></div>${njSw(m.multi,'multi:'+m.id)}</div><div class="njhead" style="margin:14px 0 8px"><b>${shared?'Filamento total da placa (g) por material/cor':(m.modoPecas||'SEQUENCIAL')==='LOTE'?'Filamento total da mesa (g)':'Filamento por unidade (g)'} · ${shown.length} cor(es)</b>${m.multi&&m.fils.length<16?`<button type="button" class="btn s" data-nja="addFil:${m.id}">+ Adicionar Cor</button>`:''}</div>${shown.map(f=>njFilRow(m,f)).join('')}<div class="njtot"><span>${shared?'Total informado da placa':'Filamento total desta mesa'}</span><b id="mpt-${m.id}">0g</b></div>`}
  <div class="njsum" id="ms-${m.id}"></div></div>`}
-function njT2(){return`<div class="panel"><div class="njhead"><div><h3 style="margin:0">Mesas de Impressão</h3><small class="ok">${NJ.mesas.length} / 50 linhas de produto · ${njPlateGroups(NJ).size} placa(s)</small></div>${NJ.mesas.length<50?'<button type="button" class="btn p" data-nja="addMesa">+ Adicionar Mesa</button>':''}</div><div style="margin-top:14px">${NJ.mesas.map(njMesaH).join('')}</div></div>`}
+function njT2(){return`<div class="panel"><div class="njhead"><div><h3 style="margin:0">Mesas de Impressão</h3><small class="ok">${NJ.mesas.length} / 50 linhas de produto · ${njPlateGroups(NJ).size} placa(s)</small></div>${NJ.mesas.length<50?'<button type="button" class="btn p" data-nja="addMesa">+ Adicionar Mesa</button>':''}</div><div style="margin-top:14px">${NJ.mesas.map(njMesaH).join('')}</div></div>${njCalibrationPanel()}`}
 function njMesaSum(m){const rr=(a,b)=>`<div class="rw"><span>${a}</span><b class="njpr">${b}</b></div>`;const title=m.sharedPlate?(m.isPlateLeader?'Resumo dos produtos desta placa':'Custo atribuído a este produto'):'Resumo desta mesa';return`<div class="njsh">💰 ${title} · ${m.q} unidade(s)</div>${m.sharedPlate?'<small class="ok">Filamento, máquina e perdas da placa rateados conforme peso unitário × quantidade.</small>':'<div class="njsh2">📦 Preço do Filamento (FIFO):</div>'+m.inf.map(i=>rr(esc(i.label),money(i.price)+'/kg')).join('')}<div class="g2 njsg"><div><small>Filamento atribuído (${f2(m.gT)} g):</small><b>${money(m.fil)}</b></div><div><small>Energia atribuída:</small><b>${money(m.en)}</b></div><div><small>Depreciação atribuída:</small><b>${money(m.dep)}</b></div><div><small>Desgaste atribuído:</small><b>${money(m.des)}</b></div><div><small>Falhas atribuídas:</small><b>${money(m.fal)}</b></div></div><div class="rw"><span><b>Custo atribuído:</b></span><b class="njpr">${money(m.custo)}</b></div><div class="rw" style="border:0"><span><b>Custo por unidade:</b></span><b class="njpr">${money(m.q?m.custo/m.q:0)}</b></div>`}
 function njT3(){const J=NJ,tot=J.usaExtras?sum(J.extras,e=>num(e.qtd)*num(e.custo)):0;
  return`<div class="panel"><div class="njhead"><div><h3 style="margin:0">📦 Materiais Extras</h3><small class="ok"><span id="ext-n">${J.usaExtras?J.extras.length:0}</span> material(is) · Total: <span id="ext-tot">${money(tot)}</span></small></div>${njSw(J.usaExtras,'sw:usaExtras')}</div>
@@ -2373,6 +2442,7 @@ function njOnInput(e){if(cur!=='v-nova'||!NJ)return;const t=e.target;if(t.id==='
 function njOnClick(e){if(cur!=='v-nova'||!NJ)return;const b=e.target.closest('[data-nja]');if(!b)return;const[a,x,y]=b.dataset.nja.split(':');NJSAVED=a==='copy'||a==='wa'||a==='advance'||a==='save'||a==='fresh'?NJSAVED:false;
  const M=id=>NJ.mesas.find(m=>m.id===id);
  if(a==='tab'){NJT=+x;NJERR=false;njRender();scrollTo(0,0)}
+ else if(a==='calibrar'){const p=rows('produtos').find(z=>eq(z.sku,x));if(!p)return toast('Produto não encontrado no cadastro.');const st=njCalibracaoStats(p.sku,p.produto,NJ.id);if(st.count<5||!(st.median>0))return toast('Ainda não há 5 impressões independentes válidas para sugerir uma referência.');const next=Math.round(st.median*100)/100;if(!confirm(`Atualizar o peso de referência de ${p.produto} (${p.sku}) de ${f2(p.peso_g)} g para ${f2(next)} g?\n\nIsso altera apenas o peso de referência do cadastro. Preços, custos e históricos não serão recalculados nem alterados automaticamente.`))return;snapSave('antes de atualizar peso de referência por calibração');const ok=withDbTransaction(()=>{setRows('produtos',rows('produtos').map(z=>eq(z.sku,p.sku)?{...z,peso_g:next,peso_referencia_calibrada_em:todayS(),peso_referencia_calibracao_amostras:st.count}:z));return true});if(ok===false)return;NJ.mesas.forEach(mm=>{const pp=(mm.sku&&eq(mm.sku,p.sku))||eq(mm.nome,p.produto);if(pp)mm.pesoUnitProduto=next});njRender();toast(`Referência atualizada para ${f2(next)} g. Custos e preços ficaram intactos.`)}
  else if(a==='next'){if(NJT===0&&NJ.tipo==='ENCOMENDA'&&!NJ.cliente.nome.trim()){NJERR=true;njRender();return toast('Informe o cliente para continuar')}NJT=Math.min(4,NJT+1);NJERR=false;njRender();scrollTo(0,0)}
  else if(a==='prev'){NJT=Math.max(0,NJT-1);njRender();scrollTo(0,0)}
  else if(a==='seg'){if(String(x).includes('.')){njSet(x,y);const mm=x.match(/^mesa\.([^.]+)\.(modo|impressora)$/);if(mm){const m=M(mm[1]),grp=m&&njPlateMembers(NJ,m);if(grp&&grp.length>1&&grp[0].id===m.id)grp.slice(1).forEach(z=>{z.modo=m.modo;z.impressora=m.impressora;});}}else NJ[x]=y;if(x==='tipo'&&y!=='ENCOMENDA')NJERR=false;if(x==='tipo'&&y==='TESTE'){NJ.status='APROVADA';NJ.testResult='';NJ.testFailureReason='';NJ.recoveredExtras=[]}NJSAVED=false;njRender()}
@@ -2482,6 +2552,26 @@ function njSaveImpl(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
   const faltas=njStockShortages(J,c,old);
   if(faltas.length){NJT=1;njRender();alert('Não é possível concluir esta impressão porque o estoque cadastrado é insuficiente ou há um material sem cadastro:\n\n• '+faltas.join('\n• ')+'\n\nAtualize o estoque real ou selecione o material correto e tente novamente. Nenhum registro desta impressão foi gravado.');return false}
  }
+ /* Quantidade real de peças boas/perdidas: o plano não é tratado automaticamente como produção vendável. */
+ if(st==='CONCLUIDA'&&J.tipo!=='TESTE'&&['ESTOQUE','LOJA','ENCOMENDA'].includes(J.tipo)){
+  const existingLots=old?rows('lotes').filter(x=>x._imp===old._id):[];
+  for(const m of (J.mesas||[])){
+   const planned=Math.max(1,Math.round(num(m.qtd)||1));
+   let defaultGood=m.qtdBoas==null?planned:Math.round(num(m.qtdBoas));
+   if(m.qtdBoas==null&&existingLots.length){
+    let candidates=existingLots.filter(x=>x._mesaId&&x._mesaId===m.id);
+    const sameModel=(J.mesas||[]).filter(x=>m.sku?eq(x.sku,m.sku):eq(x.nome,m.nome));
+    if(!candidates.length&&sameModel.length===1)candidates=existingLots.filter(x=>m.sku?eq(x.sku_produto,m.sku):(eq(x.produto,m.nome)));
+    if(candidates.length===1)defaultGood=Math.round(num(candidates[0].qtd_produzida));
+   }
+   defaultGood=Math.max(0,Math.min(planned,defaultGood));
+   const answer=prompt(`Conferência da produção — ${m.nome||'Produto'}\nPlanejado: ${planned} unidade(s).\nQuantas ficaram BOAS? As restantes serão registradas como perdidas.`,String(defaultGood));
+   if(answer===null){NJT=4;njRender();return false;}
+   const raw=String(answer).trim(),good=num(raw);
+   if(!raw||!Number.isInteger(good)||good<0||good>planned){alert(`Informe um número inteiro entre 0 e ${planned} para ${m.nome||'o produto'}. A impressão ainda não foi salva.`);NJT=4;njRender();return false;}
+   m.qtdBoas=good;m.qtdPerdidas=planned-good;
+  }
+ }
  if(old)njRevert(old._id,true);
  J.mesas.forEach(m=>m.fils.forEach(f=>{if(st==='CONCLUIDA'){if(f.price==null)f.price=njFilInfo(f.key).price}else delete f.price}));c=njCalc(J);
  const id=J.id||uid(),codigo=J.codigo||nextId(mod('impressoes')),names=c.mes.map(m=>m.nome).join(', '),ok=st==='APROVADA'||st==='CONCLUIDA',approvedTest=J.tipo==='TESTE'&&st==='CONCLUIDA'&&J.testResult==='APROVADO',failedTest=J.tipo==='TESTE'&&st==='CONCLUIDA'&&J.testResult==='FRACASSADO',stockOutput=st==='CONCLUIDA'&&(isStk(J.tipo)||approvedTest),sinal=Math.min(num(J.sinal),c.preco);let cid=J.cliente.id;
@@ -2493,19 +2583,29 @@ function njSaveImpl(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
   if(oldPed)setRows('personalizados',rows('personalizados').map(r=>r._imp===id?{...r,...o}:r));else njAdd('personalizados',{pedido_sku:nextId(mod('personalizados')),...o,_imp:id})}
  else if(oldPed)setRows('personalizados',rows('personalizados').filter(r=>r._imp!==id));
  /* ordem de produção */
- if(stockOutput)c.mes.forEach(m=>njProduto(m,c,J));
+ const stockSkuByMesa=new Map();
+ if(stockOutput){
+  const costContext={...c,mes:c.mes.map(cm=>{const source=(J.mesas||[]).find(jm=>jm.id===cm.id)||{},good=Math.max(0,num(source.qtdBoas==null?cm.q:source.qtdBoas));return{...cm,q:good}})};
+  c.mes.forEach(m=>{
+   const source=(J.mesas||[]).find(jm=>jm.id===m.id)||{},good=Math.max(0,num(source.qtdBoas==null?m.q:source.qtdBoas)),existing=acharProduto(m.nome);
+   // Zero good units means no usable output: keep an existing product's cost untouched.
+   // If it is a first-ever product, still create its catalog record so the loss has a SKU, but never add sellable stock.
+   const sku=good>0?njProduto({...m,q:good},costContext,J):(existing?existing.sku:njProduto({...m,q:m.q},costContext,J));
+   stockSkuByMesa.set(m.id,sku);
+  });
+ }
  if(ok){
   const unica=c.mes.length===1?produtoCadastro(c.mes[0].nome):null;
-  njAdd('producao',{op:oldOp||nextId(mod('producao')),data_abertura:hoje,sku_produto:unica?unica.sku:'',produto:unica?unica.produto:names,qtd_planejada:c.pieces,qtd_produzida:st==='CONCLUIDA'&&!failedTest?c.pieces:0,qtd_perdida:failedTest?c.pieces:0,data_inicio:hoje,prazo:J.prazo||'',status:st==='CONCLUIDA'?'CONCLUÍDA':'EM PRODUÇÃO',tempo_estimado:r2(c.el),impressora:[...new Set(J.mesas.map(m=>m.impressora||'Impressora padrão'))].join(', '),observacoes:'Origem: Nova impressão '+codigo+(J.tipo==='ENCOMENDA'?' · '+J.cliente.nome:'')+(approvedTest?' · TESTE APROVADO PARA VENDA':'')+(failedTest?' · TESTE FRACASSADO · '+J.testFailureReason:''),_imp:id})}
+  njAdd('producao',{op:oldOp||nextId(mod('producao')),data_abertura:hoje,sku_produto:unica?unica.sku:'',produto:unica?unica.produto:names,qtd_planejada:c.pieces,qtd_produzida:st==='CONCLUIDA'&&!failedTest?(J.tipo!=='TESTE'&&['ESTOQUE','LOJA','ENCOMENDA'].includes(J.tipo)?(J.mesas||[]).reduce((a,m)=>a+Math.max(0,num(m.qtdBoas==null?m.qtd:m.qtdBoas)),0):c.pieces):0,qtd_perdida:failedTest?c.pieces:(st==='CONCLUIDA'&&J.tipo!=='TESTE'&&['ESTOQUE','LOJA','ENCOMENDA'].includes(J.tipo)?(J.mesas||[]).reduce((a,m)=>a+Math.max(0,num(m.qtdPerdidas)),0):0),data_inicio:hoje,prazo:J.prazo||'',status:st==='CONCLUIDA'?'CONCLUÍDA':'EM PRODUÇÃO',tempo_estimado:r2(c.el),impressora:[...new Set(J.mesas.map(m=>m.impressora||'Impressora padrão'))].join(', '),observacoes:'Origem: Nova impressão '+codigo+(J.tipo==='ENCOMENDA'?' · '+J.cliente.nome:'')+(approvedTest?' · TESTE APROVADO PARA VENDA':'')+(failedTest?' · TESTE FRACASSADO · '+J.testFailureReason:''),_imp:id})}
 
  /* sinal */
  if(J.tipo==='ENCOMENDA'&&ok&&sinal>0&&J.lancaSinal)njAdd('financeiro',{data:(oldFin&&oldFin.data)||hoje,tipo:'ENTRADA',categoria:'PEDIDO',descricao:'Sinal '+codigo+' · '+J.cliente.nome.trim(),valor:r2(sinal),forma_pagamento:c.payLab,status:'RECEBIDO',observacoes:'Origem: Nova impressão',_imp:id});
  /* conclusão: baixa de estoque e entrada no estoque */
  let fx={};
  if(st==='CONCLUIDA'){fx=njBaixa(J,c);let recoveredTest={recoveredCost:0,recovered:[]};if(failedTest){recoveredTest=njApplyRecoveredExtras(J,c,fx);c=recoveredTest.c;fx=recoveredTest.fx}c=stockApplyActualCosts(c,J,fx);
-  if(stockOutput)c.mes.forEach(m=>{const sku=njProduto(m,c,J),share=num(m.share)||1/Math.max(c.mes.length,1),inventoryCost=Math.max(0,num(c.custo)-num(c.ent)-num(c.tPay)-num(c.tImp)),lotCost=r2(inventoryCost*share),lotMat=r2((num(c.fil)+num(c.fal)+num(c.emb)+num(c.ext))*share);njAdd('lotes',{data:hoje,lote:nextId(mod('lotes')),sku_produto:sku,produto:m.nome,qtd_planejada:m.q,qtd_produzida:m.q,qtd_perdida:0,percentual_perda:0,material_consumido:Math.round((num(m.gT)+num(m.failG))*1000)/1000,tempo_total:r2(m.hrsT),custo_materiais_real:lotMat,custo_total_real:lotCost,custo_unitario_real:m.q? r2(lotCost/m.q):0,impressao_origem:codigo,observacoes:'Origem: Nova impressão '+codigo+' · '+(m.lote?'lote de '+m.q+' unidade(s) na mesma mesa':'produção sequencial de '+m.q+' unidade(s)'),_imp:id})})}
+  if(stockOutput)c.mes.forEach(m=>{const source=(J.mesas||[]).find(jm=>jm.id===m.id)||{},qGood=Math.max(0,num(source.qtdBoas==null?m.q:source.qtdBoas)),qLost=Math.max(0,num(source.qtdPerdidas)),sku=stockSkuByMesa.get(m.id)||((acharProduto(m.nome)||{}).sku)||njProduto({...m,q:m.q},c,J),share=num(m.share)||1/Math.max(c.mes.length,1),inventoryCost=Math.max(0,num(c.custo)-num(c.ent)-num(c.tPay)-num(c.tImp)),lotCost=r2(inventoryCost*share),lotMat=r2((num(c.fil)+num(c.fal)+num(c.emb)+num(c.ext))*share),unitCost=qGood>0?Math.round((lotCost/qGood)*1000000)/1000000:0;njAdd('lotes',{data:hoje,lote:nextId(mod('lotes')),sku_produto:sku,produto:m.nome,qtd_planejada:m.q,qtd_produzida:qGood,qtd_perdida:qLost,percentual_perda:m.q?r2(qLost/m.q*100):0,material_consumido:Math.round((num(m.gT)+num(m.failG))*1000)/1000,tempo_total:r2(m.hrsT),custo_materiais_real:lotMat,custo_total_real:lotCost,custo_unitario_real:unitCost,impressao_origem:codigo,observacoes:'Origem: Nova impressão '+codigo+' · '+(m.lote?'lote de '+m.q+' unidade(s) na mesma mesa':'produção sequencial de '+m.q+' unidade(s)')+` · ${qGood} boa(s), ${qLost} perdida(s)`,_imp:id,_mesaId:m.id})})}
  /* registro da impressão */
- const job=JSON.parse(JSON.stringify({...J,id,codigo,status:st})),row={codigo,data:(old&&old.data)||hoje,tipo:J.tipo,status:J.tipo==='TESTE'&&st==='CONCLUIDA'?(approvedTest?'TESTE APROVADO':'TESTE FRACASSADO'):NJ_ST.find(s=>s[0]===st)[2],resultado_teste:J.tipo==='TESTE'?(J.testResult||''):'',motivo_teste:J.tipo==='TESTE'?(J.testFailureReason||''):'',cliente:J.tipo==='ENCOMENDA'?J.cliente.nome.trim():'',preco_total:r2(c.preco),produtos:names,qtd_pecas:c.pieces,peso_total_g:Math.round(num(c.gT)*1000)/1000,tempo_total_h:r2(c.el),custo_total:r2(c.custo),perda_teste:failedTest?njTestLossBase(c):0,custo_recuperado:failedTest?r2(num(fx.recoveredExtraCostReal)):0,componentes_recuperados:failedTest?(fx.recoveredExtras||[]):[],lucro:failedTest?-njTestLossBase(c):r2(c.lucro),margem:failedTest?0:r1(c.rent),lucro_virgem:r2(c.lucroVirgem),margem_virgem:r1(c.margemVirgem),lucro_sem_ajustes:r2(c.lucroSemAjustes),margem_sem_ajustes:r1(c.margemSemAjustes),versao_lucros:2,observacoes:J.obs,_job:job,_fx:fx};
+ const job=JSON.parse(JSON.stringify({...J,id,codigo,status:st})),consumoLog=njBuildConsumptionLog(J,c,id,st,failedTest),row={codigo,data:(old&&old.data)||hoje,tipo:J.tipo,status:J.tipo==='TESTE'&&st==='CONCLUIDA'?(approvedTest?'TESTE APROVADO':'TESTE FRACASSADO'):NJ_ST.find(s=>s[0]===st)[2],resultado_teste:J.tipo==='TESTE'?(J.testResult||''):'',motivo_teste:J.tipo==='TESTE'?(J.testFailureReason||''):'',cliente:J.tipo==='ENCOMENDA'?J.cliente.nome.trim():'',preco_total:r2(c.preco),produtos:names,qtd_pecas:c.pieces,peso_total_g:Math.round(num(c.gT)*1000)/1000,tempo_total_h:r2(c.el),custo_total:r2(c.custo),perda_teste:failedTest?njTestLossBase(c):0,custo_recuperado:failedTest?r2(num(fx.recoveredExtraCostReal)):0,componentes_recuperados:failedTest?(fx.recoveredExtras||[]):[],lucro:failedTest?-njTestLossBase(c):r2(c.lucro),margem:failedTest?0:r1(c.rent),lucro_virgem:r2(c.lucroVirgem),margem_virgem:r1(c.margemVirgem),lucro_sem_ajustes:r2(c.lucroSemAjustes),margem_sem_ajustes:r1(c.margemSemAjustes),versao_lucros:2,observacoes:J.obs,_job:job,_fx:fx,_consumoPorProduto:consumoLog};
  if(old)setRows('impressoes',rows('impressoes').map(r=>r._id===id?{...r,...row}:r));else njAdd('impressoes',row,id);
  NJ.id=id;NJ.codigo=codigo;NJ.cliente.id=cid||'';NJSAVED=true;NJT=4;nav();njRender();scrollTo(0,0);
  toast(J.tipo==='TESTE'&&st==='CONCLUIDA'?(approvedTest?'Teste aprovado: peça(s) enviada(s) ao estoque para venda.':'Teste fracassado registrado; nenhuma peça entrou no estoque.'):keep?'Status atualizado: '+NJ_ST.find(s=>s[0]===st)[1]:(st==='ORCAMENTO'?'Orçamento '+codigo+' gerado':'Impressão '+codigo+' salva'));if(st==='CONCLUIDA'&&!old&&J.tipo!=='TESTE')afterDbCommit(()=>setTimeout(()=>aopPrint(J,row),140))}
@@ -2832,6 +2932,42 @@ function stockFinanceExcluded(finId){const f=rows('financeiro').find(x=>x._id===
 function stockFinanceRemaining(finId,excludePurchaseId=''){const f=rows('financeiro').find(x=>x._id===finId);if(!f)return 0;return Math.max(0,r2(num(f.valor)-stockFinanceAllocation(finId,excludePurchaseId)-stockFinanceExcluded(finId)));}
 function stockFinanceUnallocated(){return rows('financeiro').filter(f=>eq(f.tipo,'SAÍDA')&&!eq(f.status,'CANCELADO')&&((/MATERIAL|EMBALAGEM|FERRAGEM|INVESTIMENTO/i.test(String(f.categoria||''))&&/filamento|material|pla\b|petg|bobina|mosqueteir|compra|embalagem|ím[aã]|ferragem/i.test(String(f.descricao||'')))||/compra.*(filamento|material|pla\b|petg|bobina|mosqueteir|embalagem)/i.test(String(f.descricao||''))||/\bverniz\b|\bcola\b|\badesivo\b|\bsílica\b|\bsilica\b|\bdessecante\b|\blixa\b|\btinta acrílica\b|\bsolvente\b|\bálcool isopropílico\b|\blubrificante\b|\bgraxa\b/i.test(String(f.descricao||'')))).map(f=>({...f,stockAlocado:stockFinanceAllocation(f._id),stockExcluido:stockFinanceExcluded(f._id),stockRestante:stockFinanceRemaining(f._id)})).filter(f=>f.stockRestante>.01).sort((a,b)=>dt(b.data).localeCompare(dt(a.data)));}
 function stockModal(title,body,onSave,saveLabel='Salvar'){let ov=document.getElementById('stock-modal');if(!ov){ov=document.createElement('div');ov.className='ov';ov.id='stock-modal';document.body.appendChild(ov);}ov.innerHTML=`<div class="modal" style="width:min(760px,100%)"><div class="mh"><h2>${title}</h2><button class="btn s" type="button" id="stock-modal-x">Fechar</button></div><div class="mb">${body}</div><div class="mf"><button class="btn" type="button" id="stock-modal-cancel">Cancelar</button><button class="btn p" type="button" id="stock-modal-save">${saveLabel}</button></div></div>`;ov.classList.add('on');const close=()=>ov.classList.remove('on');document.getElementById('stock-modal-x').onclick=close;document.getElementById('stock-modal-cancel').onclick=close;document.getElementById('stock-modal-save').onclick=()=>{try{const ok=onSave();if(ok!==false){close();page();bindGo();}}catch(e){console.error('A+ Gestão: erro ao salvar formulário modal',e);const msg=String(e&&e.message||'erro inesperado').replace(/[\r\n]+/g,' ').slice(0,180);toast('Não foi possível salvar: '+msg);}};return ov;}
+function stockBobinaMarkEmpty(id,label){
+ const found=rows('bobinas').find(x=>String(x._id)===String(id));
+ if(!found){toast('Não encontrei essa bobina no estoque.');return false;}
+ if(stockBobinaInTransit(found)||stockBobinaReturned(found)){toast('Só é possível esgotar uma bobina já recebida e disponível para uso.');return false;}
+ const leftover=stockRoundQty(Math.max(0,bobP(found)));
+ const recordedUnit=stockBobinaRecordedCostPerGram(found),unitCost=recordedUnit==null?stockBobinaCostPerGram(found,`B|${found.material||''}|${found.cor||''}`):recordedUnit;
+ const estimatedCost=r2(leftover*Math.max(0,num(unitCost)));
+ const uses=new Set(rows('movimentos_materiais').filter(m=>String(m.material_id||'')===String(found._id)&&eq(m.tipo,'CONSUMO IMPRESSÃO')&&num(m.quantidade)>0).map(m=>String(m.impressao_id||m.referencia||'')).filter(Boolean)).size;
+ const avg=uses>0?stockRoundQty(leftover/uses):0;
+ const detail=leftover>0?`
+
+O saldo residual de ${stockQtyFormat(leftover,'G')} será corrigido para zero e registrado como “PERDA NÃO RASTREADA” no histórico da bobina. Valor estimado: ${money(estimatedCost)}${recordedUnit==null?' (custo por grama estimado pela precificação)':''}.`:'\n\nO saldo já está em zero; o sistema apenas confirmará o status VAZIA.';
+ const usageNote=uses>0&&leftover>0?`
+
+Há ${uses} impressão(ões) registrada(s) com essa bobina. A diferença equivale a cerca de ${stockQtyFormat(avg,'G')} por impressão, como referência média. Os custos individuais antigos não serão alterados, porque não é possível saber em qual uso ocorreu a diferença.`:'';
+ if(!confirm(`Confirmar que a bobina ${found.codigo_bobina||''} está fisicamente vazia?
+
+Saldo registrado: ${stockQtyFormat(leftover,'G')}.${detail}${usageNote}
+
+A operação fica registrada no histórico para auditoria.`))return false;
+ return withDbTransaction(()=>{
+  const current=rows('bobinas').find(x=>String(x._id)===String(id));
+  if(!current)throw new Error('A bobina deixou de existir no cadastro.');
+  const grams=stockRoundQty(Math.max(0,bobP(current)));
+  const recorded=stockBobinaRecordedCostPerGram(current),uc=recorded==null?stockBobinaCostPerGram(current,`B|${current.material||''}|${current.cor||''}`):recorded,cost=r2(grams*Math.max(0,num(uc)));
+  const usageCount=new Set(rows('movimentos_materiais').filter(m=>String(m.material_id||'')===String(current._id)&&eq(m.tipo,'CONSUMO IMPRESSÃO')&&num(m.quantidade)>0).map(m=>String(m.impressao_id||m.referencia||'')).filter(Boolean)).size;
+  const entry={data:todayS(),peso_antes_g:grams,gramas_ajustados_g:grams,custo_estimado:cost,impressoes_associadas:usageCount,media_equivalente_por_impressao_g:usageCount>0?stockRoundQty(grams/usageCount):0,metodo:'AJUSTE AGREGADO — CUSTOS HISTÓRICOS PRESERVADOS'};
+  const history=Array.isArray(current._conciliacoesVazio)?current._conciliacoesVazio.slice():[];
+  const note=`Conciliação de bobina vazia (${entry.data}): saldo registrado ${stockQtyFormat(grams,'G')} ajustado para 0 g; ${grams>0?`diferença lançada como PERDA NÃO RASTREADA, custo ${money(cost)}${recorded==null?' (custo por grama estimado pela precificação)':''}`:'nenhuma diferença de saldo'}; ${usageCount} impressão(ões) associada(s) no histórico.${usageCount>0&&grams>0?` Média de referência: ${stockQtyFormat(entry.media_equivalente_por_impressao_g,'G')} por impressão; os custos individuais não foram reescritos.`:''}`;
+  setRows('bobinas',rows('bobinas').map(x=>String(x._id)===String(id)?{...x,peso_atual:0,status:'VAZIA',_conciliacoesVazio:[...history,entry],observacoes:[x.observacoes,note].filter(Boolean).join('\n\n')}:x));
+  if(grams>0){const move=stockBobinaMoveRow(current,grams,uc,{tipo:'PERDA NÃO RASTREADA',origem:'Conciliação física ao esgotar bobina',referencia:`${current.codigo_bobina||id} · ${entry.data}`,observacoes:`Saldo estimado ${stockQtyFormat(grams,'G')} apesar de bobina fisicamente vazia. Custo ${money(cost)}. ${usageCount} impressão(ões) associada(s); média de referência ${usageCount>0?stockQtyFormat(entry.media_equivalente_por_impressao_g,'G'):'indisponível'}. Diferença registrada em separado, sem alterar custos históricos individuais.`});move.valor_total=cost;stockAppendMoves([move]);}
+  toast(grams>0?`${current.codigo_bobina||'Bobina'} marcada como vazia. ${stockQtyFormat(grams,'G')} conciliados como perda não rastreada.`:`${current.codigo_bobina||'Bobina'} marcada como vazia; não havia saldo residual.`);
+  afterDbCommit(()=>{const fresh=rows('bobinas').filter(x=>eq(x.material,current.material)&&eq(x.cor,current.cor));stockBobinaGroupOpen(label||[current.material,current.cor].filter(Boolean).join(' '),fresh);});
+  return true;
+ });
+}
 function stockBobinaGroupOpen(label,bobinas){
  const list=(bobinas||[]).slice().sort((a,b)=>dt(a.data_compra).localeCompare(dt(b.data_compra))||String(a.codigo_bobina||'').localeCompare(String(b.codigo_bobina||''),'pt-BR',{numeric:true}));
  if(!list.length){toast('Não encontrei bobinas cadastradas para este material.');return;}
@@ -2839,8 +2975,8 @@ function stockBobinaGroupOpen(label,bobinas){
  if(!ov){ov=document.createElement('div');ov.className='ov';ov.id='stock-bobina-group-modal';document.body.appendChild(ov);}
  const qty=sum(list,b=>stockBobinaAvailable(b)?bobP(b):0),value=sum(list,b=>{if(!stockBobinaAvailable(b))return 0;const uc=stockBobinaRecordedCostPerGram(b);return uc==null?0:bobP(b)*uc;}),open=list.filter(stockBobinaAvailable).length,incoming=list.filter(stockBobinaInTransit).length;
  const status=b=>stockBobinaReturned(b)?'<span class="pill r">↩ Devolvida</span>':stockBobinaInTransit(b)?'<span class="pill a">🚚 A caminho</span>':bobP(b)<=0?'<span class="pill">Vazia</span>':eq(b.status,'ACABANDO')?'<span class="pill a">Acabando</span>':eq(b.status,'NOVA')?'<span class="pill g">Nova</span>':'<span class="pill g">Com saldo</span>';
- ov.innerHTML=`<div class="modal" style="width:min(920px,100%)" role="dialog" aria-modal="true" aria-label="Detalhes de ${esc(label)}"><div class="mh"><h2>Estoque físico · ${esc(label)}</h2><button class="btn s" type="button" data-stock-bobina-group-close>Fechar</button></div><div class="mb"><p class="ok" style="margin-top:0">Este é o popup de detalhes do material. Cada linha representa uma bobina real; os saldos abaixo já estão incluídos no resumo consolidado e não são estoque adicional.</p><div class="k3" style="margin-bottom:14px"><div class="kpi"><small>Saldo total</small><b>${stockQtyFormat(qty,'G')}</b></div><div class="kpi"><small>Valor restante conhecido</small><b>${money(value)}</b></div><div class="kpi"><small>Bobinas disponíveis</small><b>${open}</b>${incoming?`<small style="display:block;color:var(--warn)">${incoming} a caminho</small>`:''}</div></div><div class="tw"><table><thead><tr><th>Bobina</th><th>Compra</th><th>Peso inicial</th><th>Saldo físico</th><th>Custo</th><th>Valor restante</th><th>Status</th><th>Abrir</th></tr></thead><tbody>${list.map(b=>{const raw=bobP(b),q=stockBobinaAvailable(b)?raw:0,uc=stockBobinaRecordedCostPerGram(b),rem=stockBobinaAvailable(b)&&uc!=null?q*uc:null;return`<tr data-stock-group-spool="${esc(b._id)}" title="Clique para abrir a ficha padronizada da bobina" style="cursor:pointer"><td><b>${esc(b.codigo_bobina||'Sem código')}</b><small style="display:block;color:var(--mut)">${esc([b.material,b.cor].filter(Boolean).join(' '))}</small></td><td>${esc(dt(b.data_compra)||'—')}<small style="display:block;color:var(--mut)">${esc(b.fornecedor||'Fornecedor não informado')}</small></td><td>${stockQtyFormat(b.peso_inicial,'G')}</td><td><b>${stockBobinaInTransit(b)?'0 g disponível':stockQtyFormat(q,'G')}</b>${stockBobinaInTransit(b)?`<small style="display:block;color:var(--warn)">Comprada: ${stockQtyFormat(raw,'G')} · aguardando recebimento</small>`:''}</td><td>${money(b.custo_bobina)}${uc==null?'<small style="display:block;color:var(--mut)">Custo unitário indisponível</small>':`<small style="display:block;color:var(--mut)">${stockUnitCostDisplay(uc,'G')}</small>`}</td><td>${rem==null?'—':money(rem)}</td><td>${status(b)}</td><td><button class="btn s" type="button" data-stock-group-edit="${esc(b._id)}">Abrir ficha</button></td></tr>`}).join('')}</tbody></table></div><p class="foot">Para editar os dados cadastrados de uma bobina, clique na linha ou em “Abrir ficha”. Fechar este popup não altera o estoque.</p></div><div class="mf"><button class="btn" type="button" data-stock-bobina-group-close>Fechar</button><button class="btn p" type="button" id="stock-group-buy">＋ Comprar bobinas</button></div></div>`;
- ov.classList.add('on');const close=()=>ov.classList.remove('on');ov.querySelectorAll('[data-stock-bobina-group-close]').forEach(b=>b.onclick=close);ov.onclick=e=>{if(e.target===ov)close();};ov.querySelectorAll('[data-stock-group-spool]').forEach(tr=>tr.onclick=e=>{if(e.target.closest('button'))return;const id=tr.dataset.stockGroupSpool;close();form('bobinas',id);});ov.querySelectorAll('[data-stock-group-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.stockGroupEdit;close();form('bobinas',id);});const buy=ov.querySelector('#stock-group-buy');if(buy)buy.onclick=()=>{close();stockSpoolPurchaseOpen();};
+ ov.innerHTML=`<div class="modal" style="width:min(920px,100%)" role="dialog" aria-modal="true" aria-label="Detalhes de ${esc(label)}"><div class="mh"><h2>Estoque físico · ${esc(label)}</h2><button class="btn s" type="button" data-stock-bobina-group-close>Fechar</button></div><div class="mb"><p class="ok" style="margin-top:0">Este é o popup de detalhes do material. Cada linha representa uma bobina real; os saldos abaixo já estão incluídos no resumo consolidado e não são estoque adicional.</p><div class="k3" style="margin-bottom:14px"><div class="kpi"><small>Saldo total</small><b>${stockQtyFormat(qty,'G')}</b></div><div class="kpi"><small>Valor restante conhecido</small><b>${money(value)}</b></div><div class="kpi"><small>Bobinas disponíveis</small><b>${open}</b>${incoming?`<small style="display:block;color:var(--warn)">${incoming} a caminho</small>`:''}</div></div><div class="tw"><table><thead><tr><th>Bobina</th><th>Compra</th><th>Peso inicial</th><th>Saldo físico</th><th>Custo</th><th>Valor restante</th><th>Status</th><th>Abrir</th></tr></thead><tbody>${list.map(b=>{const raw=bobP(b),q=stockBobinaAvailable(b)?raw:0,uc=stockBobinaRecordedCostPerGram(b),rem=stockBobinaAvailable(b)&&uc!=null?q*uc:null;return`<tr data-stock-group-spool="${esc(b._id)}" title="Clique para abrir a ficha padronizada da bobina" style="cursor:pointer"><td><b>${esc(b.codigo_bobina||'Sem código')}</b><small style="display:block;color:var(--mut)">${esc([b.material,b.cor].filter(Boolean).join(' '))}</small></td><td>${esc(dt(b.data_compra)||'—')}<small style="display:block;color:var(--mut)">${esc(b.fornecedor||'Fornecedor não informado')}</small></td><td>${stockQtyFormat(b.peso_inicial,'G')}</td><td><b>${stockBobinaInTransit(b)?'0 g disponível':stockQtyFormat(q,'G')}</b>${stockBobinaInTransit(b)?`<small style="display:block;color:var(--warn)">Comprada: ${stockQtyFormat(raw,'G')} · aguardando recebimento</small>`:''}</td><td>${money(b.custo_bobina)}${uc==null?'<small style="display:block;color:var(--mut)">Custo unitário indisponível</small>':`<small style="display:block;color:var(--mut)">${stockUnitCostDisplay(uc,'G')}</small>`}</td><td>${rem==null?'—':money(rem)}</td><td>${status(b)}${Array.isArray(b._conciliacoesVazio)&&b._conciliacoesVazio.length?`<small style="display:block;color:var(--mut);margin-top:4px">Ajustes acumulados: ${stockQtyFormat(sum(b._conciliacoesVazio,x=>num(x.gramas_ajustados_g)),'G')}</small>`:''}</td><td><button class="btn s" type="button" data-stock-group-edit="${esc(b._id)}">Abrir ficha</button>${stockBobinaAvailable(b)&&q>0?` <button class="btn s" type="button" data-stock-spool-empty="${esc(b._id)}">Marcar vazia</button>`:''}</td></tr>`}).join('')}</tbody></table></div><p class="foot">Para editar os dados cadastrados, clique em “Abrir ficha”. Use “Marcar vazia” quando a bobina terminar fisicamente. Se o sistema ainda registrar gramas, a diferença será lançada como perda não rastreada e custo agregado da bobina; as impressões antigas não serão alteradas. Fechar este popup não altera o estoque.</p></div><div class="mf"><button class="btn" type="button" data-stock-bobina-group-close>Fechar</button><button class="btn p" type="button" id="stock-group-buy">＋ Comprar bobinas</button></div></div>`;
+ ov.classList.add('on');const close=()=>ov.classList.remove('on');ov.querySelectorAll('[data-stock-bobina-group-close]').forEach(b=>b.onclick=close);ov.onclick=e=>{if(e.target===ov)close();};ov.querySelectorAll('[data-stock-group-spool]').forEach(tr=>tr.onclick=e=>{if(e.target.closest('button'))return;const id=tr.dataset.stockGroupSpool;close();form('bobinas',id);});ov.querySelectorAll('[data-stock-group-edit]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=b.dataset.stockGroupEdit;close();form('bobinas',id);});ov.querySelectorAll('[data-stock-spool-empty]').forEach(b=>b.onclick=e=>{e.stopPropagation();stockBobinaMarkEmpty(b.dataset.stockSpoolEmpty,label);});const buy=ov.querySelector('#stock-group-buy');if(buy)buy.onclick=()=>{close();stockSpoolPurchaseOpen();};
 }
 
 function stockMaterialSelect(selected=''){return `<select id="stock-material" required><option value="">Selecione o material…</option>${rows('materiais').slice().sort((a,b)=>String(a.material||'').localeCompare(String(b.material||''),'pt-BR')).map(m=>`<option value="${esc(m._id)}" ${m._id===selected?'selected':''}>${esc(m.material)} · ${esc(m.codigo_material)} (${esc(m.unidade||'UN')})</option>`).join('')}</select>`;}
@@ -2920,7 +3056,7 @@ function stockMaterialFilamentGroupOpen(materialId){
  ov.classList.add('on');const close=()=>ov.classList.remove('on');ov.querySelectorAll('[data-stock-legacy-close]').forEach(b=>b.onclick=close);ov.onclick=e=>{if(e.target===ov)close();};ov.querySelectorAll('[data-stock-legacy-lot]').forEach(tr=>tr.onclick=()=>{close();form('materiais',m._id);});const edit=ov.querySelector('#stock-legacy-edit');if(edit)edit.onclick=()=>{close();form('materiais',m._id);};const buy=ov.querySelector('#stock-legacy-buy');if(buy)buy.onclick=()=>{close();stockPurchaseOpen('',m._id);};
 }
 function stockMaterialsView(){
- const M=rows('materiais').filter(m=>!resourceIsManagedMaterial(m)),Q=stockFinanceUnallocated(),search=String($('#stock-mat-search')?.value||'').toLocaleLowerCase('pt-BR'),tab=window._stockMatTab||'TODOS';
+ const M=rows('materiais').filter(m=>!resourceIsManagedMaterial(m)),Q=stockFinanceUnallocated(),search=String($('#stock-mat-search')?.value||'').toLocaleLowerCase('pt-BR'),tab=window._stockMatTab||'TODOS',statusTab=window._stockMatStatusTab||'TODOS';
  const archivedRef=m=>/REFERÊNCIA/i.test(String(m.categoria||''))&&/estoque em BOB-\d+/i.test(String(m.material||'')+' '+String(m.observacoes||''));
  const isLegacyArchive=m=>!!stockArchiveBobinaInfo(m);
  const isMaterialFilament=m=>/FILAMENTO/i.test(String(m.categoria||''))&&eq(m.unidade,'G');
@@ -2953,15 +3089,23 @@ function stockMaterialsView(){
   return matches&&(tab==='TODOS'||tab==='FILAMENTO');
  });
  const consolidatedInfos=[...infos,...spoolSummaryRows].sort((a,b)=>String(a.displayName||a.m.material||'').localeCompare(String(b.displayName||b.m.material||''),'pt-BR'));
+ // Filtro de situação dentro da mesma tela: a caminho = existe compra física pendente;
+ // OK = há saldo disponível acima do mínimo e não há compra pendente associada.
+ const incomingForEntry=entry=>{const m=entry.m,archive=entry.archive;return m._virtualBobina?(archive&&archive.bobinas||[]).map(stockBobinaPurchase).filter((p,i,a)=>p&&eq(p.status_estoque,'A CAMINHO')&&a.findIndex(x=>x&&x._id===p._id)===i):rows('compras_materiais').filter(p=>p.material_id===m._id&&eq(p.status_estoque,'A CAMINHO'));};
+ const isEntryLow=entry=>num(entry.m.estoque_minimo)>0&&entry.i.quantity<=num(entry.m.estoque_minimo);
+ const entryIsIncoming=entry=>incomingForEntry(entry).length>0;
+ const entryIsOK=entry=>!entryIsIncoming(entry)&&entry.i.quantity>0&&!isEntryLow(entry);
+ const visibleStockInfos=consolidatedInfos.filter(entry=>statusTab==='TODOS'||(statusTab==='CAMINHO'&&entryIsIncoming(entry))||(statusTab==='OK'&&entryIsOK(entry)));
+ const statusCountIncoming=consolidatedInfos.filter(entryIsIncoming).length,statusCountOK=consolidatedInfos.filter(entryIsOK).length;
  const archivedRefCount=M.filter(archivedRef).length,visibleMaterialCount=M.filter(m=>!archivedRef(m)&&!isLegacyArchive(m)).length,summaryCount=visibleMaterialCount+allBobinaSummaries.length;
  const filamentMaterialCount=M.filter(m=>!isLegacyArchive(m)&&!archivedRef(m)&&isMaterialFilament(m)).length,filamentCount=filamentMaterialCount+allBobinaSummaries.length;
  $('#content').innerHTML=head('Materiais e insumos',`<button class="btn" data-go="v-stock-purchases">🧾 Compras</button><button class="btn" data-go="v-stock-lots">🧱 Lotes e custos</button><button class="btn" data-go="v-consumo-interno">🧴 Uso interno mensurável</button><button class="btn" data-go="v-recursos-empresa">🧰 Recursos da Empresa</button><button class="btn" id="stock-adjust-open">⇅ Ajustar saldo</button><button class="btn" data-f="materiais|">+ Material</button><button class="btn" id="stock-spool-buy-open">＋ Comprar bobinas</button><button class="btn p" id="stock-buy-open">＋ Comprar item físico</button>`)+
  `<div class="k5" style="margin-bottom:16px">${_kp('Valor rastreável total',money(sumValue+spoolValue))}${_kp('Valor em estoque por lotes',money(sumValue))}${_kp('Valor restante nas bobinas',money(spoolValue))}${_kp('Materiais para repor',lowCount,lowCount?'var(--bad)':'var(--acc)')}${_kp('Bobinas com saldo',spoolsOpen)}</div>`+
- `<div class="panel" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap"><div><h3 style="margin-bottom:4px">Resumo consolidado do estoque</h3><p class="ok" style="margin:0">Todos os filamentos usam o mesmo padrão visual. O saldo de filamentos antigos vem dos lotes existentes; o dos novos vem das bobinas físicas. Cada saldo aparece uma única vez neste resumo.</p><small style="color:var(--mut)">${openLots} lote(s) com saldo · ${spoolsOpen} bobina(s) com saldo · ${rows('compras_materiais').filter(x=>!eq(x.status_estoque,'CANCELADO')).length} compra(s) registrada(s)</small></div><div class="f" style="min-width:min(340px,100%);margin:0"><input id="stock-mat-search" placeholder="Buscar filamento, material, código ou fornecedor…" value="${esc($('#stock-mat-search')?.value||'')}"></div></div><div class="vsw" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${[['TODOS','Todos'],['FILAMENTO','Filamentos'],['INTERNO','Uso interno'],['OUTROS','Componentes e demais'],['BAIXO','Abaixo do mínimo']].map(([id,label])=>`<button type="button" data-stock-mat-tab="${id}" class="${tab===id?'on':''}">${label} <span class="ok">${id==='TODOS'?summaryCount:id==='FILAMENTO'?filamentCount:id==='INTERNO'?M.filter(stockIsInternal).length:id==='OUTROS'?M.filter(m=>!isLegacyArchive(m)&&!archivedRef(m)&&!isMaterialFilament(m)&&!stockIsInternal(m)&&!/FILAMENTO/i.test(String(m.categoria||''))).length:lowCount}</span></button>`).join('')}</div><p class="ok" style="margin:10px 0 0">Clique em qualquer filamento para abrir o popup de estoque. As bobinas e os lotes são detalhes do saldo exibido aqui, não um estoque adicional.</p></div>`+
+ `<div class="panel" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap"><div><h3 style="margin-bottom:4px">Resumo consolidado do estoque</h3><p class="ok" style="margin:0">Todos os filamentos usam o mesmo padrão visual. O saldo de filamentos antigos vem dos lotes existentes; o dos novos vem das bobinas físicas. Cada saldo aparece uma única vez neste resumo.</p><small style="color:var(--mut)">${openLots} lote(s) com saldo · ${spoolsOpen} bobina(s) com saldo · ${rows('compras_materiais').filter(x=>!eq(x.status_estoque,'CANCELADO')).length} compra(s) registrada(s)</small></div><div class="f" style="min-width:min(340px,100%);margin:0"><input id="stock-mat-search" placeholder="Buscar filamento, material, código ou fornecedor…" value="${esc($('#stock-mat-search')?.value||'')}"></div></div><div class="vsw" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${[['TODOS','Todos'],['FILAMENTO','Filamentos'],['INTERNO','Uso interno'],['OUTROS','Componentes e demais'],['BAIXO','Abaixo do mínimo']].map(([id,label])=>`<button type="button" data-stock-mat-tab="${id}" class="${tab===id?'on':''}">${label} <span class="ok">${id==='TODOS'?summaryCount:id==='FILAMENTO'?filamentCount:id==='INTERNO'?M.filter(stockIsInternal).length:id==='OUTROS'?M.filter(m=>!isLegacyArchive(m)&&!archivedRef(m)&&!isMaterialFilament(m)&&!stockIsInternal(m)&&!/FILAMENTO/i.test(String(m.categoria||''))).length:lowCount}</span></button>`).join('')}</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px"><small style="color:var(--mut);font-weight:650">Situação:</small><div class="vsw" style="display:flex;gap:8px;flex-wrap:wrap">${[['TODOS','Todos',consolidatedInfos.length],['CAMINHO','🚚 A caminho',statusCountIncoming],['OK','✅ OK',statusCountOK]].map(([id,label,count])=>`<button type="button" data-stock-status-tab="${id}" class="${statusTab===id?'on':''}" aria-pressed="${statusTab===id}">${label} <span class="ok">${count}</span></button>`).join('')}</div></div><p class="ok" style="margin:10px 0 0">Os filtros de situação funcionam junto com busca e categoria, sem abrir outra aba. “A caminho” mostra itens com compra ainda não recebida; “OK” mostra itens com saldo disponível acima do mínimo e sem compra pendente. Clique em qualquer filamento para abrir os detalhes.</p></div>`+
  (Q.length?`<div class="panel" style="margin-bottom:14px;border-color:var(--warn)"><h3>Conciliação pendente com o Financeiro</h3><p class="ok">Estas despesas antigas parecem relacionadas a materiais, mas ainda não têm valor alocado a uma compra rastreável. Não as vincule automaticamente: confirme o item e rateie o valor para não duplicar saldo nem custo.</p>${Q.slice(0,5).map(f=>`<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid var(--line);padding:10px 0;flex-wrap:wrap"><div><b>${esc(f.descricao)}</b><small style="display:block;color:var(--mut)">${esc(dt(f.data)||'Sem data')} · lançado ${money(f.valor)} · livre para conciliar ${money(f.stockRestante)}</small></div><button type="button" class="btn s" data-stock-link-fin="${f._id}">Conciliar com estoque…</button></div>`).join('')}</div>`:'')+
- (consolidatedInfos.length?`<div class="tw stock-one-scroll"><table class="stock-consolidated"><thead><tr><th>Filamento / material</th><th>Saldo atual</th><th>Mínimo</th><th>Última compra</th><th>Custo médio</th><th>Valor em estoque</th><th>Registros ativos</th><th>Status</th></tr></thead><tbody>${consolidatedInfos.map(entry=>{const{m,i,archive}=entry,isFilament=!!entry.filament||!!entry.legacyFilament||!!m._virtualBobina,displayName=entry.displayName||m.material,incomingPurchases=m._virtualBobina?(archive&&archive.bobinas||[]).map(stockBobinaPurchase).filter((p,i,a)=>p&&eq(p.status_estoque,'A CAMINHO')&&a.findIndex(x=>x&&x._id===p._id)===i):rows('compras_materiais').filter(p=>p.material_id===m._id&&eq(p.status_estoque,'A CAMINHO')),incomingQty=sum(incomingPurchases,'quantidade'),low=num(m.estoque_minimo)>0&&i.quantity<=num(m.estoque_minimo),labelUnit=m.unidade||'G',status=incomingPurchases.length&&i.quantity<=0?'<span class="pill a">A caminho</span>':low?'<span class="pill r">Repor</span>':i.quantity<=0?'<span class="pill a">Sem saldo</span>':'<span class="pill g">OK</span>',subtitle=isFilament?'FILAMENTO · ESTOQUE FÍSICO RASTREÁVEL':[m.codigo_material,m.categoria,m.finalidade_uso].filter(Boolean).join(' · ')||'Material cadastrado';return`<tr data-stock-row="${esc(m._id)}" data-stock-kind="${m._virtualBobina?'bobina':entry.legacyFilament?'filamento-lote':'material'}" style="cursor:pointer" title="Clique para abrir o popup de detalhes"><td data-label="Filamento / material"><b>${esc(displayName)}</b><small style="display:block;color:var(--mut);font-size:11px;margin-top:3px">${esc(subtitle)}</small></td><td data-label="Saldo atual"><b>${stockQtyFormat(i.quantity,labelUnit)}</b>${incomingPurchases.length?`<small style="display:block;color:var(--warn);margin-top:3px">A caminho: ${incomingPurchases.map(p=>stockQtyFormat(p.quantidade,p.unidade||labelUnit)).join(' + ')}</small>`:''}</td><td data-label="Mínimo">${num(m.estoque_minimo)?stockQtyFormat(m.estoque_minimo,labelUnit):'—'}</td><td data-label="Última compra">${i.lastPurchaseCost==null?'—':stockUnitCostDisplay(i.lastPurchaseCost,labelUnit)}<small style="display:block;color:var(--mut)">${i.lastPurchaseDate||'Sem data registrada'}</small>${i.priceChangePct!=null&&i.priceChangePct>=15?`<span class="pill a" style="display:block;width:max-content;margin-top:3px">↑ ${f2(i.priceChangePct)}% vs. compra anterior</span>`:''}</td><td data-label="Custo médio">${stockUnitCostDisplay(i.average,labelUnit)}</td><td data-label="Valor em estoque"><b>${money(i.value)}</b></td><td data-label="Registros ativos">${i.openLots} ativo(s)${incomingPurchases.length?`<small style="display:block;color:var(--mut)">${incomingPurchases.length} compra(s) a caminho</small>`:''}</td><td data-label="Status">${status}</td></tr>`}).join('')}</tbody></table></div>`:`<div class="empty"><b>Nenhum item encontrado</b>Cadastre um material ou ajuste a busca.</div>`)+
+ (visibleStockInfos.length?`<div class="tw stock-one-scroll"><table class="stock-consolidated"><thead><tr><th>Filamento / material</th><th>Saldo atual</th><th>Mínimo</th><th>Última compra</th><th>Custo médio</th><th>Valor em estoque</th><th>Registros ativos</th><th>Status</th></tr></thead><tbody>${visibleStockInfos.map(entry=>{const{m,i,archive}=entry,isFilament=!!entry.filament||!!entry.legacyFilament||!!m._virtualBobina,displayName=entry.displayName||m.material,incomingPurchases=incomingForEntry(entry),low=num(m.estoque_minimo)>0&&i.quantity<=num(m.estoque_minimo),labelUnit=m.unidade||'G',status=incomingPurchases.length&&i.quantity<=0?'<span class="pill a">A caminho</span>':low?'<span class="pill r">Repor</span>':i.quantity<=0?'<span class="pill a">Sem saldo</span>':'<span class="pill g">OK</span>',subtitle=isFilament?'FILAMENTO · ESTOQUE FÍSICO RASTREÁVEL':[m.codigo_material,m.categoria,m.finalidade_uso].filter(Boolean).join(' · ')||'Material cadastrado';return`<tr data-stock-row="${esc(m._id)}" data-stock-kind="${m._virtualBobina?'bobina':entry.legacyFilament?'filamento-lote':'material'}" style="cursor:pointer" title="Clique para abrir o popup de detalhes"><td data-label="Filamento / material"><b>${esc(displayName)}</b><small style="display:block;color:var(--mut);font-size:11px;margin-top:3px">${esc(subtitle)}</small></td><td data-label="Saldo atual"><b>${stockQtyFormat(i.quantity,labelUnit)}</b>${incomingPurchases.length?`<small style="display:block;color:var(--warn);margin-top:3px">A caminho: ${incomingPurchases.map(p=>stockQtyFormat(p.quantidade,p.unidade||labelUnit)).join(' + ')}</small>`:''}</td><td data-label="Mínimo">${num(m.estoque_minimo)?stockQtyFormat(m.estoque_minimo,labelUnit):'—'}</td><td data-label="Última compra">${i.lastPurchaseCost==null?'—':stockUnitCostDisplay(i.lastPurchaseCost,labelUnit)}<small style="display:block;color:var(--mut)">${i.lastPurchaseDate||'Sem data registrada'}</small>${i.priceChangePct!=null&&i.priceChangePct>=15?`<span class="pill a" style="display:block;width:max-content;margin-top:3px">↑ ${f2(i.priceChangePct)}% vs. compra anterior</span>`:''}</td><td data-label="Custo médio">${stockUnitCostDisplay(i.average,labelUnit)}</td><td data-label="Valor em estoque"><b>${money(i.value)}</b></td><td data-label="Registros ativos">${i.openLots} ativo(s)${incomingPurchases.length?`<small style="display:block;color:var(--mut)">${incomingPurchases.length} compra(s) a caminho</small>`:''}</td><td data-label="Status">${status}</td></tr>`}).join('')}</tbody></table></div>`:`<div class="empty"><b>Nenhum item encontrado para este filtro</b>Altere a situação ou a categoria, ou limpe a busca.</div>`)+
  `<p class="foot">A lista tem uma única rolagem vertical (a própria página). Os filamentos antigos são exibidos no mesmo padrão dos novos, sem alterar os nomes gravados em impressões anteriores. Clique em um filamento para ver lotes ou bobinas no popup padronizado.</p>`;
- const q=$('#stock-mat-search');if(q)q.oninput=()=>stockMaterialsView();document.querySelectorAll('[data-stock-mat-tab]').forEach(b=>b.onclick=()=>{window._stockMatTab=b.dataset.stockMatTab;stockMaterialsView()});document.querySelectorAll('[data-stock-row]').forEach(tr=>tr.onclick=()=>{const id=tr.dataset.stockRow,entry=consolidatedInfos.find(x=>String(x.m._id)===String(id));if(!entry)return;if(entry.m._virtualBobina){stockBobinaGroupOpen(entry.displayName||entry.m.material,entry.archive&&entry.archive.bobinas||[]);return;}if(entry.legacyFilament){stockMaterialFilamentGroupOpen(entry.m._id);return;}form('materiais',entry.m._id);});const buy=$('#stock-buy-open');if(buy)buy.onclick=()=>stockPurchaseOpen();const spoolBuy=$('#stock-spool-buy-open');if(spoolBuy)spoolBuy.onclick=()=>stockSpoolPurchaseOpen();const adj=$('#stock-adjust-open');if(adj)adj.onclick=()=>stockAdjustOpen();document.querySelectorAll('[data-stock-link-fin]').forEach(b=>b.onclick=e=>{e.stopPropagation();const fin=rows('financeiro').find(f=>f._id===b.dataset.stockLinkFin);if(fin&&/bobina/i.test(String(fin.descricao||'')))stockSpoolPurchaseOpen(b.dataset.stockLinkFin);else stockPurchaseOpen(b.dataset.stockLinkFin)});wire();
+ const q=$('#stock-mat-search');if(q)q.oninput=()=>stockMaterialsView();document.querySelectorAll('[data-stock-mat-tab]').forEach(b=>b.onclick=()=>{window._stockMatTab=b.dataset.stockMatTab;stockMaterialsView()});document.querySelectorAll('[data-stock-status-tab]').forEach(b=>b.onclick=()=>{window._stockMatStatusTab=b.dataset.stockStatusTab;stockMaterialsView()});document.querySelectorAll('[data-stock-row]').forEach(tr=>tr.onclick=()=>{const id=tr.dataset.stockRow,entry=consolidatedInfos.find(x=>String(x.m._id)===String(id));if(!entry)return;if(entry.m._virtualBobina){stockBobinaGroupOpen(entry.displayName||entry.m.material,entry.archive&&entry.archive.bobinas||[]);return;}if(entry.legacyFilament){stockMaterialFilamentGroupOpen(entry.m._id);return;}form('materiais',entry.m._id);});const buy=$('#stock-buy-open');if(buy)buy.onclick=()=>stockPurchaseOpen();const spoolBuy=$('#stock-spool-buy-open');if(spoolBuy)spoolBuy.onclick=()=>stockSpoolPurchaseOpen();const adj=$('#stock-adjust-open');if(adj)adj.onclick=()=>stockAdjustOpen();document.querySelectorAll('[data-stock-link-fin]').forEach(b=>b.onclick=e=>{e.stopPropagation();const fin=rows('financeiro').find(f=>f._id===b.dataset.stockLinkFin);if(fin&&/bobina/i.test(String(fin.descricao||'')))stockSpoolPurchaseOpen(b.dataset.stockLinkFin);else stockPurchaseOpen(b.dataset.stockLinkFin)});wire();
 }
 
 function stockReceivingView(){
@@ -3085,8 +3229,8 @@ saveRecImpl=function(again){const scope=cur==='materiais',oldId=ed,beforeIds=new
 /* Quando uma ordem manual de produção é concluída, consome também a ficha de materiais. Ordens criadas pela Nova Impressão já têm baixa e não são duplicadas. */
 const _saveRecImplStockProd=saveRecImpl;
 saveRecImpl=function(again){const scope=cur==='producao',idBefore=ed,prev=idBefore?rows('producao').find(r=>r._id===idBefore):null,wasDone=prev&&eq(prev.status,'CONCLUÍDA'),oldFx=prev&&prev._fx_materiais;let formData=null;if(scope){try{formData=read()}catch{}}if(scope&&formData&&eq(formData.status,'CONCLUÍDA')&&!String(formData._imp||prev&&prev._imp||'').trim()){
- const p=rows('produtos').find(x=>eq(x.sku,formData.sku_produto)),bom=rows('fichas').filter(x=>eq(x.sku_produto,formData.sku_produto));if(bom.length&&(!wasDone||!prev||num(prev.qtd_produzida)!==num(formData.qtd_produzida)||prev.sku_produto!==formData.sku_produto)){const release=new Map();(oldFx||[]).forEach(c=>release.set(c.material_id,(release.get(c.material_id)||0)+num(c.quantidade)));const issues=[];bom.forEach(f=>{const m=rows('materiais').find(x=>eq(x.codigo_material,f.codigo_material));if(!m){issues.push(`Material ${f.material||f.codigo_material} não cadastrado.`);return}const required=num(f.quantidade)*num(formData.qtd_produzida),available=stockMatInfo(m).quantity+num(release.get(m._id));if(required>available+0.0001)issues.push(`${m.material}: precisa ${stockQtyFormat(required,m.unidade)} para ${formData.qtd_produzida} peça(s); disponível ${stockQtyFormat(available,m.unidade)}.`)});if(issues.length){alert('Não foi possível concluir a ordem de produção. O estoque de materiais é insuficiente:\n\n• '+issues.join('\n• ')+'\n\nNenhuma alteração foi salva.');return false;}}}
- const beforeIds=new Set(rows('producao').map(r=>r._id));const result=_saveRecImplStockProd(again);if(scope){const now=rows('producao'),saved=idBefore?now.find(r=>r._id===idBefore):now.find(r=>!beforeIds.has(r._id));if(saved&&eq(saved.status,'CONCLUÍDA')&&!saved._imp){const bom=rows('fichas').filter(x=>eq(x.sku_produto,saved.sku_produto)),changed=!wasDone||!prev||num(prev.qtd_produzida)!==num(saved.qtd_produzida)||prev.sku_produto!==saved.sku_produto;if(bom.length&&changed){withDbTransaction(()=>{if(oldFx&&oldFx.length)stockRestoreLotConsumptions(oldFx,{tipo:'ESTORNO CONSUMO',origem:'Edição de ordem de produção',referencia:saved.op||saved._id});const newFx=[];for(const f of bom){const m=rows('materiais').find(x=>eq(x.codigo_material,f.codigo_material));if(!m)continue;const qty=num(f.quantidade)*num(saved.qtd_produzida),out=stockConsumeLots(m,qty,{tipo:'CONSUMO PRODUÇÃO',origem:'Ordem de produção',referencia:saved.op||saved._id,observacoes:`Ficha: ${saved.sku_produto}`});if(!out.ok)throw new Error(`Saldo insuficiente de ${m.material}`);newFx.push(...out.used);}setRows('producao',rows('producao').map(x=>x._id===saved._id?{...x,_fx_materiais:newFx}:x));});}}}return result;};
+ const p=rows('produtos').find(x=>eq(x.sku,formData.sku_produto)),bom=rows('fichas').filter(x=>eq(x.sku_produto,formData.sku_produto));if(bom.length&&(!wasDone||!prev||(num(prev.qtd_produzida)+num(prev.qtd_perdida))!==(num(formData.qtd_produzida)+num(formData.qtd_perdida))||prev.sku_produto!==formData.sku_produto)){const release=new Map();(oldFx||[]).forEach(c=>release.set(c.material_id,(release.get(c.material_id)||0)+num(c.quantidade)));const issues=[];bom.forEach(f=>{const m=rows('materiais').find(x=>eq(x.codigo_material,f.codigo_material));if(!m){issues.push(`Material ${f.material||f.codigo_material} não cadastrado.`);return}const required=num(f.quantidade)*(num(formData.qtd_produzida)+num(formData.qtd_perdida)),available=stockMatInfo(m).quantity+num(release.get(m._id));if(required>available+0.0001)issues.push(`${m.material}: precisa ${stockQtyFormat(required,m.unidade)} para ${formData.qtd_produzida} peça(s); disponível ${stockQtyFormat(available,m.unidade)}.`)});if(issues.length){alert('Não foi possível concluir a ordem de produção. O estoque de materiais é insuficiente:\n\n• '+issues.join('\n• ')+'\n\nNenhuma alteração foi salva.');return false;}}}
+ const beforeIds=new Set(rows('producao').map(r=>r._id));const result=_saveRecImplStockProd(again);if(scope){const now=rows('producao'),saved=idBefore?now.find(r=>r._id===idBefore):now.find(r=>!beforeIds.has(r._id));if(saved&&eq(saved.status,'CONCLUÍDA')&&!saved._imp){const bom=rows('fichas').filter(x=>eq(x.sku_produto,saved.sku_produto)),changed=!wasDone||!prev||(num(prev.qtd_produzida)+num(prev.qtd_perdida))!==(num(saved.qtd_produzida)+num(saved.qtd_perdida))||prev.sku_produto!==saved.sku_produto;if(bom.length&&changed){withDbTransaction(()=>{if(oldFx&&oldFx.length)stockRestoreLotConsumptions(oldFx,{tipo:'ESTORNO CONSUMO',origem:'Edição de ordem de produção',referencia:saved.op||saved._id});const newFx=[];for(const f of bom){const m=rows('materiais').find(x=>eq(x.codigo_material,f.codigo_material));if(!m)continue;const qty=num(f.quantidade)*(num(saved.qtd_produzida)+num(saved.qtd_perdida)),out=stockConsumeLots(m,qty,{tipo:'CONSUMO PRODUÇÃO',origem:'Ordem de produção',referencia:saved.op||saved._id,observacoes:`Ficha: ${saved.sku_produto}`});if(!out.ok)throw new Error(`Saldo insuficiente de ${m.material}`);newFx.push(...out.used);}setRows('producao',rows('producao').map(x=>x._id===saved._id?{...x,_fx_materiais:newFx}:x));});}}}return result;};
 
 /* ===== KITS DE VENDA: composição virtual, preço e baixa dos componentes ===== */
 function kitParts(k){if(Array.isArray(k&&k.componentes))return k.componentes;try{const parsed=JSON.parse(String(k&&k.componentes_json||''));return Array.isArray(parsed)?parsed:[];}catch{return [];}}
@@ -4024,4 +4168,181 @@ decorate(document);decorateDash();
 })();
 </script>
 
+<script>
+/* A+ Gestão — proteções adicionais da mecânica de lotes (2026-10-25) */
+(function lotesHardening(){
+  const clone = x => JSON.parse(JSON.stringify(x ?? {}));
+  const eqLot = (a,b) => typeof eq === 'function' ? eq(a,b) : String(a??'').trim().toLowerCase()===String(b??'').trim().toLowerCase();
+  const captureCollections = keys => Object.fromEntries(keys.map(k=>[k,clone(rows(k))]));
+  const restoreUndoSnapshot = snapshot => {
+    Object.entries(snapshot).forEach(([k,v])=>setRows(k,clone(v)));
+    try { page(); bindGo(); } catch (e) { console.error('A+ lotes: atualização após desfazer',e); }
+    toast('Exclusão desfeita; dados e vínculos foram restaurados.');
+  };
+  const addUndo = (message, snapshot) => toastU(message, () => restoreUndoSnapshot(snapshot));
+
+  // A lot may not outlive its originating impression/production order.
+  const _fixLinksLotBase = fixLinks;
+  fixLinks = function(){
+    _fixLinksLotBase();
+    const impressionIds = new Set(rows('impressoes').map(r=>r._id));
+    const productionIds = new Set(rows('producao').map(r=>r._id));
+    const current = rows('lotes');
+    const next = current.filter(l => (!l._imp || impressionIds.has(l._imp)) && (!l._op || productionIds.has(l._op)));
+    if (next.length !== current.length) setRows('lotes',next);
+  };
+
+  // Source-linked production records and lots are derived from the impression; edit their source instead.
+  const _delUndoLotBase = delUndoImpl;
+  delUndoImpl = function(id, ids, label){
+    if(id==='impressoes'){
+      const targets=rows('impressoes').filter(r=>ids.has(r._id));
+      if(!targets.length)return;
+      const snapshot=captureCollections(['impressoes','bobinas','materiais','lotes','producao','financeiro','personalizados','lotes_materiais','movimentos_materiais']);
+      targets.forEach(r=>njRevert(r._id,false));
+      setRows('impressoes',rows('impressoes').filter(r=>!ids.has(r._id)));
+      fixLinks();
+      addUndo((label||'Impressão excluída.')+' Consumos e lotes foram estornados.',snapshot);
+      return;
+    }
+    if(id==='lotes'){
+      const targets=rows('lotes').filter(r=>ids.has(r._id));
+      if(targets.some(r=>r._imp||r._op)){
+        toast('Este lote é gerado por uma impressão ou ordem de produção. Abra e corrija a origem; para ajustes físicos, use Movimentos de estoque.');
+        return;
+      }
+    }
+    if(id==='producao'){
+      const targets=rows('producao').filter(r=>ids.has(r._id));
+      if(targets.some(r=>r._imp)){
+        toast('Esta ordem foi gerada pela Nova Impressão. Exclua ou corrija a impressão de origem para manter lotes e consumos sincronizados.');
+        return;
+      }
+      const snapshot=captureCollections(['producao','lotes','lotes_materiais','movimentos_materiais']);
+      targets.forEach(r=>{
+        if(eqLot(r.status,'CONCLUÍDA')&&Array.isArray(r._fx_materiais)&&r._fx_materiais.length){
+          stockRestoreLotConsumptions(r._fx_materiais,{tipo:'ESTORNO CONSUMO',origem:'Exclusão de ordem de produção',referencia:r.op||r._id,observacoes:'Estorno dos materiais da ordem manual excluída.'});
+        }
+      });
+      setRows('producao',rows('producao').filter(r=>!ids.has(r._id)));
+      fixLinks();
+      addUndo((label||'Ordem de produção excluída.')+' Materiais e lote foram reconciliados.',snapshot);
+      return;
+    }
+    return _delUndoLotBase(id,ids,label);
+  };
+
+  // Bulk deletion uses the same transactional/undo path as single-record deletion.
+  bulkDel = function(){
+    const n=selIds.size, m=mod(cur); if(!n)return;
+    const ids=new Set(selIds);
+    if(!confirm(`Excluir ${n} registro(s) de ${m.label}? ${cur==='impressoes'?'Os consumos serão estornados e os lotes/ordens ligados removidos; será possível desfazer.':'Esta ação será registrada e poderá ser desfeita quando aplicável.'}`))return;
+    selIds.clear();
+    delUndo(cur,ids,`${n} registro(s) excluído(s).`);
+    table();
+  };
+
+  // No mass-edit bypass for lot / production invariants.
+  const _bulkApplyLotBase = bulkApply;
+  bulkApply = function(){
+    if(cur==='lotes')return toast('Lotes não podem ser alterados em massa. Abra um lote manual individual; lotes de origem são controlados pela impressão/ordem.');
+    if(cur==='producao'){
+      const field=$('#bf')&&$('#bf').value;
+      const safeMetadata=['data_abertura','data_inicio','prazo','tempo_estimado','observacoes','impressora','capacidade'];
+      if(!safeMetadata.includes(field))return toast('Edição em massa bloqueada para este campo porque ele afeta estoque, perda ou consumo. Edite uma ordem por vez para recalcular com segurança.');
+    }
+    return _bulkApplyLotBase();
+  };
+
+  // Validate manual lots; source-generated lots cannot be edited directly.
+  const _saveRecLotBase = saveRecImpl;
+  saveRecImpl = function(again){
+    const moduleId=cur, recordId=ed;
+    if(moduleId==='lotes'){
+      const old=recordId?rows('lotes').find(r=>r._id===recordId):null;
+      if(old&&(old._imp||old._op)){
+        toast('Este lote é gerado por uma impressão ou ordem de produção e não pode ser editado diretamente. Corrija o registro de origem.');
+        return false;
+      }
+      const draft=read(); if(!draft)return false;
+      const planned=num(draft.qtd_planejada), good=num(draft.qtd_produzida), lost=num(draft.qtd_perdida);
+      if(!Number.isInteger(planned)||planned<1){toast('A quantidade planejada do lote precisa ser um inteiro maior que zero.');return false;}
+      if(!Number.isInteger(good)||good<0||!Number.isInteger(lost)||lost<0){toast('As quantidades produzida e perdida precisam ser inteiros não negativos.');return false;}
+      if(good+lost>planned){toast('Produzido + perdido não pode ultrapassar a quantidade planejada.');return false;}
+      const sku=String(draft.sku_produto||'').trim(), product=rows('produtos').find(p=>eqLot(p.sku,sku));
+      if(!sku||!product){toast('Selecione um SKU existente no cadastro de Produtos para este lote.');return false;}
+      const nonnegative=['material_consumido','tempo_total','custo_materiais_real','custo_total_real','custo_unitario_real'];
+      if(nonnegative.some(k=>draft[k]!==''&&draft[k]!=null&&num(draft[k])<0)){toast('Consumo, tempo e custos do lote não podem ser negativos.');return false;}
+      const beforeIds=new Set(rows('lotes').map(r=>r._id));
+      const result=_saveRecLotBase(again);
+      const now=rows('lotes');
+      const saved=recordId?now.find(r=>r._id===recordId):now.find(r=>!beforeIds.has(r._id));
+      if(saved){
+        const adjusted={...saved,produto:product.produto||saved.produto||sku,percentual_perda:planned?Math.round(lost/planned*1000000)/10000:0};
+        if(num(adjusted.custo_total_real)>0&&good>0)adjusted.custo_unitario_real=Math.round((num(adjusted.custo_total_real)/good)*1000000)/1000000;
+        setRows('lotes',now.map(r=>r._id===saved._id?adjusted:r));
+      }
+      return result;
+    }
+
+    // Orders from Nova Impressão are projections: direct edits can desynchronize their lot/consumption links.
+    if(moduleId==='producao'){
+      const source=recordId?rows('producao').find(r=>r._id===recordId):null;
+      let draft=null;try{draft=read()}catch{}
+      if(!draft)return false;
+      if(source&&source._imp){
+        const controlled=['sku_produto','qtd_planejada','qtd_produzida','qtd_perdida','status'];
+        if(controlled.some(k=>String(draft[k]??'')!==String(source[k]??''))){
+          toast('Esta ordem é controlada pela Nova Impressão. Altere os dados na impressão de origem, não diretamente na ordem.');
+          return false;
+        }
+      } else {
+        const planned=num(draft.qtd_planejada),good=num(draft.qtd_produzida),lost=num(draft.qtd_perdida);
+        if(!Number.isInteger(planned)||planned<1){toast('A quantidade planejada precisa ser um inteiro maior que zero.');return false;}
+        if(!Number.isInteger(good)||good<0||!Number.isInteger(lost)||lost<0){toast('Produzido e perdido precisam ser inteiros não negativos.');return false;}
+        if(good+lost>planned){toast('Produzido + perdido não pode ultrapassar a quantidade planejada.');return false;}
+        if(eqLot(draft.status,'CONCLUÍDA')&&good+lost!==planned){toast('Para concluir a ordem, contabilize todas as unidades: produzidas boas + perdidas deve ser igual à quantidade planejada.');return false;}
+        if(good>0&&!rows('produtos').some(p=>eqLot(p.sku,draft.sku_produto))){toast('Selecione um SKU existente em Produtos antes de concluir uma ordem com unidades boas.');return false;}
+      }
+    }
+
+    const oldProd=(moduleId==='producao'&&recordId)?rows('producao').find(r=>r._id===recordId):null;
+    const oldDone=!!(oldProd&&eqLot(oldProd.status,'CONCLUÍDA')&&!oldProd._imp);
+    const oldFx=oldDone&&Array.isArray(oldProd._fx_materiais)?clone(oldProd._fx_materiais):[];
+    const oldSku=oldProd&&oldProd.sku_produto,oldQty=oldProd?(num(oldProd.qtd_produzida)+num(oldProd.qtd_perdida)):0;
+    const beforeProdIds=new Set(rows('producao').map(r=>r._id));
+    const result=_saveRecLotBase(again);
+    if(moduleId==='producao'&&oldDone){
+      const now=rows('producao'),saved=now.find(r=>r._id===recordId);
+      if(saved){
+        const newDone=eqLot(saved.status,'CONCLUÍDA');
+        const changed=oldSku!==saved.sku_produto||oldQty!==(num(saved.qtd_produzida)+num(saved.qtd_perdida));
+        const newBom=rows('fichas').filter(f=>eqLot(f.sku_produto,saved.sku_produto));
+        const existingFx=Array.isArray(saved._fx_materiais)?saved._fx_materiais:[];
+        // The pre-existing wrapper already reverses/re-consumes when a new BOM is present.
+        // It does not reverse the former BOM when the order is cancelled or the new SKU has no BOM.
+        const mustRestore=(!newDone)||(changed&&!newBom.length&&oldFx.length&&JSON.stringify(existingFx)===JSON.stringify(oldFx));
+        if(mustRestore&&oldFx.length){
+          stockRestoreLotConsumptions(oldFx,{tipo:'ESTORNO CONSUMO',origem:'Edição de ordem de produção',referencia:saved.op||saved._id,observacoes:!newDone?'Ordem deixou de estar concluída; materiais devolvidos ao estoque.':'SKU novo sem ficha de materiais; consumo anterior devolvido.'});
+          setRows('producao',rows('producao').map(r=>r._id===saved._id?{...r,_fx_materiais:[]}:r));
+        } else if(!newDone&&existingFx.length){
+          setRows('producao',rows('producao').map(r=>r._id===saved._id?{...r,_fx_materiais:[]}:r));
+        }
+      }
+    }
+    return result;
+  };
+
+  // An order generated by Nova Impressão must never regenerate/remove its linked stock lot through generic sync.
+  const _syncRowLotBase = syncRow;
+  syncRow = function(id,sid,q){
+    if(id==='producao'){
+      const record=rows('producao').find(r=>r._id===sid);
+      if(record&&record._imp)return '';
+    }
+    return _syncRowLotBase(id,sid,q);
+  };
+})();
+
+</script>
 </body></html>
