@@ -1092,7 +1092,7 @@ function hoje(){const t=todayS(),rg=perRange(hp,t),pv=prevR(rg),soon=addD(t,3),T
  act=[...rows('vendas').map(r=>({m:'vendas',r,l:'Venda · '+(r.produto||produtoTexto(r.sku_produto,r)||'')+' · '+money(rev(r))})),...fin.map(r=>({m:'financeiro',r,l:(sai(r)?'Saída':'Entrada')+' · '+(r.descricao||'')+' · '+money(r.valor)})),...Pj.map(r=>({m:'personalizados',r,l:'Pedido · '+(r.cliente||'')+' ('+(r.status||'')+')'})),...rows('consignacoes').map(r=>({m:'consignacoes',r,l:'Envio/consignação · '+(r.loja_empresa||'')+' · '+(r.produto||produtoTexto(r.sku,r)||'')}))].map(x=>({...x,d:x.r._criadoEm||dt(x.r.data||x.r.ultimo_envio)})).sort((a,b)=>String(b.d).localeCompare(String(a.d))).slice(0,8),h=new Date().getHours(),Pe=Pj.filter(r=>st(r)==='ENTREGUE'),tvn=rows('vendas').length+Pe.length,trv=sum(rows('vendas'),rev)+sum(Pe,'valor_total'),ds=[...new Set(rows('vendas').map(r=>dt(r.data)).filter(Boolean))].sort(),bs=ds.reduce((a,d,i)=>{const run=i&&addD(ds[i-1],1)===d?a.run+1:1;return{run,best:Math.max(a.best,run)}},{run:0,best:0}).best,
  CQ=[['Primeira venda','Realize sua primeira venda',tvn>=1,'1 venda'],['Mil reais','Alcance R$ 1.000 em vendas',trv>=1e3,'R$ 1.000'],['Cinco mil','Alcance R$ 5.000 em vendas',trv>=5e3,'R$ 5.000'],['Dez mil','Alcance R$ 10.000 em vendas',trv>=1e4,'R$ 10.000'],['Dez vendas','Complete 10 vendas',tvn>=10,'10 vendas'],['Cinquenta vendas','Complete 50 vendas',tvn>=50,'50 vendas'],['Sequência de 5','5 dias consecutivos com vendas',bs>=5,'5 dias seguidos']];
  $('#content').innerHTML=head(`${h<12?'Bom dia':h<18?'Boa tarde':'Boa noite'} 👋 <small class="ok" style="font-size:15px;font-weight:400">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})}</small>`)+
- `${bkCard()}<div class="qk"><button data-go="v-receber-pedidos">📦 RECEBER PEDIDOS<small>${rows('compras_materiais').filter(p=>eq(p.status_estoque,'A CAMINHO')).length} aguardando chegada</small></button><button data-go="v-recursos-empresa">🧰 RECURSOS<small>ferramentas, kits e consumíveis</small></button><button data-qk="venda">⚡ Venda rápida<small>produto, quantidade e pronto</small></button><button data-qk="gasto">⚡ Gasto rápido<small>valor e categoria</small></button>${[['consignacoes','Enviar para loja','Consignação'],['personalizados','Novo pedido','Personalizado']].map(q=>`<button data-f="${q[0]}|" ${q[3]?`data-p='${q[3]}'`:''}>${q[1]}<small>${q[2]}</small></button>`).join('')}</div>
+ `${bkCard()}<div class="qk"><button data-go="v-receber-pedidos">📦 RECEBER PEDIDOS<small>${rows('compras_materiais').filter(p=>eq(p.status_estoque,'A CAMINHO')).length} aguardando chegada</small></button><button data-go="v-recursos-empresa">🧰 RECURSOS<small>ferramentas, kits e consumíveis</small></button><button data-qk="venda">⚡ Venda rápida<small>produto, quantidade e pronto</small></button><button data-qk="gasto">⚡ Gasto rápido<small>valor e categoria</small></button>${[['LOTE','Enviar para loja','Vários produtos de uma vez'],['personalizados','Novo pedido','Personalizado']].map(q=>`<button ${q[0]==='LOTE'?'type="button" data-lote=""':`data-f="${q[0]}|"`} ${q[3]?`data-p='${q[3]}'`:''}>${q[1]}<small>${q[2]}</small></button>`).join('')}</div>
  <div class="panel dash-attention-panel" style="border-left:4px solid var(--acc);margin-top:14px"><h3>🧭 A+ — O que merece sua atenção</h3>
    <div class="dash-attention-group"><div class="dash-attention-heading"><b>Decisões e oportunidades</b><small>Recomendações do A+ sobre produção e consignação.</small></div>${(()=>{const R=painelComandoA();return R.length?R.map(x=>`<button class="todo" data-f="${x.acao}|${x.id}"><span><b>${esc(x.titulo)}</b><small>${esc(x.sub)}</small></span><b class="ok">Abrir</b></button>`).join(''):'<div class="empty dash-compact-empty"><b>Nenhuma decisão comercial urgente.</b><small>O A+ continua acompanhando demanda e consignações.</small></div>'})()}</div>
    <div class="dash-attention-group"><div class="dash-attention-heading"><b>Tarefas e prazos${T.length?` (${T.length})`:''}</b><small>Entregas, visitas, contas e atividades que vencem nos próximos 3 dias.</small></div>${T.length?T.slice(0,hAll?10:3).map(i=>`${DONE_OK.includes(i.m)?'<div class="todow">':''}<button class="todo" data-f="${i.m}|${i.r}"><span class="dot ${i.k?'soon':'late'}"></span><span>${esc(i.ti)}<small>${esc(i.sub)}</small></span><b class="${i.k?'':'ok'}" style="${i.k?'':'color:var(--bad)'}">${i.v||(i.d?(i.k?'':'atrasado · ')+i.d.split('-').reverse().slice(0,2).join('/'):'')}</b></button>${DONE_OK.includes(i.m)?`<button class="btn s dn" data-done="${i.m}|${i.r}" title="Marcar como concluída">✓ Feito</button></div>`:''}`).join(''):'<div class="empty dash-compact-empty"><b>Dia limpo</b>Nada vencendo nos próximos 3 dias.</div>'}${T.length>3?`<div style="text-align:center;margin-top:10px"><button class="btn s" id="hall">${hAll?'Mostrar só as 3 primeiras':'Ver mais ('+(Math.min(T.length,10)-3)+')'}</button></div>`:''}</div>
@@ -1116,7 +1116,7 @@ function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'
  const hasValue=v=>v!==undefined&&v!==null&&String(v).trim()!=='',prod=sku=>P.find(p=>eq(p.sku,sku)),cost=r=>num((prod(r.sku)||{}).custo_unitario),price=r=>num(r.preco_unitario)||num((prod(r.sku)||{}).preco_padrao),pct=(r,l)=>hasValue(r.comissao_pct)?num(r.comissao_pct):hasValue(l&&l.comissao)?num(l.comissao):30;
  const resumo=l=>{const all=C.filter(r=>eq(r.loja_empresa,l.loja_empresa)),pend=all.filter(r=>!eq(r.status_acerto,'ACERTADO')),stock=pend.filter(r=>num(r.estoque_loja)>0),units=sum(stock,'estoque_loja'),imm=sum(stock,r=>num(r.estoque_loja)*cost(r)),gross=sum(stock,r=>num(r.estoque_loja)*price(r)),comm=sum(stock,r=>num(r.estoque_loja)*price(r)*pct(r,l)/100),net=gross-comm,potProfit=net-imm,sold=sum(all,'qtd_vendida'),recv=sum(pend,'a_receber'),soldGross=sum(all,'valor_bruto');return{all,pend,stock,units,imm,gross,comm,net,potProfit,sold,recv,soldGross}};
  const RS=L.map(l=>[l,resumo(l)]),T=RS.reduce((a,[l,r])=>({units:a.units+r.units,imm:a.imm+r.imm,gross:a.gross+r.gross,net:a.net+r.net,profit:a.profit+r.potProfit,recv:a.recv+r.recv}),{units:0,imm:0,gross:0,net:0,profit:0,recv:0});
- $('#content').innerHTML=head('Lojas parceiras',`<button class="btn" data-go="consignacoes">Todas as consignações</button><button class="btn" data-go="avarias">⚠️ Quebras / avarias</button><button class="btn p" data-f="lojas|">+ Nova loja</button>`)+
+ $('#content').innerHTML=head('Lojas parceiras',`<button class="btn p" type="button" data-lote="">📦 Envio em lote</button><button class="btn" data-go="consignacoes">Todas as consignações</button><button class="btn" data-go="avarias">⚠️ Quebras / avarias</button><button class="btn p" data-f="lojas|">+ Nova loja</button>`)+
  (L.length?`<div class="k5" style="margin-bottom:18px">
  ${kc('Peças nas lojas',f2(T.units),'#3b82f6','Unidades ainda em consignação')}
  ${kc('Dinheiro parado',money(T.imm),'var(--warn)','Seu custo real das peças nas lojas')}
@@ -1136,7 +1136,7 @@ function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'
  ${products?`<details open><summary><b>Produtos atualmente na loja</b></summary><div style="margin-top:6px">${products}</div></details>`:'<div class="ok">Nenhuma peça pendente nesta loja.</div>'}
  ${mLoja.n?`<div class="panel" style="padding:10px;margin:0"><b style="font-size:13px">Lucros estimados do que já vendeu</b><div class="rw"><span>Lucro Virgem</span><b>${money(mLoja.lucroVirgem)}</b></div><div class="rw"><span>Lucro sem Ajustes</span><b>${money(mLoja.lucroSemAjustes)}</b></div></div>`:''}
  <div class="ok">Próxima visita: ${v?`<b style="color:${v<t?'var(--bad)':'inherit'}">${v.split('-').reverse().join('/')}</b>`:'não marcada'}${last?' · último acerto: <b>'+last.split('-').reverse().join('/')+'</b>':''}</div>
- <div class="ac"><button class="btn s" type="button" data-avaria-store="${esc(l.loja_empresa)}">⚠️ Registrar avaria</button><button class="btn s" data-f='consignacoes|' data-p='${esc(JSON.stringify({loja_empresa:l.loja_empresa,comissao_pct:hasValue(l.comissao)?num(l.comissao):30,ultimo_envio:t}))}'>+ Envio</button>${r.pend.length?`<button class="btn s p" data-ac="${esc(l.loja_empresa)}">Acertar ${money(r.recv)}</button>`:''}<button class="btn s" data-f="lojas|${l._id}">Editar</button></div></div>`}).join('')}</div>`:'<div class="empty"><b>Cadastre sua primeira loja parceira</b>Depois registre os envios e acerte tudo por aqui.</div>')+
+ <div class="ac"><button class="btn s" type="button" data-avaria-store="${esc(l.loja_empresa)}">⚠️ Registrar avaria</button><button class="btn s" data-f='consignacoes|' data-p='${esc(JSON.stringify({loja_empresa:l.loja_empresa,comissao_pct:hasValue(l.comissao)?num(l.comissao):30,ultimo_envio:t}))}'>+ Envio</button><button class="btn s" type="button" data-lote="${esc(l.loja_empresa)}">📦 Lote</button>${r.pend.length?`<button class="btn s p" data-ac="${esc(l.loja_empresa)}">Acertar ${money(r.recv)}</button>`:''}<button class="btn s" data-f="lojas|${l._id}">Editar</button></div></div>`}).join('')}</div>`:'<div class="empty"><b>Cadastre sua primeira loja parceira</b>Depois registre os envios e acerte tudo por aqui.</div>')+
  '<p class="foot"><b>Dinheiro parado</b> usa o custo real cadastrado de cada produto. <b>Venda potencial</b> usa o preço de venda da consignação. <b>Potencial para você</b> desconta a comissão do lojista. Esses valores são projeções do estoque que ainda está nas lojas.</p>';
  document.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>acertar(b.dataset.ac));wire()}
 function acertar(n){const t=todayS(),all=rows('consignacoes'),p=all.filter(r=>eq(r.loja_empresa,n)&&!eq(r.status_acerto,'ACERTADO')),tot=sum(p,'a_receber'),left=sum(p,'estoque_loja');
@@ -1527,7 +1527,7 @@ function list(){const m=mod(cur),R=rows(cur),hasSt=m.fields.some(f=>f[0]==='stat
  const prodScan=cur==='produtos'?'<button class="btn" id="pscan">🔎 Pesquisar produtos no sistema</button>':'';
  const migratedSpoolRows=cur==='materiais'?R.map(x=>({m:x,b:stockArchiveBobinaInfo(x)})).filter(x=>x.b):[];
  const spoolNotice=migratedSpoolRows.length?`<div class="note" style="margin:10px 0"><b>Estoque transferido para bobinas (não perdido):</b> ${migratedSpoolRows.map(x=>`${esc(x.m.material)}: <b>${stockQtyLabel(x.b.quantity)}</b> em ${x.b.bobinas.length} bobina(s)`).join(' · ')}. Esses cadastros antigos ficam com saldo interno zerado para evitar dupla contagem; o saldo físico é controlado na tela <b>Bobinas</b>.</div>`:'';
- $('#content').innerHTML=`<div class="ph">${tabOf(cur)==='v-mais'?'<button class="btn s" data-go="v-mais">‹ Mais</button>':''}<h2>${ICON[cur]} ${esc(m.label)}</h2></div><div class="bar"><input id="q" placeholder="Buscar em ${esc(m.label.toLowerCase())}…" aria-label="Buscar"><span class="ok" id="cnt"></span>${vtog()}<button class="btn" id="ex">Exportar</button>${prodScan}<button class="btn p" id="nw">+ Novo</button></div>${spoolNotice}${hasSt?'<div class="chips" id="chips"></div>':''}<div class="note" id="bulk" hidden><span id="bn"></span><button class="btn s" id="bed">Editar em massa</button><button class="btn s" id="bdel">Excluir selecionados</button><button class="btn s" id="bclr">Limpar seleção</button></div><div class="tw" id="tw"></div>`;
+ $('#content').innerHTML=`<div class="ph">${tabOf(cur)==='v-mais'?'<button class="btn s" data-go="v-mais">‹ Mais</button>':''}<h2>${ICON[cur]} ${esc(m.label)}</h2></div><div class="bar"><input id="q" placeholder="Buscar em ${esc(m.label.toLowerCase())}…" aria-label="Buscar"><span class="ok" id="cnt"></span>${vtog()}<button class="btn" id="ex">Exportar</button>${prodScan}${cur==='consignacoes'?'<button class="btn p" type="button" data-lote="">📦 Envio em lote</button>':''}<button class="btn${cur==='consignacoes'?'':' p'}" id="nw">+ Novo</button></div>${spoolNotice}${hasSt?'<div class="chips" id="chips"></div>':''}<div class="note" id="bulk" hidden><span id="bn"></span><button class="btn s" id="bed">Editar em massa</button><button class="btn s" id="bdel">Excluir selecionados</button><button class="btn s" id="bclr">Limpar seleção</button></div><div class="tw" id="tw"></div>`;
  $('#q').oninput=table;$('#ex').onclick=()=>exportMod(cur);if($('#pscan'))$('#pscan').onclick=pesquisarProdutosSistema;$('#nw').onclick=()=>form(cur);$('#bdel').onclick=bulkDel;$('#bed').onclick=bulkEdit;$('#bclr').onclick=()=>{selIds.clear();table()};bindGo();table()}
 function table(){const m=mod(cur),R=rows(cur),q=($('#q')?.value||'').toLowerCase(),C=cols(m);let F=R.filter(r=>(!flt||String(r.status)===flt)&&Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)));
  if(sk)F=[...F].sort((a,b)=>{const x=a[sk],y=b[sk];return(typeof x==='number'&&typeof y==='number'?x-y:String(x??'').localeCompare(String(y??''),'pt-BR',{numeric:true}))*sd});
@@ -4670,5 +4670,107 @@ VIEWS['avarias']=avariasV;
 // Refresh visible navigation after adding the new nested workspace, without changing current records.
 nav();page();bindGo();
 
+</script>
+<script id="aplus-envio-lote">
+/* ===== A+ 2026-10-28: ENVIO EM LOTE para lojas parceiras =====
+   Um envio = vários produtos para a mesma loja. Cada produto continua virando UMA consignação própria
+   (mesmos campos do envio individual), então vendas, devoluções, avarias e acerto seguem por produto.
+   O estoque em casa já é calculado a partir de qtd_enviada das consignações; os movimentos de
+   ENVIO CONSIGNAÇÃO são só informativos (syncConsignacaoMovimentos) — por isso nada é baixado duas vezes. */
+let loteBusy=false;
+function loteProdutos(){
+ const P=rows('produtos');
+ return estoque().map(e=>{
+  const p=P.find(x=>x._id===e._id);
+  if(!p||!String(p.sku||'').trim()||eq(p.ativo,'NÃO')||!vendavel(p))return null;
+  return{sku:p.sku,produto:p.produto||p.sku,casa:Math.max(0,Math.floor(num(e.casa))),preco:num(p.preco_padrao)};
+ }).filter(Boolean);
+}
+function loteEnvioOpen(preStore){
+ if(document.getElementById('lote-ov'))return;
+ const lojas=rows('lojas').filter(l=>String(l.loja_empresa||'').trim()&&!eq(l.status,'ENCERRADA'));
+ if(!lojas.length){toast('Cadastre uma loja parceira antes de fazer um envio em lote.');return}
+ const base=loteProdutos();
+ if(!base.length){toast('Não há produtos ativos "para venda" cadastrados.');return}
+ const ov=document.createElement('div');ov.className='ov on';ov.id='lote-ov';document.body.appendChild(ov);
+ const st={loja:(lojas.find(l=>eq(l.loja_empresa,preStore))||lojas[0]).loja_empresa,data:todayS(),obs:'',q:'',sel:{}};
+ const lojaPct=()=>{const l=lojas.find(x=>eq(x.loja_empresa,st.loja));return l&&hasValue(l.comissao)?num(l.comissao):30};
+ const dBR=d=>dt(d).split('-').reverse().join('/');
+ const eff=p=>{const s=st.sel[p.sku]||{};return{q:num(s.q),preco:hasValue(s.preco)?num(s.preco):p.preco,pct:hasValue(s.pct)?num(s.pct):lojaPct()}};
+ const $o=id=>ov.querySelector('#'+id);
+ const sub=p=>{const e=eff(p);return e.q>0?`${money(e.q*e.preco)}<small style="display:block">p/ você ${money(e.q*e.preco*(1-e.pct/100))}</small>`:'—'};
+ const live=()=>{let n=0,u=0,b=0,l=0;base.forEach(p=>{const e=eff(p);if(e.q>0){n++;u+=e.q;b+=e.q*e.preco;l+=e.q*e.preco*(1-e.pct/100)}});return n?`<b>${n}</b> produto(s) · <b>${u}</b> un. · potencial ${money(b)} · p/ você ${money(l)}`:'Nenhum produto selecionado ainda'};
+ const showErr=a=>{const b=$o('lote-err');if(!b)return;b.hidden=!a.length;b.innerHTML=a.length?'<b>Corrija antes de continuar:</b><br>'+a.map(x=>'• '+esc(x)).join('<br>'):''};
+ // lê o estoque de novo na hora de conferir/confirmar (nunca confia só no que foi exibido ao abrir)
+ const coletar=()=>{
+  const F=loteProdutos(),erros=[],itens=[];
+  if(!lojas.some(l=>eq(l.loja_empresa,st.loja)))erros.push('Escolha a loja parceira.');
+  if(!dt(st.data))erros.push('Informe a data do envio.');
+  F.forEach(p=>{
+   const s=st.sel[p.sku];if(!s||!hasValue(s.q)||num(s.q)===0)return;
+   const e=eff(p),n=p.produto;
+   if(!Number.isInteger(e.q)||e.q<1){erros.push(n+': use uma quantidade inteira maior que zero.');return}
+   if(e.q>p.casa){erros.push(n+': estoque insuficiente — você tem '+p.casa+' un. em casa e tentou enviar '+e.q+'.');return}
+   if(!(e.preco>0)){erros.push(n+': informe o preço de venda na loja (o produto não tem preço padrão).');return}
+   if(e.pct<0||e.pct>100){erros.push(n+': a comissão precisa ficar entre 0% e 100%.');return}
+   itens.push({p,q:e.q,preco:e.preco,pct:e.pct});
+  });
+  Object.keys(st.sel).forEach(k=>{const s=st.sel[k];if(hasValue(s.q)&&num(s.q)!==0&&!F.some(p=>eq(p.sku,k)))erros.push(k+': produto não está mais disponível para envio.')});
+  if(!itens.length&&!erros.length)erros.push('Escolha ao menos um produto e informe a quantidade.');
+  return{erros,itens};
+ };
+ const rowHtml=p=>{const s=st.sel[p.sku]||{},off=p.casa<=0;
+  return`<tr data-sku="${esc(p.sku)}" ${off?'style="opacity:.55"':''}><td><b>${esc(p.produto)}</b><small class="ok" style="display:block">${esc(p.sku)}</small></td><td><b>${p.casa}</b>${off?'<small class="ok" style="display:block">sem estoque</small>':''}</td><td><input type="number" inputmode="numeric" min="0" max="${p.casa}" step="1" data-k="q" value="${esc(s.q??'')}" ${off?'disabled placeholder="—"':'placeholder="0"'} style="width:78px"></td><td><input type="text" inputmode="decimal" data-k="preco" value="${esc(s.preco??'')}" placeholder="${p.preco>0?f2(p.preco):'preço'}" style="width:92px"></td><td><input type="text" inputmode="decimal" data-k="pct" value="${esc(s.pct??'')}" placeholder="${f2(lojaPct())}" style="width:72px"></td><td data-k="sub" class="ok">${sub(p)}</td></tr>`};
+ ov.innerHTML=`<div class="modal" style="width:min(920px,100%)"><div class="mh"><h2 id="lote-h"></h2><button class="btn s" type="button" id="lote-x">Fechar</button></div><div class="mb" id="lote-body"></div><div class="mf" id="lote-ft"></div></div>`;
+ const fechar=ask=>{if(ask&&Object.values(st.sel).some(s=>num(s.q)>0)&&!confirm('Descartar o envio em lote que você está preparando?'))return;ov.remove()};
+ $o('lote-x').onclick=()=>fechar(true);
+ function passo1(){
+  $o('lote-h').textContent='📦 Envio em lote para loja parceira';
+  $o('lote-body').innerHTML=`<p class="ok" style="margin-top:0">Escolha a loja, marque os produtos e informe quantas unidades de cada um vão. Cada produto continua com seu próprio saldo, venda, devolução e acerto.</p>
+  <div class="fg"><div class="f"><label>Loja parceira *</label><select id="lote-loja">${lojas.map(l=>`<option value="${esc(l.loja_empresa)}" ${eq(l.loja_empresa,st.loja)?'selected':''}>${esc(l.loja_empresa)}</option>`).join('')}</select></div><div class="f"><label>Data do envio *</label><input id="lote-data" type="date" value="${esc(st.data)}"></div><div class="f full"><label>Observação (opcional)</label><input id="lote-obs" value="${esc(st.obs)}" placeholder="Ex.: reposição de vitrine"></div></div>
+  <div class="bar" style="margin:12px 0 8px"><input id="lote-q" value="${esc(st.q)}" placeholder="Buscar produto ou SKU…" aria-label="Buscar produto"></div>
+  <div id="lote-err" class="note" hidden style="color:var(--bad)"></div>
+  <div style="overflow-x:auto"><table><thead><tr><th>Produto</th><th>Em casa</th><th>Enviar</th><th>Preço na loja (R$)</th><th>Comissão %</th><th>Valor</th></tr></thead><tbody id="lote-tb">${base.map(rowHtml).join('')}</tbody></table></div>
+  <p class="foot">Deixe preço e comissão em branco para usar o preço padrão do produto e a comissão da loja (mostrados em cinza). Você pode ajustar por produto. Só aparecem produtos ativos marcados como "para venda".</p>`;
+  $o('lote-ft').innerHTML=`<span id="lote-sum" style="margin-right:auto;font-size:13px;grid-column:1/-1">${live()}</span><button class="btn" type="button" id="lote-c">Cancelar</button><button class="btn p" type="button" id="lote-n">Conferir resumo ›</button>`;
+  const filtra=()=>{const q=String(st.q||'').toLowerCase().trim();ov.querySelectorAll('#lote-tb tr').forEach(tr=>{const p=base.find(x=>x.sku===tr.dataset.sku);tr.hidden=!!q&&!(p.produto+' '+p.sku).toLowerCase().includes(q)})};filtra();
+  $o('lote-c').onclick=()=>fechar(true);
+  $o('lote-loja').onchange=e=>{st.loja=e.target.value;ov.querySelectorAll('input[data-k="pct"]').forEach(i=>i.placeholder=f2(lojaPct()));ov.querySelectorAll('#lote-tb tr').forEach(tr=>{const p=base.find(x=>x.sku===tr.dataset.sku);tr.querySelector('[data-k="sub"]').innerHTML=sub(p)});$o('lote-sum').innerHTML=live()};
+  $o('lote-data').oninput=e=>{st.data=e.target.value};
+  $o('lote-obs').oninput=e=>{st.obs=e.target.value};
+  $o('lote-q').oninput=e=>{st.q=e.target.value;filtra()};
+  $o('lote-tb').oninput=e=>{const i=e.target,tr=i.closest('tr'),k=i.dataset.k;if(!tr||!k||k==='sub')return;const p=base.find(x=>x.sku===tr.dataset.sku);(st.sel[p.sku]=st.sel[p.sku]||{q:'',preco:'',pct:''})[k]=i.value;tr.querySelector('[data-k="sub"]').innerHTML=sub(p);$o('lote-sum').innerHTML=live()};
+  $o('lote-n').onclick=()=>{const c=coletar();showErr(c.erros);if(!c.erros.length)passo2(c)};
+ }
+ function passo2(c){
+  const tot=c.itens.reduce((a,x)=>{const b=x.q*x.preco;a.u+=x.q;a.b+=b;a.l+=b*(1-x.pct/100);return a},{u:0,b:0,l:0});
+  $o('lote-h').textContent='Conferir envio · '+st.loja;
+  $o('lote-body').innerHTML=`<div id="lote-err" class="note" hidden style="color:var(--bad)"></div><p style="margin-top:0">Envio em <b>${dBR(st.data)}</b> para <b>${esc(st.loja)}</b>${st.obs.trim()?' · '+esc(st.obs.trim()):''}</p>
+  <div style="overflow-x:auto"><table><thead><tr><th>Produto</th><th>Enviar</th><th>Preço</th><th>Comissão</th><th>Valor potencial</th><th>Para você</th><th>Fica em casa</th></tr></thead><tbody>${c.itens.map(x=>`<tr><td><b>${esc(x.p.produto)}</b><small class="ok" style="display:block">${esc(x.p.sku)}</small></td><td><b>${x.q}</b></td><td>${money(x.preco)}</td><td>${f2(x.pct)}%</td><td>${money(x.q*x.preco)}</td><td>${money(x.q*x.preco*(1-x.pct/100))}</td><td>${x.p.casa-x.q}</td></tr>`).join('')}</tbody><tfoot><tr><td><b>Total · ${c.itens.length} produto(s)</b></td><td><b>${tot.u}</b></td><td></td><td></td><td><b>${money(tot.b)}</b></td><td><b>${money(tot.l)}</b></td><td></td></tr></tfoot></table></div>
+  <p class="foot">Ao confirmar, ${c.itens.length} registro(s) de consignação serão criados (um por produto) e os movimentos de envio serão lançados. O estoque em casa diminui sozinho. O dinheiro só entra no caixa no acerto da loja.</p>`;
+  $o('lote-ft').innerHTML=`<button class="btn" type="button" id="lote-b">‹ Voltar e ajustar</button><button class="btn p" type="button" id="lote-ok">✅ Confirmar envio</button>`;
+  $o('lote-b').onclick=passo1;
+  $o('lote-ok').onclick=()=>confirmar();
+ }
+ function confirmar(){
+  if(loteBusy)return;loteBusy=true;
+  const btn=$o('lote-ok');if(btn)btn.disabled=true;
+  try{
+   const c=coletar();
+   if(c.erros.length){passo1();showErr(c.erros);return}
+   const loteId='LOTE-'+uid(),agora=new Date().toISOString(),ids=new Set(rows('consignacoes').map(r=>r._id));
+   const nota='Envio em lote de '+dBR(st.data)+' ('+c.itens.length+' produtos)'+(st.obs.trim()?' · '+st.obs.trim():'');
+   const novos=c.itens.map(x=>{let id=uid();while(ids.has(id))id=uid();ids.add(id);
+    return{_id:id,_criadoEm:agora,_lote_envio:loteId,loja_empresa:st.loja,sku:x.p.sku,produto:x.p.produto,qtd_enviada:x.q,qtd_vendida:0,qtd_devolvida:0,qtd_avariada:0,estoque_loja:x.q,preco_unitario:x.preco,valor_bruto:0,comissao_pct:x.pct,comissao_valor:0,a_receber:0,status_acerto:'PENDENTE',ultimo_envio:dt(st.data),ultimo_acerto:'',observacoes:nota}});
+   const ok=withDbTransaction(()=>{setRows('consignacoes',[...novos,...rows('consignacoes')]);novos.forEach(syncConsignacaoMovimentos);return true});
+   if(!ok)return; // a transação desfaz tudo e já avisou o erro
+   const u=novos.reduce((a,r)=>a+r.qtd_enviada,0),loja=st.loja;
+   ov.remove();toast('Envio em lote registrado: '+novos.length+' produto(s), '+u+' un. para '+loja);
+   nav();page();bindGo();
+  }finally{loteBusy=false;const b=document.getElementById('lote-ok');if(b)b.disabled=false}
+ }
+ passo1();
+}
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-lote]');if(!b)return;e.preventDefault();e.stopPropagation();loteEnvioOpen(b.getAttribute('data-lote')||'')},true);
 </script>
 </body></html>
