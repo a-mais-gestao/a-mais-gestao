@@ -640,23 +640,111 @@ const MODULES=[
 {id:'central_acoes',label:'Central de ações',icon:'☑',sheet:'CENTRAL DE AÇÕES',fields:[['prioridade','Prioridade'],['area','Área'],['acao','Ação','text',true],['origem','Origem / referência'],['responsavel','Responsável'],['prazo','Prazo','date'],['status','Status','select',['ABERTA','EM ANDAMENTO','CONCLUÍDA']],['impacto','Impacto'],['observacoes','Observações','textarea']]}
 ];
 const DBKEY='aplus_gestao_v1',$=s=>document.querySelector(s),mod=id=>MODULES.find(m=>m.id===id);
+/*
+ * Banco principal A+ Gestão — IndexedDB.
+ * A estrutura em memória continua sendo { modulo: [registros...] }, portanto
+ * os módulos, relatórios, importadores e backups existentes permanecem compatíveis.
+ * Cada módulo é persistido em uma chave própria para gravar somente o que mudou.
+ */
+const MAIN_DB_NAME='aplus_gestao_main',MAIN_DB_VERSION=1,MAIN_DB_STORE='kv';
 let db=(()=>{try{return JSON.parse(localStorage.getItem(DBKEY))||{}}catch{return{}}})(),cur='dashboard',ed=null,imp=null,sk=null,sd=1,flt='';
 const cloneData=o=>JSON.parse(JSON.stringify(o??{}));
 let lastGoodDb=cloneData(db),dbTxDepth=0,dbTxDirty=false,dbTxToasts=[],dbTxEffects=[];
+let mainDbMode='localStorage',mainDbConnection=null,dbRevision=0,dbCommittedRevision=0;
+let dbPendingWrites=[],dbFlushScheduled=false,dbFlushRunning=false;
+let dbChannel=null;try{if('BroadcastChannel' in window)dbChannel=new BroadcastChannel('aplus_gestao_sync')}catch(e){}
 const rows=id=>Array.isArray(db[id])?db[id]:[];
 function dbQuotaError(e){return !!e&&(['QuotaExceededError','NS_ERROR_DOM_QUOTA_REACHED'].includes(String(e.name||''))||e.code===22||e.code===1014||/quota|storage full|exceed.*storage/i.test(String(e.message||'')))}
 function dbStorageStats(){try{let total=0,items=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'',v=localStorage.getItem(k)||'',bytes=(k.length+v.length)*2;total+=bytes;items.push({k,bytes})}items.sort((a,b)=>b.bytes-a.bytes);return{kb:Math.round(total/1024),top:items.slice(0,3).map(x=>`${x.k}: ${Math.round(x.bytes/1024)} KB`)}}catch{return{kb:null,top:[]}}}
-function persistDbCandidate(candidate){const payload=JSON.stringify(candidate);try{localStorage.setItem(DBKEY,payload);return true}catch(first){if(!dbQuotaError(first))throw first;
- // Libera apenas preferências descartáveis; nunca remove dados de negócio, configurações de preço ou a chave do assistente.
- ['aplus_last','aplus_bk_snooze'].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
- try{localStorage.setItem(DBKEY,payload);console.warn('A+ Gestão: salvamento concluído após liberar preferências transitórias.');return true}catch(second){const st=dbStorageStats();second._aplusStorageStats=st;throw second;}
-}}
-function dbSaveFailureMessage(err){const name=String(err&&err.name||'Erro'),detail=String(err&&err.message||'falha sem detalhe').replace(/[\r\n]+/g,' ').slice(0,150);if(dbQuotaError(err)){const st=err&&err._aplusStorageStats;return `Armazenamento local cheio (${name}). A alteração NÃO foi salva. Exporte um backup JSON antes de apagar qualquer dado; imagens embutidas como data:image podem ocupar muito espaço. Não limpe os dados do site antes de fazer backup.${st&&st.kb!=null?` Uso estimado: ${st.kb} KB.`:''}`;}if(name==='SecurityError'||/storage.*disabled|access is denied/i.test(detail))return `O navegador bloqueou o armazenamento deste site (${name}). Nenhuma alteração foi salva. Verifique as permissões de dados do site. Detalhe: ${detail}`;return `Falha interna ao salvar (${name}): ${detail}. Nenhuma alteração foi gravada; os dados anteriores foram restaurados.`}
-function showDbSaveFailure(err){console.error('A+ Gestão: transação desfeita',err,err&&err._aplusStorageStats||dbStorageStats());toast(dbSaveFailureMessage(err));const e=$('#toast');if(e){clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on','act'),9500)}}
+const idbReq=rq=>new Promise((resolve,reject)=>{rq.onsuccess=()=>resolve(rq.result);rq.onerror=()=>reject(rq.error||new Error('Falha ao consultar IndexedDB'))});
+const idbTxDone=tx=>new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve(true);tx.onabort=()=>reject(tx.error||new Error('Transação IndexedDB cancelada'));tx.onerror=()=>reject(tx.error||new Error('Falha na transação IndexedDB'))});
+function openMainDb(){return new Promise((resolve,reject)=>{
+ if(!window.indexedDB)return reject(new Error('Este navegador não oferece IndexedDB.'));
+ let req;try{req=indexedDB.open(MAIN_DB_NAME,MAIN_DB_VERSION)}catch(e){reject(e);return}
+ req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(MAIN_DB_STORE))d.createObjectStore(MAIN_DB_STORE,{keyPath:'key'})};
+ req.onsuccess=()=>{const d=req.result;d.onversionchange=()=>{try{d.close()}catch{}};resolve(d)};
+ req.onerror=()=>reject(req.error||new Error('Não foi possível abrir o banco IndexedDB'));
+ req.onblocked=()=>console.warn('A+ Gestão: abertura do banco aguardando outra aba ser fechada.');
+})}
+function dbFromIdbEntries(entries){const out={};(entries||[]).forEach(x=>{if(x&&typeof x.key==='string'&&x.key.startsWith('m:'))out[x.key.slice(2)]=x.value});return out}
+async function idbReadMain(){
+ const tx=mainDbConnection.transaction(MAIN_DB_STORE,'readonly'),st=tx.objectStore(MAIN_DB_STORE),done=idbTxDone(tx);
+ try{const all=await idbReq(st.getAll());await done;return all||[]}catch(e){await done.catch(()=>{});throw e}
+}
+async function idbWriteMain(candidate,base={}){
+ const tx=mainDbConnection.transaction(MAIN_DB_STORE,'readwrite'),st=tx.objectStore(MAIN_DB_STORE),done=idbTxDone(tx),keys=new Set([...Object.keys(base||{}),...Object.keys(candidate||{})]);
+ try{
+  for(const k of keys){const inNext=Object.prototype.hasOwnProperty.call(candidate,k),inOld=Object.prototype.hasOwnProperty.call(base,k),same=inNext&&inOld&&JSON.stringify(candidate[k])===JSON.stringify(base[k]);if(same)continue;const key='m:'+k;if(inNext)st.put({key,value:candidate[k]});else st.delete(key)}
+  st.put({key:'__meta__',value:{schemaVersion:1,updatedAt:new Date().toISOString(),modules:keys.size}});
+  await done;return true;
+ }catch(e){await done.catch(()=>{});throw e}
+}
+async function initMainDb(){
+ const legacy=(()=>{try{const x=JSON.parse(localStorage.getItem(DBKEY)||'{}');return x&&typeof x==='object'&&!Array.isArray(x)?x:{}}catch{return{}}})();
+ try{
+  mainDbConnection=await openMainDb();
+  let entries=await idbReadMain(),loaded=dbFromIdbEntries(entries),hasIndexedData=Object.keys(loaded).length>0,migrated=false;
+  if(!hasIndexedData&&Object.keys(legacy).length){
+   await idbWriteMain(legacy,{});loaded=cloneData(legacy);hasIndexedData=true;migrated=true;
+   console.info('A+ Gestão: dados antigos migrados do localStorage para IndexedDB.');
+  }
+  /* Se houver banco IndexedDB válido, ele sempre prevalece sobre a cópia legada. */
+  db=cloneData(loaded);lastGoodDb=cloneData(loaded);mainDbMode='indexeddb';
+  dbRevision=0;dbCommittedRevision=0;
+  try{localStorage.setItem('aplus_db_backend','indexeddb_v1')}catch(e){}
+  try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
+  return{mode:'indexeddb',migrated};
+ }catch(e){
+  console.warn('A+ Gestão: IndexedDB indisponível; usando armazenamento local como alternativa.',e);
+  try{db=cloneData(legacy);lastGoodDb=cloneData(legacy);mainDbMode='localStorage'}catch(x){mainDbMode='localStorage';db={};lastGoodDb={}}
+  return{mode:'localStorage',error:e};
+ }
+}
+function idbRefreshFromOtherTab(){if(mainDbMode!=='indexeddb'||!mainDbConnection||mobileFormDirty||dbTxDepth||dbRevision!==dbCommittedRevision)return;
+ idbReadMain().then(entries=>{if(mobileFormDirty||dbRevision!==dbCommittedRevision)return;const fresh=dbFromIdbEntries(entries);db=cloneData(fresh);lastGoodDb=cloneData(fresh);try{if(!$('#ov').classList.contains('on'))page()}catch(e){}}).catch(e=>console.warn('A+ Gestão: sincronização entre abas',e));
+}
+if(dbChannel)dbChannel.onmessage=e=>{if(e&&e.data&&e.data.type==='changed')idbRefreshFromOtherTab()};
+function dbSaveFailureMessage(err){const name=String(err&&err.name||'Erro'),detail=String(err&&err.message||'falha sem detalhe').replace(/[\r\n]+/g,' ').slice(0,150);
+ if(dbQuotaError(err)){if(mainDbMode==='indexeddb')return `O navegador recusou espaço para gravar no IndexedDB (${name}). Nenhuma alteração foi confirmada. Exporte um backup JSON e verifique o espaço livre do dispositivo ou as permissões de armazenamento do site.`;const st=err&&err._aplusStorageStats;return `Armazenamento local cheio (${name}). A alteração NÃO foi salva. Exporte um backup JSON antes de apagar qualquer dado; imagens embutidas como data:image podem ocupar muito espaço.${st&&st.kb!=null?` Uso estimado: ${st.kb} KB.`:''}`;}
+ if(name==='SecurityError'||/storage.*disabled|access is denied/i.test(detail))return `O navegador bloqueou o armazenamento deste site (${name}). Nenhuma alteração foi salva. Verifique as permissões de dados do site. Detalhe: ${detail}`;
+ return `Falha interna ao salvar (${name}): ${detail}. O sistema restaurou a última versão confirmada do banco.`;
+}
+function showDbSaveFailure(err){console.error('A+ Gestão: gravação não confirmada',err,err&&err._aplusStorageStats||dbStorageStats());toast(dbSaveFailureMessage(err));const e=$('#toast');if(e){clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on','act'),9500)}}
 let mobileFormDirty=false,mobileSafetyLast=0;
+function dbSetSavedState(){if(dbCommittedRevision===dbRevision){mobileSetSaveState('saved','✓ Salvo no IndexedDB');mobileFormDirty=false}}
+function scheduleDbFlush(){if(dbFlushScheduled||dbFlushRunning)return;dbFlushScheduled=true;Promise.resolve().then(flushDbWrites)}
+async function flushDbWrites(){
+ if(dbFlushRunning)return;dbFlushScheduled=false;dbFlushRunning=true;let waitingHooks=[];
+ try{
+  while(dbPendingWrites.length){const batch=dbPendingWrites.splice(0),latest=batch[batch.length-1];batch.forEach(x=>{if(x.hooks)waitingHooks.push(x.hooks)});
+   try{
+    await idbWriteMain(latest.snapshot,lastGoodDb);
+    lastGoodDb=cloneData(latest.snapshot);dbCommittedRevision=latest.rev;
+    const completed=waitingHooks.splice(0);completed.forEach(h=>{try{h.onSuccess&&h.onSuccess()}catch(e){console.error('A+ Gestão: pós-gravação',e)}});
+    if(latest.rev===dbRevision)dbSetSavedState();
+    try{dbChannel&&dbChannel.postMessage({type:'changed',revision:latest.rev})}catch(e){}
+   }catch(err){
+    if(dbPendingWrites.length)continue; /* A próxima fotografia já contém as alterações; tenta gravar o estado mais recente. */
+    if(latest.rev===dbRevision){db=cloneData(lastGoodDb);dbRevision=dbCommittedRevision;mobileSetSaveState('dirty','⚠ Falha ao salvar · dados anteriores preservados');mobileFormDirty=false;try{page();bindGo()}catch(e){}showDbSaveFailure(err)}
+    const failed=waitingHooks.splice(0);failed.forEach(h=>{try{h.onFailure&&h.onFailure(err)}catch(e){}});
+   }
+  }
+ }finally{dbFlushRunning=false;if(dbPendingWrites.length)scheduleDbFlush()}
+}
+function persistDbCandidate(candidate,hooks={}){
+ const snapshot=cloneData(candidate);
+ if(mainDbMode==='indexeddb'){
+  const rev=++dbRevision;dbPendingWrites.push({rev,snapshot,hooks});mobileSetSaveState('saving','Salvando no IndexedDB…');scheduleDbFlush();return'pending';
+ }
+ const payload=JSON.stringify(snapshot);
+ try{localStorage.setItem(DBKEY,payload);lastGoodDb=cloneData(snapshot);return true}catch(first){if(!dbQuotaError(first))throw first;
+  ['aplus_last','aplus_bk_snooze'].forEach(k=>{try{localStorage.removeItem(k)}catch{}});
+  try{localStorage.setItem(DBKEY,payload);lastGoodDb=cloneData(snapshot);console.warn('A+ Gestão: salvamento concluído após liberar preferências transitórias.');return true}catch(second){const st=dbStorageStats();second._aplusStorageStats=st;throw second;}
+ }
+}
 function save(){
  if(dbTxDepth){dbTxDirty=true;return true}
- try{mobileSetSaveState('saving','Salvando…');persistDbCandidate(db);lastGoodDb=cloneData(db);mobileSetSaveState('saved','✓ Salvo neste aparelho');mobileFormDirty=false;return true}
+ try{const result=persistDbCandidate(db);if(result!=='pending'){mobileSetSaveState('saved',mainDbMode==='indexeddb'?'✓ Salvo no IndexedDB':'✓ Salvo neste aparelho');mobileFormDirty=false}return true}
  catch(e){db=cloneData(lastGoodDb);mobileSetSaveState('dirty','⚠ Não salvo');showDbSaveFailure(e);return false}
 }
 const setRows=(id,r)=>{db[id]=r;return save()};
@@ -664,11 +752,13 @@ function withDbTransaction(fn){
  if(dbTxDepth){dbTxDepth++;try{return fn()}finally{dbTxDepth--}}
  const before=cloneData(db);dbTxDepth=1;dbTxDirty=false;dbTxToasts=[];dbTxEffects=[];let result,err=null;
  try{result=fn()}catch(e){err=e}
- dbTxDepth=0;let committed=!err;
- if(committed&&dbTxDirty){try{persistDbCandidate(db);lastGoodDb=cloneData(db)}catch(e){err=e;committed=false}}
- const queuedToasts=dbTxToasts.slice(),queuedEffects=dbTxEffects.slice();dbTxToasts=[];dbTxEffects=[];dbTxDirty=false;
+ dbTxDepth=0;let committed=!err,storageResult=true;
+ const queuedToasts=dbTxToasts.slice(),queuedEffects=dbTxEffects.slice();dbTxToasts=[];dbTxEffects=[];const changed=dbTxDirty;dbTxDirty=false;
+ const finishSuccess=()=>{const latestSaved=dbCommittedRevision===dbRevision;mobileSetSaveState(latestSaved?'saved':'saving',latestSaved?(mainDbMode==='indexeddb'?'✓ Salvo no IndexedDB':'✓ Salvo neste aparelho'):'Salvando alterações restantes…');if(latestSaved)mobileFormDirty=false;queuedToasts.forEach(t=>toast(t));queuedEffects.forEach(f=>{try{f()}catch(e){console.error('A+ Gestão: pós-salvamento',e)}})};
+ if(committed&&changed){try{storageResult=persistDbCandidate(db,{onSuccess:finishSuccess,onFailure:()=>{try{page();bindGo()}catch(e){}}});}catch(e){err=e;committed=false}}
  if(!committed){db=before;lastGoodDb=cloneData(before);mobileSetSaveState('dirty','⚠ Não salvo');showDbSaveFailure(err);try{page();bindGo()}catch{}}
- else{mobileSetSaveState('saved','✓ Salvo neste aparelho');mobileFormDirty=false;queuedToasts.forEach(t=>toast(t));queuedEffects.forEach(f=>{try{f()}catch(e){console.error('A+ Gestão: pós-salvamento',e)}})}
+ else if(storageResult==='pending'){mobileSetSaveState('saving','Salvando no IndexedDB…')}
+ else finishSuccess();
  return committed?result:false;
 }
 function afterDbCommit(fn){if(dbTxDepth)dbTxEffects.push(fn);else fn()}
@@ -688,6 +778,10 @@ const safeImageUrl=value=>{
   if(id)return'https://drive.google.com/thumbnail?id='+encodeURIComponent(id)+'&sz=w1000';
  }
  if(host==='dropbox.com'||host.endsWith('.dropbox.com')){parsed.searchParams.delete('dl');parsed.searchParams.set('raw','1')}
+ /* Links do OneDrive compartilhados podem ser abertos diretamente pelo endpoint de download. */
+ if(host==='1drv.ms'||host==='onedrive.live.com'){
+  if(host==='onedrive.live.com'&&parsed.searchParams.has('resid')){parsed.searchParams.set('download','1');return parsed.href}
+ }
  return parsed.href;
 };
 const imagePreview=(value,alt='Produto',size='card')=>{const src=safeImageUrl(value);if(!src)return'';const dims=size==='thumb'?'width:48px;height:48px':size==='print'?'width:min(220px,100%);max-height:150px':'width:100%;max-height:170px';return `<a href="${esc(src)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" title="Abrir imagem em nova aba" onclick="event.stopPropagation()" style="display:block;${dims};overflow:hidden;border-radius:10px;border:1px solid var(--line);background:var(--inp);margin:6px 0"><img loading="lazy" src="${esc(src)}" alt="${esc(alt)}" referrerpolicy="no-referrer" style="width:100%;height:100%;max-height:170px;object-fit:cover;display:block" onerror="this.hidden=true;const f=this.nextElementSibling;if(f)f.hidden=false"><span hidden style="display:flex;align-items:center;justify-content:center;min-height:48px;height:100%;padding:8px;text-align:center;color:var(--mut);font-size:12px">⚠ Prévia indisponível · clique para abrir o link</span></a>`};
@@ -2011,7 +2105,7 @@ if(!ed&&AUTO[cur]){const autoKey=AUTO[cur][0];if(!String(o[autoKey]||'').trim())
  if(ed)R=R.map(r=>r._id===ed?{...r,...o}:r);else R=[{...o,_id:sid,_criadoEm:new Date().toISOString()},...R];const prv=ed?rows(cur).find(r=>r._id===ed):null;cascade(cur,ed,o);const ok=setRows(cur,R);if(ok){const mg=syncRow(cur,sid);toast(mg||(cur==='produtos'&&autoPreco(o,prv)?'Produto salvo · custo e preços calculados automaticamente':ed?'Registro atualizado':'Registro salvo'))}
  {const savedMod=cur,savedNew=!ed,savedRow={...o,_id:sid};const c=cur;try{if(bk)cur=bk;nav();page();bindGo();if(again){cur=c;ed=null;form(c)}else{bk=null;$('#ov').classList.remove('on');ed=null}}catch(e){console.error('A+ Gestão: registro salvo, mas houve erro ao atualizar a tela',e);bk=null;ed=null;$('#ov').classList.remove('on');if(ok)toast('Registro salvo. Houve um erro apenas ao atualizar a tela; recarregue a página se necessário.')} if(savedNew&&ok)afterDbCommit(()=>setTimeout(()=>aopAfterSave(savedMod,savedRow,true),100))}}
 function saveRec(again){return withDbTransaction(()=>saveRecImpl(again))}
-$('#sv').onclick=()=>saveRec(0);$('#sn').onclick=()=>saveRec(1);$('#mx').onclick=()=>{if(mobileFormDirty&&!confirm('Há alterações que ainda não foram salvas. Fechar mesmo assim?'))return;mobileFormDirty=false;mobileSetSaveState('saved','✓ Salvo neste aparelho');$('#ov').classList.remove('on');ed=null;if(bk){cur=bk;bk=null}};
+$('#sv').onclick=()=>saveRec(0);$('#sn').onclick=()=>saveRec(1);$('#mx').onclick=()=>{if((mobileFormDirty||dbCommittedRevision<dbRevision)&&!confirm('Há alterações que ainda estão sendo salvas ou não foram confirmadas. Fechar mesmo assim?'))return;mobileFormDirty=false;mobileSetSaveState(dbCommittedRevision<dbRevision?'saving':'saved',dbCommittedRevision<dbRevision?'Salvando no IndexedDB…':(mainDbMode==='indexeddb'?'✓ Salvo no IndexedDB':'✓ Salvo neste aparelho'));$('#ov').classList.remove('on');ed=null;if(bk){cur=bk;bk=null}};
 $('#form').onsubmit=e=>{e.preventDefault();saveRec(0)};
 $('#del').onclick=()=>{const m0=cur,r0=ed;if(!r0)return;delUndo(m0,new Set([r0]),'Registro excluído.');$('#ov').classList.remove('on');ed=null;if(bk){cur=bk;bk=null}nav();page();bindGo()};
 $('#dup').onclick=()=>{const o=read();if(o){ed=null;const a=AUTO[cur];a&&(o[a[0]]='');form(cur,null,o);toast('Cópia pronta para editar')}};
@@ -2109,7 +2203,7 @@ async function mobileShareBackup(){
  }catch(e){if(e&&e.name==='AbortError')return;console.warn('Compartilhamento de backup indisponível',e);exportJson()}
 }
 function readJson(fl){const rd=new FileReader();rd.onload=ev=>{try{const J0=JSON.parse(ev.target.result),d=J0.dados||{};impCfg=J0.config||null;impFull=J0.app==='aplus_gestao'&&!!J0.dados;imp={};MODULES.forEach(m=>{if(impFull)imp[m.id]=Array.isArray(d[m.id])?d[m.id]:[];else if(Array.isArray(d[m.id]))imp[m.id]=d[m.id]});const n=Object.values(imp).reduce((a,r)=>a+r.length,0);$('#ipv').innerHTML=n?`<div class="note"><span>Encontrei <b>${n} registro(s)</b> em ${Object.keys(imp).length} módulo(s) (backup JSON).</span></div>`:'<div class="note">Arquivo sem dados reconhecidos.</div>';$('#iok').disabled=!(n||impCfg)}catch{toast('JSON inválido.')}};rd.readAsText(fl)}
-addEventListener('storage',e=>{if(e.key===DBKEY){try{db=JSON.parse(e.newValue)||{};lastGoodDb=cloneData(db)}catch{}if(!$('#ov').classList.contains('on'))page()}});
+addEventListener('storage',e=>{if(e.key===DBKEY&&mainDbMode!=='indexeddb'){try{db=JSON.parse(e.newValue)||{};lastGoodDb=cloneData(db)}catch{}if(!$('#ov').classList.contains('on'))page()}});
 const XLSX_INTERNAL_HEADER='__APLUS_INTERNAL__',XLSX_META_CHUNK=30000;
 const excelExtras=m=>[...new Set(rows(m.id).flatMap(r=>Object.keys(r._extraExcelFields||{})))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
 const metaChunkCount=m=>Math.max(1,...rows(m.id).map(r=>Math.ceil(JSON.stringify(r).length/XLSX_META_CHUNK)));
@@ -2142,7 +2236,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
  if(e.target&&e.target.closest&&e.target.closest('#form')){mobileFormDirty=true;mobileSetSaveState('dirty','● Alterações não salvas')}
 });
-addEventListener('beforeunload',e=>{if(!mobileFormDirty)return;e.preventDefault();e.returnValue='';});
+addEventListener('beforeunload',e=>{if(!mobileFormDirty&&dbCommittedRevision===dbRevision)return;e.preventDefault();e.returnValue='';});
 document.querySelectorAll('#mobile-nav [data-mob-go]').forEach(b=>b.onclick=()=>go(b.dataset.mobGo));
 const mobRegister=document.getElementById('mob-register');if(mobRegister)mobRegister.onclick=e=>{e.stopPropagation();document.getElementById('qm').classList.toggle('on')};
 const mobBackup=document.getElementById('mob-backup');if(mobBackup)mobBackup.onclick=mobileShareBackup;
@@ -2177,7 +2271,7 @@ document.getElementById('sb').addEventListener('click',e=>{if(e.target.closest('
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('mo'))mobileMenu(false)});
 document.documentElement.dataset.theme=th;
 $('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;safeLocalSet('aplus_theme',t)};
-navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 /* ---------- JARVIS ---------- */
 const JV_PERSONA='Você é J.A.R.V.I.S., o assistente de gestão da A+, uma empresa de produtos impressos em 3D. Trate o usuário por "senhor". Tom de mordomo britânico: formal, elegante, eficiente, com ironia leve e seca (no máximo uma tirada por resposta). Responda em português do Brasil, de forma curta e falável (no máximo 3 frases curtas; só detalhe se eu pedir), sem tabelas nem markdown pesado, pois a resposta pode ser lida em voz alta. Use SOMENTE os dados fornecidos; não invente números. Se faltar dado, diga o que falta. Valores em reais. Aponte riscos e sugira a próxima ação concreta.';
 const jvSet=()=>{try{return JSON.parse(localStorage.getItem('aplus_jv'))||{}}catch{return{}}};let jvHist=[],jvHi=false;
@@ -3501,9 +3595,18 @@ function migTesteFracassadoResultado(){
 function aplusPostLoadRepair(){
  let repaired=0;withDbTransaction(()=>{stockMigrateMaterialPurpose();stockRepairMaterialCodes();stockEnsureOpeningLots();repairHistoricalDataConsistency();resourceMigrateReceived();resourceFixMoveleiroDuplicates();syncAllConsignacaoMovimentos();repaired+=repararOrdensProducao();migTesteFracassadoResultado();migLucrosKatanaEEntregas();fixLinks();});return repaired;
 }
-const _prodReparadas=aplusPostLoadRepair();
-migV4();migV5();migLucrosV3();migLucrosKatanaEEntregas();stockMigrateMaterialPurpose();go('v-hoje');snapAuto();
-if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
+async function startAplusAfterDatabase(){
+ const gate=document.createElement('div');gate.id='aplus-db-startup';gate.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:#08080bea;color:#fff;font:600 15px Montserrat,system-ui,sans-serif;text-align:center';gate.textContent='A+ Gestão · Preparando seu banco de dados com segurança…';document.body.appendChild(gate);
+ try{
+  const dbInfo=await initMainDb();
+  const _prodReparadas=aplusPostLoadRepair();
+  migV4();migV5();migLucrosV3();migLucrosKatanaEEntregas();stockMigrateMaterialPurpose();go('v-hoje');snapAuto();
+  if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
+  if(dbInfo.mode!=='indexeddb')setTimeout(()=>toast('Aviso: IndexedDB não ficou disponível neste navegador. O sistema está usando o armazenamento local; evite modo privado e faça backups frequentes.'),900);
+ }catch(e){console.error('A+ Gestão: falha ao iniciar o banco',e);try{go('v-hoje')}catch{}toast('O banco não pôde ser preparado corretamente. Faça um backup antes de continuar.');}
+ finally{gate.remove()}
+}
+/* A inicialização é acionada no último script, depois que todos os módulos e eventos foram registrados. */
 /* ===== Bolinhas de ajuda (?) ao lado de cada campo de entrada ===== */
 (function(){
 const nz=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -4816,4 +4919,5 @@ function loteEnvioOpen(preStore){
 }
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-lote]');if(!b)return;e.preventDefault();e.stopPropagation();loteEnvioOpen(b.getAttribute('data-lote')||'')},true);
 </script>
+<script>startAplusAfterDatabase();</script>
 </body></html>
