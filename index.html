@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0a0d"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"><title>A+ Gestão</title><!-- A+ MOBILE 2026-10-24: navegação inferior, safe-area, formulários touch, proteção de edição e compartilhamento de backup. -->
+<meta name="theme-color" content="#0a0a0d"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"><title>A+ Gestão</title><!-- A+ revisão de persistência, importação, imagens, recebimento e cache offline · 2026-11-05 --><!-- A+ MOBILE 2026-10-24: navegação inferior, safe-area, formulários touch, proteção de edição e compartilhamento de backup. -->
 <!-- Nova Impressão auditada: perdas reais informadas e fonte física obrigatória na conclusão -->
 <!-- A+ IMPRESSÃO UX REESTRUTURADA: fluxo guiado, cards por destino/placa, materiais, preço e revisão final -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -651,7 +651,7 @@ let db=(()=>{try{return JSON.parse(localStorage.getItem(DBKEY))||{}}catch{return
 const cloneData=o=>JSON.parse(JSON.stringify(o??{}));
 let lastGoodDb=cloneData(db),dbTxDepth=0,dbTxDirty=false,dbTxToasts=[],dbTxEffects=[];
 let mainDbMode='localStorage',mainDbConnection=null,dbRevision=0,dbCommittedRevision=0;
-let dbPendingWrites=[],dbFlushScheduled=false,dbFlushRunning=false;
+let dbPendingWrites=[],dbFlushScheduled=false,dbFlushRunning=false,dbFlushWaiters=[];
 let dbChannel=null;try{if('BroadcastChannel' in window)dbChannel=new BroadcastChannel('aplus_gestao_sync')}catch(e){}
 const rows=id=>Array.isArray(db[id])?db[id]:[];
 function dbQuotaError(e){return !!e&&(['QuotaExceededError','NS_ERROR_DOM_QUOTA_REACHED'].includes(String(e.name||''))||e.code===22||e.code===1014||/quota|storage full|exceed.*storage/i.test(String(e.message||'')))}
@@ -713,23 +713,39 @@ function showDbSaveFailure(err){console.error('A+ Gestão: gravação não confi
 let mobileFormDirty=false,mobileSafetyLast=0;
 function dbSetSavedState(){if(dbCommittedRevision===dbRevision){mobileSetSaveState('saved','✓ Salvo no IndexedDB');mobileFormDirty=false}}
 function scheduleDbFlush(){if(dbFlushScheduled||dbFlushRunning)return;dbFlushScheduled=true;Promise.resolve().then(flushDbWrites)}
+function settleDbFlushWaiters(revision,ok){
+ const keep=[];
+ dbFlushWaiters.forEach(w=>{if(w.revision<=revision){try{w.resolve(!!ok)}catch(e){}}else keep.push(w)});
+ dbFlushWaiters=keep;
+}
+function waitForDbRevision(revision=dbRevision){
+ if(mainDbMode!=='indexeddb'||revision<=dbCommittedRevision)return Promise.resolve(true);
+ return new Promise(resolve=>dbFlushWaiters.push({revision,resolve}));
+}
+async function waitForDbIdle(){return waitForDbRevision(dbRevision)}
+async function withDbTransactionAsync(fn){
+ const result=withDbTransaction(fn);
+ if(result===false)return false;
+ return await waitForDbRevision(dbRevision);
+}
 async function flushDbWrites(){
  if(dbFlushRunning)return;dbFlushScheduled=false;dbFlushRunning=true;let waitingHooks=[];
  try{
   while(dbPendingWrites.length){const batch=dbPendingWrites.splice(0),latest=batch[batch.length-1];batch.forEach(x=>{if(x.hooks)waitingHooks.push(x.hooks)});
    try{
     await idbWriteMain(latest.snapshot,lastGoodDb);
-    lastGoodDb=cloneData(latest.snapshot);dbCommittedRevision=latest.rev;
+    lastGoodDb=cloneData(latest.snapshot);dbCommittedRevision=latest.rev;settleDbFlushWaiters(latest.rev,true);
     const completed=waitingHooks.splice(0);completed.forEach(h=>{try{h.onSuccess&&h.onSuccess()}catch(e){console.error('A+ Gestão: pós-gravação',e)}});
     if(latest.rev===dbRevision)dbSetSavedState();
     try{dbChannel&&dbChannel.postMessage({type:'changed',revision:latest.rev})}catch(e){}
    }catch(err){
     if(dbPendingWrites.length)continue; /* A próxima fotografia já contém as alterações; tenta gravar o estado mais recente. */
     if(latest.rev===dbRevision){db=cloneData(lastGoodDb);dbRevision=dbCommittedRevision;mobileSetSaveState('dirty','⚠ Falha ao salvar · dados anteriores preservados');mobileFormDirty=false;try{page();bindGo()}catch(e){}showDbSaveFailure(err)}
+    settleDbFlushWaiters(latest.rev,false);
     const failed=waitingHooks.splice(0);failed.forEach(h=>{try{h.onFailure&&h.onFailure(err)}catch(e){}});
    }
   }
- }finally{dbFlushRunning=false;if(dbPendingWrites.length)scheduleDbFlush()}
+ }finally{dbFlushRunning=false;if(dbPendingWrites.length)scheduleDbFlush();else if(dbFlushWaiters.length){const pending=dbFlushWaiters.slice();pending.forEach(w=>{if(w.revision>dbCommittedRevision)settleDbFlushWaiters(w.revision,false);else settleDbFlushWaiters(w.revision,true)})}}
 }
 function persistDbCandidate(candidate,hooks={}){
  const snapshot=cloneData(candidate);
@@ -765,26 +781,29 @@ function afterDbCommit(fn){if(dbTxDepth)dbTxEffects.push(fn);else fn()}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 function safeLocalSet(key,value){try{localStorage.setItem(key,String(value));return true}catch(e){console.warn('A+ Gestão: não foi possível salvar a preferência '+key,e);return false}}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const safeImageUrl=value=>{
- let u=String(value??'').trim().replace(/&amp;/gi,'&').replace(/[\u200B-\u200D\uFEFF]/g,'');if(!u)return'';
+const safeImageUrl=(value,depth=0)=>{
+ let u=String(value??'').trim().replace(/&amp;/gi,'&').replace(/[\u200B-\u200D\uFEFF]/g,'');if(!u||depth>2)return'';
  /* Mantém imagens raster em data URI já existentes, mas não aceita SVG embutido. */
  if(/^data:image\/(?:png|jpe?g|gif|webp|avif);base64,/i.test(u))return u;
  if(u.startsWith('//'))u='https:'+u;
  else if(!/^https?:\/\//i.test(u)&&/^(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:[/?#]|$)/i.test(u))u='https://'+u;
  let parsed;try{parsed=new URL(u)}catch{return''}if(!['http:','https:'].includes(parsed.protocol))return'';
  const host=parsed.hostname.toLowerCase();
+ /* O Google Imagens fornece uma página /imgres; o arquivo real está no parâmetro imgurl. */
+ if((host==='google.com'||host.endsWith('.google.com'))&&/^\/imgres\/?$/.test(parsed.pathname)){
+  const direct=parsed.searchParams.get('imgurl')||parsed.searchParams.get('mediaurl');
+  if(direct&&direct!==u)return safeImageUrl(direct,depth+1);
+ }
  if(host==='drive.google.com'||host==='docs.google.com'){
   const pathId=(parsed.pathname.match(/\/(?:file\/d|d)\/([\w-]+)/)||[])[1],id=pathId||parsed.searchParams.get('id');
   if(id)return'https://drive.google.com/thumbnail?id='+encodeURIComponent(id)+'&sz=w1000';
  }
  if(host==='dropbox.com'||host.endsWith('.dropbox.com')){parsed.searchParams.delete('dl');parsed.searchParams.set('raw','1')}
- /* Links do OneDrive compartilhados podem ser abertos diretamente pelo endpoint de download. */
- if(host==='1drv.ms'||host==='onedrive.live.com'){
-  if(host==='onedrive.live.com'&&parsed.searchParams.has('resid')){parsed.searchParams.set('download','1');return parsed.href}
- }
+ /* Links OneDrive: converte compartilhamento em endpoint de download quando possível. */
+ if(host==='onedrive.live.com'&&parsed.searchParams.has('resid')){parsed.searchParams.set('download','1');return parsed.href}
  return parsed.href;
 };
-const imagePreview=(value,alt='Produto',size='card')=>{const src=safeImageUrl(value);if(!src)return'';const dims=size==='thumb'?'width:48px;height:48px':size==='print'?'width:min(220px,100%);max-height:150px':'width:100%;max-height:170px';return `<a href="${esc(src)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" title="Abrir imagem em nova aba" onclick="event.stopPropagation()" style="display:block;${dims};overflow:hidden;border-radius:10px;border:1px solid var(--line);background:var(--inp);margin:6px 0"><img loading="lazy" src="${esc(src)}" alt="${esc(alt)}" referrerpolicy="no-referrer" style="width:100%;height:100%;max-height:170px;object-fit:cover;display:block" onerror="this.hidden=true;const f=this.nextElementSibling;if(f)f.hidden=false"><span hidden style="display:flex;align-items:center;justify-content:center;min-height:48px;height:100%;padding:8px;text-align:center;color:var(--mut);font-size:12px">⚠ Prévia indisponível · clique para abrir o link</span></a>`};
+const imagePreview=(value,alt='Produto',size='card')=>{const src=safeImageUrl(value);if(!src)return'';const dims=size==='thumb'?'width:48px;height:48px':size==='print'?'width:min(220px,100%);max-height:150px':'width:100%;max-height:170px';return `<div aria-label="Prévia da imagem" style="display:block;${dims};overflow:hidden;border-radius:10px;border:1px solid var(--line);background:var(--inp);margin:6px 0"><img loading="lazy" src="${esc(src)}" alt="${esc(alt)}" referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;max-height:170px;object-fit:cover;display:block;pointer-events:none" onerror="this.hidden=true;const f=this.nextElementSibling;if(f)f.hidden=false"><span hidden style="display:flex;align-items:center;justify-content:center;min-height:48px;height:100%;padding:8px;text-align:center;color:var(--mut);font-size:12px">⚠ Prévia indisponível</span></div>`};
 const num=v=>{if(typeof v==='number')return isFinite(v)?v:0;let s=String(v??'').trim().replace(/R\$|\s/g,'');if(!s)return 0;if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');else if(/^-?[1-9]\d{0,2}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');const n=Number(s.replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0};
 const hasValue=v=>v!==undefined&&v!==null&&String(v).trim()!=='';
 const money=v=>num(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),f2=n=>String(Math.round(n*100)/100).replace('.',',');
@@ -1061,13 +1080,13 @@ try{if(!localStorage.getItem('aplus_canais_seed')){if(!rows('canais').length)set
 /* ===== Catálogo de produtos (vitrine) ===== */
 (()=>{const M=mod('produtos');[['nicho','Nicho'],['foto','Foto principal (link da imagem)','url'],['fotos_extras','Fotos extras (um link por linha)','textarea'],['descricao_curta','Descrição curta'],['descricao_completa','Descrição completa','textarea'],['medidas','Medidas'],['material','Material'],['cores','Cores disponíveis'],['destaque','Destaque no catálogo','select',['NÃO','SIM']]].forEach(f=>{if(!M.fields.some(x=>x[0]===f[0]))M.fields.push(f)});
 Object.defineProperty(PREM,'produtos',{get:()=>({nicho:rows('nichos').map(r=>r.nicho).filter(Boolean)}),configurable:true});
-const sty=document.createElement('style');sty.textContent='.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.ccard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .12s,box-shadow .12s}.ccard:hover{transform:translateY(-3px);box-shadow:0 10px 26px #0003}.cimg{aspect-ratio:1/1;background:var(--acc2);display:flex;align-items:center;justify-content:center;overflow:hidden}.cimg img{width:100%;height:100%;object-fit:cover}.cimg img+.cph,.cimg>a+.cph{display:none}.cph{font-size:48px;opacity:.5}.cbd{padding:12px 14px}.cbd h4{margin:2px 0 4px;font-size:16px}.cbd p{margin:0 0 8px;color:var(--mut);font-size:13px;min-height:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.cft{display:flex;justify-content:space-between;align-items:center;gap:8px}.cstar{position:absolute;top:8px;right:10px;color:#f59e0b;font-size:20px;z-index:1}.cpr{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:24px 32px;display:none}.cpr.on{display:block}.cprh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.cpr .cgrid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}#cdv{z-index:50}.cdt{display:grid;grid-template-columns:1fr 1fr;gap:18px}.cdt .cimg{border-radius:12px}.cth{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.cth img{width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent}.cth img.on{border-color:var(--acc)}@media(max-width:700px){.cdt{grid-template-columns:1fr}.cpr{padding:16px}}';document.head.appendChild(sty);
+const sty=document.createElement('style');sty.textContent='.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.ccard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .12s,box-shadow .12s}.ccard:hover{transform:translateY(-3px);box-shadow:0 10px 26px #0003}.cimg{aspect-ratio:1/1;background:var(--acc2);display:flex;align-items:center;justify-content:center;overflow:hidden}.cimg img{width:100%;height:100%;object-fit:cover}.cimg img+.cph{display:none}.cph{font-size:48px;opacity:.5}.cbd{padding:12px 14px}.cbd h4{margin:2px 0 4px;font-size:16px}.cbd p{margin:0 0 8px;color:var(--mut);font-size:13px;min-height:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.cft{display:flex;justify-content:space-between;align-items:center;gap:8px}.cstar{position:absolute;top:8px;right:10px;color:#f59e0b;font-size:20px;z-index:1}.cpr{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:24px 32px;display:none}.cpr.on{display:block}.cprh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.cpr .cgrid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}#cdv{z-index:50}.cdt{display:grid;grid-template-columns:1fr 1fr;gap:18px}.cdt .cimg{border-radius:12px}.cth{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.cth img{width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent}.cth img.on{border-color:var(--acc)}@media(max-width:700px){.cdt{grid-template-columns:1fr}.cpr{padding:16px}}';document.head.appendChild(sty);
 const cpr=document.createElement('div');cpr.className='cpr';cpr.id='cpr';document.body.appendChild(cpr);
 const cdv=document.createElement('div');cdv.className='ov';cdv.id='cdv';cdv.innerHTML='<div class="modal" style="width:min(820px,100%)"><div class="mh"><h2 id="cdt_t"></h2><button class="btn s" id="cdx">Fechar</button></div><div class="mb" id="cdb"></div></div>';document.body.appendChild(cdv);
 const CT={q:'',n:'',c:'',d:'',dest:0,pr:1},emp=()=>{try{return JSON.parse(localStorage.getItem('aplus_empresa'))||{}}catch{return{}}},
  safeU=u=>safeImageUrl(u),
  imgs=p=>[p.foto,...String(p.fotos_extras||'').split(/\r?\n/)].map(safeU).filter(Boolean),uniq=k=>[...new Set(rows('produtos').filter(p=>!eq(p.ativo,'NÃO')).map(p=>p[k]).filter(Boolean))].sort(),
- pic=u=>`<div class="cimg">${u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" title="Abrir imagem em nova aba" style="display:block;width:100%;height:100%;color:var(--mut);text-decoration:none"><img loading="lazy" src="${esc(u)}" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover" onerror="this.remove();this.parentElement.textContent='⚠ Prévia indisponível · clique para abrir o link';this.parentElement.style.cssText='display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;font-size:12px'"></a>`:''}<div class="cph">🧊</div></div>`;
+ pic=u=>`<div class="cimg">${u?`<img loading="lazy" src="${esc(u)}" alt="" referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;object-fit:cover;pointer-events:none" onerror="this.remove();this.parentElement.textContent='⚠ Prévia indisponível';this.parentElement.style.cssText='display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;font-size:12px'">`:''}<div class="cph">🧊</div></div>`;
 function catList(){const E=estoque(),q=CT.q.toLowerCase();return rows('produtos').filter(p=>!eq(p.ativo,'NÃO')&&catOk(p)&&(!CT.n||eq(p.nicho,CT.n))&&(!CT.c||eq(p.categoria,CT.c))&&(!CT.d||eq(p.disponibilidade,CT.d))&&(!CT.dest||eq(p.destaque,'SIM'))&&(!q||[p.produto,p.sku,p.descricao_curta,p.descricao_completa,p.nicho,p.categoria,p.material,p.cores].join(' ').toLowerCase().includes(q))).map(p=>({p,casa:(E.find(e=>e._id===p._id)||{}).casa||0}))}
 const catCard=({p,casa})=>`<article class="ccard" data-cp="${p._id}">${eq(p.destaque,'SIM')?'<span class="cstar">★</span>':''}${pic(imgs(p)[0])}<div class="cbd"><small class="ok">${esc(p.nicho||p.categoria||'')}</small><h4>${esc(p.produto)}</h4><p>${esc(p.descricao_curta||'')}</p><div class="cft">${CT.pr&&num(p.preco_padrao)?`<b>${money(p.preco_padrao)}</b>`:'<span></span>'}<span class="pill ${casa>0?'g':'a'}">${casa>0?'Em estoque':esc(p.disponibilidade||'Sob encomenda')}</span></div></div></article>`;
 function catV(pres){const root=pres?cpr:$('#content'),Q=x=>root.querySelector(x),chips=(k,arr,lab)=>arr.length?`<div class="chips"><button class="chip ${CT[k]?'':'on'}" data-ck="${k}|">${lab}</button>${arr.map(v=>`<button class="chip ${eq(CT[k],v)?'on':''}" data-ck="${k}|${esc(v)}">${esc(v)}</button>`).join('')}</div>`:'';
@@ -2171,11 +2190,11 @@ function bkBind(){const a=$('#bk-now');if(a)a.onclick=()=>{exportJson();hoje()};
 const SNAP_KEEP=8;
 function snapIdb(){return new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error('sem IndexedDB'));const r=indexedDB.open('aplus_snaps',1);r.onupgradeneeded=()=>r.result.createObjectStore('s',{keyPath:'t'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 const snapReq=rq=>new Promise((res,rej)=>{rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error)});
-async function snapSave(why){try{const n=Object.values(db).reduce((a,r)=>a+(Array.isArray(r)?r.length:0),0);if(!n)return;const t=new Date().toISOString(),data=JSON.stringify({dados:db,config:backupConfig()});
- const d=await snapIdb(),tx=d.transaction('s','readwrite'),st=tx.objectStore('s');st.put({t,why,n,data});const rq=st.getAllKeys();rq.onsuccess=()=>{const ks=rq.result.sort();while(ks.length>SNAP_KEEP)st.delete(ks.shift())};await new Promise((r,j)=>{tx.oncomplete=r;tx.onerror=()=>j(tx.error)});d.close()}catch(e){}}
+async function snapSave(why){let d=null;try{const n=Object.values(db).reduce((a,r)=>a+(Array.isArray(r)?r.length:0),0);if(!n)return true;const t=new Date().toISOString(),data=JSON.stringify({dados:db,config:backupConfig()});
+ d=await snapIdb();const tx=d.transaction('s','readwrite'),st=tx.objectStore('s');st.put({t,why,n,data});const rq=st.getAllKeys();rq.onsuccess=()=>{const ks=rq.result.sort();while(ks.length>SNAP_KEEP)st.delete(ks.shift())};await new Promise((r,j)=>{tx.oncomplete=r;tx.onabort=()=>j(tx.error||new Error('Cópia automática cancelada'));tx.onerror=()=>j(tx.error||new Error('Falha ao guardar cópia automática'))});return true}catch(e){console.warn('A+ Gestão: cópia automática não foi concluída',e);return false}finally{try{d&&d.close()}catch(e){}}}
 async function snapMeta(){const d=await snapIdb(),out=[];await new Promise((res,rej)=>{const rq=d.transaction('s').objectStore('s').openCursor();rq.onsuccess=()=>{const c=rq.result;if(c){const v=c.value;out.push({t:v.t,why:v.why,n:v.n});c.continue()}else res()};rq.onerror=()=>rej(rq.error)});d.close();return out.sort((a,b)=>b.t.localeCompare(a.t))}
 async function snapAuto(){try{const m=await snapMeta();if(!m.length||m[0].t.slice(0,10)!==new Date().toISOString().slice(0,10))snapSave('automática (diária)')}catch(e){}}
-async function snapRestore(t){try{const d=await snapIdb(),r=await snapReq(d.transaction('s').objectStore('s').get(t));d.close();if(!r)return toast('Cópia não encontrada.');await snapSave('antes de restaurar');const J=JSON.parse(r.data),oldCfg=backupConfig(),ok=withDbTransaction(()=>{db=cloneData(J.dados||{});save();if(J.config)applyBackupConfig(J.config);return true});if(!ok){try{applyBackupConfig(oldCfg)}catch(e){console.error('Não foi possível restaurar todas as preferências anteriores',e)}return toast('Restauração cancelada: não foi possível gravar os dados. Os dados anteriores foram preservados; confira as preferências.')}aplusPostLoadRepair();document.getElementById('sov').classList.remove('on');toast('Cópia restaurada e consistência revisada.');nav();page();bindGo()}catch(e){toast('Não foi possível restaurar a cópia ou suas configurações.')}}
+async function snapRestore(t){let d=null;const oldCfg=backupConfig();try{d=await snapIdb();const r=await snapReq(d.transaction('s').objectStore('s').get(t));if(!r)return toast('Cópia não encontrada.');if(!await snapSave('antes de restaurar'))return toast('Não foi possível criar uma cópia de segurança antes da restauração. Nenhum dado foi alterado.');const J=JSON.parse(r.data);const ok=await withDbTransactionAsync(()=>{db=cloneData(J.dados||{});save();if(J.config)applyBackupConfig(J.config);return true});if(!ok){try{applyBackupConfig(oldCfg)}catch(e){console.error('Não foi possível restaurar todas as preferências anteriores',e)}return toast('Restauração cancelada: o IndexedDB não confirmou a gravação. Os dados anteriores foram preservados.')}try{await aplusPostLoadRepair()}catch(e){console.error('A+ Gestão: cópia restaurada, mas reparos posteriores falharam',e);toast('Cópia restaurada, mas a revisão de consistência não terminou. Faça um backup e confira os módulos.')}document.getElementById('sov').classList.remove('on');nav();page();bindGo();if(!document.querySelector('#toast.on'))toast('Cópia restaurada e gravação confirmada.')}catch(e){try{applyBackupConfig(oldCfg)}catch(x){}console.error('A+ Gestão: falha na restauração',e);toast('Não foi possível restaurar a cópia. Os dados anteriores foram preservados.')}finally{try{d&&d.close()}catch(e){}}}
 async function snapUI(){let o=document.getElementById('sov');if(!o){o=document.createElement('div');o.className='ov';o.id='sov';o.innerHTML='<div class="modal"><div class="mh"><h2>Cópias automáticas</h2><button class="btn s" id="sx" type="button">Fechar</button></div><div class="mb" id="snp-b"></div></div>';document.body.appendChild(o);document.getElementById('sx').onclick=()=>o.classList.remove('on');o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('on')})}
  o.classList.add('on');const b=document.getElementById('snp-b');b.innerHTML='<p class="ok">Carregando…</p>';
  try{const m=await snapMeta();b.innerHTML=`<p class="ok">O app guarda uma cópia por dia (e antes de importar, recalcular preços ou restaurar), até ${SNAP_KEEP}. <b>Elas ficam neste navegador</b>: ajudam com erros e trocas de dados, mas não substituem o backup em arquivo (se você limpar os dados do site, elas somem).</p>`+(m.length?m.map(x=>`<div class="snr"><span><b>${new Date(x.t).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}</b><small>${esc(x.why||'')} · ${x.n} registro(s)</small></span><button class="btn s" type="button" data-sr="${esc(x.t)}">Restaurar</button></div>`).join(''):'<div class="empty"><b>Nenhuma cópia ainda</b>A primeira é criada automaticamente quando houver dados.</div>');
@@ -2217,7 +2236,23 @@ $('#file').onchange=e=>{const fl=e.target.files[0];if(!fl)return;impCfg=null;imp
  imp[m.id]=mx.slice(at+1).filter(r=>r.some((v,i)=>!metaAt.includes(i)&&String(v??'').trim()!=='')||metaAt.some(i=>String(r[i]??'').trim()!=='')).map(r=>{let base=null;const metaRaw=metaAt.map(i=>String(r[i]??'')).join('');if(metaRaw){try{const q=JSON.parse(metaRaw);if(q&&typeof q==='object'&&!Array.isArray(q))base=q}catch{}}const o=base?{...base}:{_id:uid()};if(!o._id)o._id=uid();const ex={...(o._extraExcelFields||{})};H.forEach((f,i)=>{if(!f||f.internal||r[i]===undefined)return;if(f.extra){ex[f.key]=r[i];return}o[f[0]]=r[i]===''?'':f[2]==='date'?dt(r[i])||r[i]:f[2]==='number'?num(r[i]):r[i]});if(Object.keys(ex).length)o._extraExcelFields=ex;return o})});
  const n=Object.values(imp).reduce((a,r)=>a+r.length,0);$('#ipv').innerHTML=n?`<div class="note"><span>Encontrei <b>${n} registro(s)</b> em ${Object.keys(imp).length} módulo(s): ${Object.keys(imp).map(i=>`${mod(i).label} (${imp[i].length})`).join(', ')}. Colunas antigas não reconhecidas também serão preservadas.</span></div>`:'<div class="note">Não encontrei registros reconhecidos. Use um backup exportado pelo A+ Gestão.</div>';$('#iok').disabled=!(n||impCfg)}catch{toast('Não consegui ler este arquivo. Confira se é um .xlsx válido.')}};rd.readAsArrayBuffer(fl)};
 $('#imp').onclick=()=>$('#iov').classList.add('on');$('#ix').onclick=()=>{$('#iov').classList.remove('on');$('#file').value='';$('#ipv').innerHTML='';$('#iok').disabled=true;imp=null};
-$('#iok').onclick=()=>{if(!imp||!confirm('Substituir os módulos encontrados e restaurar as configurações disponíveis?'))return;snapSave('antes de importar');const oldCfg=backupConfig(),ok=withDbTransaction(()=>{db=impFull?{}:{...db};Object.entries(imp).forEach(([i,r])=>{db[i]=r});save();if(impCfg)applyBackupConfig(impCfg);return true});if(!ok){try{applyBackupConfig(oldCfg)}catch(e){console.error('Não foi possível restaurar todas as preferências anteriores',e)}return toast('Importação cancelada. Os dados anteriores foram preservados; confira as preferências e o espaço de armazenamento.')}aplusPostLoadRepair();impFull=false;$('#ix').click();nav();page();bindGo();toast('Importação concluída; módulos, configurações e vínculos foram revisados.')};
+$('#iok').onclick=async()=>{
+ if(!imp||!confirm('Substituir os módulos encontrados e restaurar as configurações disponíveis?'))return;
+ const btn=$('#iok'),oldCfg=backupConfig();let importCommitted=false;btn.disabled=true;btn.textContent='Importando…';
+ try{
+  if(!await snapSave('antes de importar'))throw new Error('Não foi possível criar uma cópia automática antes da importação.');
+  const ok=await withDbTransactionAsync(()=>{db=impFull?{}:{...db};Object.entries(imp).forEach(([i,r])=>{db[i]=r});save();if(impCfg)applyBackupConfig(impCfg);return true});
+  if(!ok)throw new Error('O IndexedDB não confirmou a gravação. Os dados anteriores foram preservados.');
+  importCommitted=true;
+  await aplusPostLoadRepair();
+  if(!await waitForDbIdle())throw new Error('A revisão dos dados não foi confirmada pelo IndexedDB.');
+  impFull=false;$('#ix').click();nav();page();bindGo();toast('Importação concluída e gravação confirmada; módulos e vínculos foram revisados.');
+ }catch(e){
+  if(!importCommitted){try{applyBackupConfig(oldCfg)}catch(x){console.error('Não foi possível restaurar as preferências anteriores',x)}console.error('A+ Gestão: importação cancelada',e);toast(e.message||'Importação não concluída. Os dados anteriores foram preservados.');}
+  else{console.error('A+ Gestão: dados importados, mas a revisão posterior falhou',e);impFull=false;$('#ix').click();nav();page();bindGo();toast('Os dados foram importados e gravados. Porém, a revisão automática de consistência falhou; faça um backup e confira o sistema antes de continuar.');}
+ }
+ finally{if(btn.isConnected){btn.textContent='Importar';btn.disabled=!(imp&&(Object.values(imp).some(x=>Array.isArray(x)&&x.length)||impCfg));}}
+};
 
 /* ---------- experiência mobile e proteção contra perda de dados ---------- */
 function mobileSetSaveState(kind,text){
@@ -2863,11 +2898,13 @@ function njSave(keep){return withDbTransaction(()=>njSaveImpl(keep))}
 
 
 /* ---------- correção única v4: custos, caixa e cadastros ---------- */
-function migV4(){
+async function migV4(){
+ let oldPriceRaw=null;
  try{
  if(localStorage.getItem('aplus_mig_v4'))return;
- if(!Object.keys(db).some(k=>rows(k).length)){localStorage.setItem('aplus_mig_v4','1');return}
- snapSave('antes da correção v4');
+ if(!Object.keys(db).some(k=>rows(k).length)){safeLocalSet('aplus_mig_v4','1');return true}
+ if(!await snapSave('antes da correção v4'))return false;
+ oldPriceRaw=localStorage.getItem('aplus_preco');
  const L=[],dg=s=>String(s||'').replace(/\D/g,'');
  /* parâmetros salvos que apenas repetiam o padrão deixam de "congelar" o cadastro */
  {const o=PRC_SAVED();let n=0;Object.keys(o).forEach(k=>{if(k in PRC_DEF&&num(o[k])===PRC_DEF[k]){delete o[k];n++}});if(n){localStorage.setItem('aplus_preco',JSON.stringify(o));L.push('Parâmetros de preço: '+n+' valor(es) padrão liberado(s) para seguir o cadastro.')}}
@@ -2884,18 +2921,20 @@ function migV4(){
  /* Não recalcular preços de venda durante a migração. O recálculo em lote só deve ocorrer
     quando a pessoa aciona explicitamente “Recalcular todos os produtos” em Precificação.
     Antes, este bloco gravava o preço sugerido por cima do preço escolhido manualmente. */
- localStorage.setItem('aplus_mig_v4','1');
+ if(!await waitForDbIdle()){if(oldPriceRaw===null)localStorage.removeItem('aplus_preco');else localStorage.setItem('aplus_preco',oldPriceRaw);return false}
+ safeLocalSet('aplus_mig_v4','1');
  if(L.length)setTimeout(()=>alert('Correções aplicadas (uma única vez):\n\n• '+L.join('\n• ')+'\n\nUma cópia dos dados de antes foi guardada em Mais › Backup e dados.'),600);
- }catch(e){console.error('migV4',e)}}
+ return true;
+ }catch(e){if(oldPriceRaw!==null)try{localStorage.setItem('aplus_preco',oldPriceRaw)}catch(x){}console.error('migV4',e);return false}}
 
 /* ---------- correção única v5: une produtos com o mesmo nome ---------- */
-function migV5(){
+async function migV5(){
  try{
  if(localStorage.getItem('aplus_mig_v5'))return;
  const G={};rows('produtos').forEach(p=>{const k=nz(p.produto);if(k)(G[k]=G[k]||[]).push(p)});
  const dups=Object.values(G).filter(g=>g.length>1);
- if(!dups.length){localStorage.setItem('aplus_mig_v5','1');return}
- snapSave('antes de unir produtos duplicados');
+ if(!dups.length){safeLocalSet('aplus_mig_v5','1');return true}
+ if(!await snapSave('antes de unir produtos duplicados'))return false;
  const L=[],score=p=>(p.categoria?2:0)+(p.estoque_minimo!==''&&p.estoque_minimo!=null?1:0)+(num(p.tempo_h)>0?1:0),
   refs=[['lotes','sku_produto'],['movimentos','sku'],['vendas','sku_produto'],['consignacoes','sku'],['producao','sku_produto'],['fichas','sku_produto'],['catalogo','sku'],['oportunidades','sku'],['concorrentes','sku']];
  dups.forEach(g=>{const[keep,...rest]=[...g].sort((a,b)=>score(b)-score(a)||String(a.sku).localeCompare(String(b.sku)));
@@ -2905,9 +2944,11 @@ function migV5(){
    const ei=num(d.estoque_inicial);
    setRows('produtos',rows('produtos').filter(p=>p._id!==d._id).map(p=>p._id===keep._id?{...p,estoque_inicial:num(p.estoque_inicial)+ei}:p));
    L.push(d.sku+' → '+keep.sku+' ('+keep.produto+')')})});
- localStorage.setItem('aplus_mig_v5','1');
+ if(!await waitForDbIdle())return false;
+ safeLocalSet('aplus_mig_v5','1');
  setTimeout(()=>alert('Produtos duplicados unidos (uma única vez):\n\n• '+L.join('\n• ')+'\n\nLotes, produção, vendas, custos e preços foram religados ao produto mantido. Uma cópia dos dados de antes foi guardada em Mais › Backup e dados.'),900);
- }catch(e){console.error('migV5',e)}}
+ return true;
+ }catch(e){console.error('migV5',e);return false}}
 /* A+ 2026-10-23: toda compra física nova inicia A CAMINHO; estoque só entra no recebimento. */
 /* ===== ESTOQUE INTEGRADO V1: compras → lotes → custo médio → consumo real ===== */
 MODULES.push(
@@ -3148,7 +3189,7 @@ const stockQtyFormat=(q,u)=>`${stockRoundQty(q).toLocaleString('pt-BR',{maximumF
 const stockMoneyUnit=(q,u)=>`${money(q)} / ${u||'un.'}`;
 const stockNormUnit=u=>String(u||'UN').toUpperCase().trim();
 function stockIsInternal(m){return !!m&&(eq(m.finalidade_uso,'CONSUMO INTERNO')||/CONSUMO\s+INTERNO|USO\s+INTERNO/i.test(String(m.categoria||'')))}
-function stockMigrateMaterialPurpose(){try{const current=rows('materiais'),R=current.map(m=>{if(String(m.finalidade_uso||'').trim())return m;const c=String(m.categoria||'').toUpperCase();let finalidade='NÃO CLASSIFICADO';if(/FILAMENTO|COMPONENTE|FERRAGEM/.test(c))finalidade='INSUMO DE PRODUÇÃO';else if(/EMBALAGEM/.test(c))finalidade='EMBALAGEM';return {...m,finalidade_uso:finalidade};});if(JSON.stringify(R)!==JSON.stringify(current))setRows('materiais',R);localStorage.setItem('aplus_stock_purpose_v1','1')}catch(e){console.error('Migração de finalidade dos materiais',e)}}
+function stockMigrateMaterialPurpose(){try{const current=rows('materiais'),R=current.map(m=>{if(String(m.finalidade_uso||'').trim())return m;const c=String(m.categoria||'').toUpperCase();let finalidade='NÃO CLASSIFICADO';if(/FILAMENTO|COMPONENTE|FERRAGEM/.test(c))finalidade='INSUMO DE PRODUÇÃO';else if(/EMBALAGEM/.test(c))finalidade='EMBALAGEM';return {...m,finalidade_uso:finalidade};});if(JSON.stringify(R)!==JSON.stringify(current))setRows('materiais',R);afterDbCommit(()=>waitForDbIdle().then(ok=>{if(ok)safeLocalSet('aplus_stock_purpose_v1','1')}))}catch(e){console.error('Migração de finalidade dos materiais',e)}}
 function stockUnitChoices(m){const u=stockNormUnit(m&&m.unidade);return ['G','KG'].includes(u)?['G','KG']:[u||'UN'];}
 function stockConvertQty(q,from,to){q=num(q);from=stockNormUnit(from);to=stockNormUnit(to);if(from===to)return q;if(from==='KG'&&to==='G')return q*1000;if(from==='G'&&to==='KG')return q/1000;return NaN;}
 function stockNextCode(id,field,prefix,offset=0){const n=Math.max(0,...rows(id).map(r=>+(String(r[field]||'').match(/(\d+)$/)||[0,0])[1]));return`${prefix}-${String(n+1+offset).padStart(3,'0')}`;}
@@ -3272,9 +3313,13 @@ function stockReceivePurchase(id){return withDbTransaction(()=>{const p=rows('co
  const rClass=resourceMaterialClass(m,p);if(rClass){const rec=resourceReceiveFromPurchase(p,m);setRows('compras_materiais',rows('compras_materiais').map(x=>x._id===id?{...x,status_estoque:'RECEBIDO',data_recebimento:todayS(),gestao_destino:'RECURSOS DA EMPRESA',recurso_id:rec&&rec.recurso_id||''}:x));toast(`Recebimento de ${p.compra_id||'compra'} registrado em Recursos da Empresa.`);return true;}
  // Recebimento idempotente: se a compra já tiver lote criado por uma tentativa anterior, apenas reaproveita.
  let lot=rows('lotes_materiais').find(l=>l.compra_id===p.compra_id&&l.material_id===m._id);
- if(!lot){lot={lote_material:stockNextCode('lotes_materiais','lote_material','LMT'),material_id:m._id,codigo_material:m.codigo_material,material:m.material,data_entrada:todayS(),quantidade_inicial:q,quantidade_restante:q,unidade:stockNormUnit(m.unidade),custo_unitario:stockRoundUnitCost(cost/q,m.unidade),custo_total_inicial:cost,fornecedor:p.fornecedor||'',origem:'COMPRA',compra_id:p.compra_id,financeiro_id:p.financeiro_id||'',status:'ABERTO',observacoes:'Recebimento físico confirmado após compra A CAMINHO.',_id:uid(),_criadoEm:new Date().toISOString()};setRows('lotes_materiais',[lot,...rows('lotes_materiais')]);
-   const existsMove=rows('movimentos_materiais').some(x=>eq(x.tipo,'COMPRA')&&x.referencia===p.compra_id&&x.material_id===m._id);
-   if(!existsMove)stockAppendMoves([stockMoveRow({tipo:'COMPRA',m,lote,quantidade:q,valor:cost,origem:'Recebimento de compra',referencia:p.compra_id,observacoes:`Recebimento físico confirmado${p.fornecedor?' · Fornecedor: '+p.fornecedor:''}`,data:todayS()})]);
+ if(!lot){lot={lote_material:stockNextCode('lotes_materiais','lote_material','LMT'),material_id:m._id,codigo_material:m.codigo_material,material:m.material,data_entrada:todayS(),quantidade_inicial:q,quantidade_restante:q,unidade:stockNormUnit(m.unidade),custo_unitario:stockRoundUnitCost(cost/q,m.unidade),custo_total_inicial:cost,fornecedor:p.fornecedor||'',origem:'COMPRA',compra_id:p.compra_id,financeiro_id:p.financeiro_id||'',status:'ABERTO',observacoes:'Recebimento físico confirmado após compra A CAMINHO.',_id:uid(),_criadoEm:new Date().toISOString()};setRows('lotes_materiais',[lot,...rows('lotes_materiais')]);}
+ // A existência do lote e do movimento são conferidas separadamente: corrige histórico incompleto sem criar duplicatas.
+ const moveExists=rows('movimentos_materiais').some(x=>eq(x.tipo,'COMPRA')&&String(x.referencia||'')===String(p.compra_id||'')&&x.material_id===m._id);
+ if(!moveExists){
+  const lotQty=stockRoundQty(num(lot.quantidade_inicial)>0?lot.quantidade_inicial:q);
+  const lotValue=r2(num(lot.custo_total_inicial)>0?num(lot.custo_total_inicial):lotQty*num(lot.custo_unitario));
+  stockAppendMoves([stockMoveRow({tipo:'COMPRA',m,lote:lot,quantidade:lotQty,valor:lotValue,origem:'Recebimento de compra',referencia:p.compra_id,observacoes:`Recebimento físico confirmado${p.fornecedor?' · Fornecedor: '+p.fornecedor:''}`,data:lot.data_entrada||todayS()})]);
  }
  const L=stockLotsFor(m),open=L.filter(l=>num(l.quantidade_restante)>0),qty=stockRoundQty(sum(open,l=>num(l.quantidade_restante))),rawValue=sum(open,l=>num(l.quantidade_restante)*num(l.custo_unitario)),value=r2(rawValue),avg=qty>0?stockRoundUnitCost(rawValue/qty,m.unidade):num(m.custo_unidade);
  setRows('materiais',rows('materiais').map(x=>x._id===m._id?{...x,estoque_atual:qty,custo_unidade:avg,valor_estoque:value,custo_ultima_compra:stockRoundUnitCost(lot.custo_unitario,m.unidade),data_ultima_compra:todayS()}:x));
@@ -3526,10 +3571,8 @@ function kitOpen(id=null){
 Object.assign(VIEWS,{'kits':kitsV,'v-kits':kitsV});
 HUBS.vendas.tabs.push(['kits','Kits de venda']);
 
-/* Compra, recebimento, consumo e saldo ficam reconciliados desde a abertura. */
-withDbTransaction(()=>stockEnsureOpeningLots());
-
-function migLucrosV3(){
+/* Compra, recebimento, consumo e saldo são reconciliados somente depois que o IndexedDB abre. */
+async function migLucrosV3(){
  const key='aplus_mig_lucros_v3';try{if(localStorage.getItem(key))return}catch{}
  let changed=0;
  try{
@@ -3540,11 +3583,13 @@ function migLucrosV3(){
    changed++;return{...r,lucro_virgem:v.lucroVirgem,lucro_sem_ajustes:v.lucroSemAjustes,margem_virgem:v.margemVirgem,margem_sem_ajustes:v.margemSemAjustes,versao_lucros:3,lucros_estimados:true,fonte_lucros:v.fonte||'Estimativa recalculada com a regra atual e custos atuais'};
   });if(R.some((r,i)=>r!==rows(id)[i]))setRows(id,R)};
   upd('vendas','vendas');
-  localStorage.setItem(key,'1');
+  if(!await waitForDbIdle())return false;
+  safeLocalSet(key,'1');
   if(changed)console.info('A+ Gestão: '+changed+' estimativa(s) de lucro atualizada(s) para a regra de taxas por forma de pagamento.');
- }catch(e){console.error('A+ Gestão: não foi possível atualizar estimativas de lucro antigas',e)}
+  return true;
+ }catch(e){console.error('A+ Gestão: não foi possível atualizar estimativas de lucro antigas',e);return false}
 }
-function migLucrosKatanaEEntregas(){
+async function migLucrosKatanaEEntregas(){
  // Reexecuta a verificação mesmo depois da importação de um backup. A versão anterior
  // usava uma chave persistente e podia ignorar registros importados posteriormente.
  const key='aplus_mig_lucros_pedidos_entregues_v2';
@@ -3569,11 +3614,12 @@ function migLucrosKatanaEEntregas(){
    if(next.some((r,i)=>r!==old[i]))setRows(id,next);
   };
   // Primeiro imprime, para que os pedidos entregues possam herdar a composição completa.
-  atualiza('impressoes','impressoes');
-  atualiza('personalizados','personalizados');
-  try{localStorage.setItem(key,'1')}catch{}
+  const ok=withDbTransaction(()=>{atualiza('impressoes','impressoes');atualiza('personalizados','personalizados');return true});
+  if(ok===false||!await waitForDbIdle())return false;
+  safeLocalSet(key,'1');
   if(changed)console.info('A+ Gestão: '+changed+' registro(s) reparados com Lucro Virgem e Lucro sem Ajustes.');
- }catch(e){console.error('A+ Gestão: não foi possível completar os indicadores de pedidos entregues',e)}
+  return true;
+ }catch(e){console.error('A+ Gestão: não foi possível completar os indicadores de pedidos entregues',e);return false}
 }
 
 
@@ -3592,15 +3638,24 @@ function migTesteFracassadoResultado(){
  if(n)setRows('impressoes',R);return n
 }
 
-function aplusPostLoadRepair(){
- let repaired=0;withDbTransaction(()=>{stockMigrateMaterialPurpose();stockRepairMaterialCodes();stockEnsureOpeningLots();repairHistoricalDataConsistency();resourceMigrateReceived();resourceFixMoveleiroDuplicates();syncAllConsignacaoMovimentos();repaired+=repararOrdensProducao();migTesteFracassadoResultado();migLucrosKatanaEEntregas();fixLinks();});return repaired;
+async function aplusPostLoadRepair(){
+ let repaired=0;
+ const ok=withDbTransaction(()=>{stockMigrateMaterialPurpose();stockRepairMaterialCodes();stockEnsureOpeningLots();repairHistoricalDataConsistency();resourceMigrateReceived();resourceFixMoveleiroDuplicates();syncAllConsignacaoMovimentos();repaired+=repararOrdensProducao();migTesteFracassadoResultado();fixLinks();return true});
+ if(ok===false||!await waitForDbIdle())throw new Error('O IndexedDB não confirmou a revisão de consistência.');
+ const lucroOk=await migLucrosKatanaEEntregas();
+ if(lucroOk===false||!await waitForDbIdle())throw new Error('O IndexedDB não confirmou a atualização dos indicadores de lucro.');
+ return repaired;
 }
 async function startAplusAfterDatabase(){
  const gate=document.createElement('div');gate.id='aplus-db-startup';gate.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:#08080bea;color:#fff;font:600 15px Montserrat,system-ui,sans-serif;text-align:center';gate.textContent='A+ Gestão · Preparando seu banco de dados com segurança…';document.body.appendChild(gate);
  try{
   const dbInfo=await initMainDb();
-  const _prodReparadas=aplusPostLoadRepair();
-  migV4();migV5();migLucrosV3();migLucrosKatanaEEntregas();stockMigrateMaterialPurpose();go('v-hoje');snapAuto();
+  const _prodReparadas=await aplusPostLoadRepair();
+  if(await migV4()===false)throw new Error('A correção automática v4 não foi confirmada no banco.');
+  if(await migV5()===false)throw new Error('A correção automática v5 não foi confirmada no banco.');
+  if(await migLucrosV3()===false)throw new Error('A atualização dos indicadores de lucro não foi confirmada no banco.');
+  if(!await waitForDbIdle())throw new Error('Há gravações pendentes que não foram confirmadas.');
+  go('v-hoje');snapAuto();
   if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
   if(dbInfo.mode!=='indexeddb')setTimeout(()=>toast('Aviso: IndexedDB não ficou disponível neste navegador. O sistema está usando o armazenamento local; evite modo privado e faça backups frequentes.'),900);
  }catch(e){console.error('A+ Gestão: falha ao iniciar o banco',e);try{go('v-hoje')}catch{}toast('O banco não pôde ser preparado corretamente. Faça um backup antes de continuar.');}
@@ -4919,5 +4974,18 @@ function loteEnvioOpen(preStore){
 }
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-lote]');if(!b)return;e.preventDefault();e.stopPropagation();loteEnvioOpen(b.getAttribute('data-lote')||'')},true);
 </script>
-<script>startAplusAfterDatabase();</script>
+<script>
+startAplusAfterDatabase();
+/* Cache offline do aplicativo: requer o arquivo sw.js na mesma pasta do index.html. */
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+ addEventListener('load',()=>{
+  const base=new URL('./',document.baseURI);
+  navigator.serviceWorker.register(new URL('sw.js',base),{scope:base.pathname})
+   .then(()=>console.info('A+ Gestão: suporte offline do aplicativo ativado.'))
+   .catch(e=>console.warn('A+ Gestão: cache offline indisponível; o sistema continua funcionando online.',e));
+ });
+}
+addEventListener('offline',()=>{try{toast('Sem internet: você pode continuar trabalhando. Os dados ficam neste aparelho.')}catch(e){}});
+addEventListener('online',()=>{try{toast('Conexão restabelecida. Os dados locais continuam disponíveis.')}catch(e){}});
+</script>
 </body></html>
