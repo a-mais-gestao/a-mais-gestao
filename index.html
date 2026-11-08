@@ -2881,9 +2881,11 @@ function njSaveImpl(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
  /* sinal */
  if(J.tipo==='ENCOMENDA'&&ok&&sinal>0&&J.lancaSinal)njAdd('financeiro',{data:(oldFin&&oldFin.data)||hoje,tipo:'ENTRADA',categoria:'PEDIDO',descricao:'Sinal '+codigo+' · '+J.cliente.nome.trim(),valor:r2(sinal),forma_pagamento:c.payLab,status:'RECEBIDO',observacoes:'Origem: Nova impressão',_imp:id});
  /* conclusão: baixa de estoque e entrada no estoque */
- let fx={};
+ let fx={},finalProductGroups=njProductGroups(J,c);
  if(st==='CONCLUIDA'){fx=njBaixa(J,c);let recoveredTest={recoveredCost:0,recovered:[]};if(failedTest){recoveredTest=njApplyRecoveredExtras(J,c,fx);c=recoveredTest.c;fx=recoveredTest.fx}c=stockApplyActualCosts(c,J,fx);
-  const finalProductGroups=njProductGroups(J,c);
+  /* Mantém os grupos no escopo externo: eles também são usados no registro da impressão
+     quando o status é orçamento/aprovada, e após recalcular custos na conclusão. */
+  finalProductGroups=njProductGroups(J,c);
   if(stockOutput)finalProductGroups.forEach(g=>{const source=g.parts[0].source,qGood=Math.max(0,num(source.qtdBoas==null?g.q:source.qtdBoas)),qLost=Math.max(0,num(source.qtdPerdidas)),sku=stockSkuByMesa.get(source.id)||((acharProduto(g.nome)||{}).sku)||njProduto({...g,q:g.q},c,J),share=num(g.share)||1/Math.max(finalProductGroups.length,1),inventoryCost=Math.max(0,num(c.custo)-num(c.ent)-num(c.tPay)-num(c.tImp)),lotCost=r2(inventoryCost*share),lotMat=r2((num(c.fil)+num(c.fal)+num(c.emb)+num(c.ext))*share),unitCost=qGood>0?Math.round((lotCost/qGood)*1000000)/1000000:0;njAdd('lotes',{data:hoje,lote:nextId(mod('lotes')),sku_produto:sku,produto:g.nome,qtd_planejada:g.q,qtd_produzida:qGood,qtd_perdida:qLost,percentual_perda:g.q?r2(qLost/g.q*100):0,material_consumido:Math.round((num(g.gT)+num(g.failG))*1000)/1000,tempo_total:r2(g.hrsT),custo_materiais_real:lotMat,custo_total_real:lotCost,custo_unitario_real:unitCost,impressao_origem:codigo,observacoes:'Origem: Nova impressão '+codigo+(g.isMultipart?' · produto montado com partes separadas: '+g.partNames.join(', '):' · produção em mesa')+` · ${qGood} boa(s), ${qLost} perdida(s)`,_imp:id,_mesaId:source.id,_mesaIds:g.parts.map(p=>p.source.id)})});
  }
 
