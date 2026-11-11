@@ -232,6 +232,20 @@ html[data-theme=dark] .kpi,html[data-theme=dark] .kc2{border-top:2px solid #f026
 .vg-card{position:relative;display:flex;flex-direction:column;gap:9px;min-width:0;text-align:left;padding:14px 16px 15px;background:linear-gradient(160deg,color-mix(in srgb,var(--card) 100%,#fff 3%),var(--card));border:1px solid var(--line);border-radius:16px;cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
 .vg-card:hover,.vg-card:focus-visible{transform:translateY(-2px);border-color:var(--acc);box-shadow:0 10px 26px #0003}
 .vg-card:has(input[data-sel]:checked){border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 30%,transparent)}
+/* Impressões: cor do cartão acompanha o resultado operacional, não apenas o status textual. */
+.vg-card.imp-card{--imp-tone:#64748b;position:relative;isolation:isolate;overflow:hidden;border-color:color-mix(in srgb,var(--imp-tone) 42%,var(--line));background:linear-gradient(145deg,color-mix(in srgb,var(--imp-tone) 10%,var(--card)),var(--card) 72%)}
+.vg-card.imp-card:before{content:"";position:absolute;z-index:-1;left:0;top:10px;bottom:10px;width:4px;border-radius:0 5px 5px 0;background:var(--imp-tone)}
+.vg-card.imp-card:hover,.vg-card.imp-card:focus-visible{border-color:var(--imp-tone);box-shadow:0 10px 26px #0003}
+.vg-card.imp-card:has(input[data-sel]:checked){border-color:var(--imp-tone);box-shadow:0 0 0 2px color-mix(in srgb,var(--imp-tone) 28%,transparent)}
+.imp-state-pill{display:inline-flex;align-items:center;gap:5px;max-width:100%;border:1px solid color-mix(in srgb,var(--imp-tone) 35%,var(--line));border-radius:99px;padding:3px 9px;background:color-mix(in srgb,var(--imp-tone) 13%,var(--card));color:color-mix(in srgb,var(--imp-tone) 82%,var(--ink));font-weight:750;font-size:11px;line-height:1.25;white-space:normal}
+.imp-card-note{display:flex;align-items:flex-start;gap:7px;padding:9px 10px;border:1px solid color-mix(in srgb,var(--imp-tone) 26%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--imp-tone) 8%,var(--card));font-size:12px;line-height:1.4;color:var(--ink)}
+.imp-card-note strong{font-weight:750}.imp-card-note.warn{--imp-tone:#b45309}.imp-card-note.bad{--imp-tone:#dc2626}
+.imp-card-meta{font-size:12px;color:var(--mut);display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.imp-card-meta b{color:var(--ink);font-weight:650}
+.imp-legend{display:flex;align-items:center;gap:7px 14px;flex-wrap:wrap;margin:4px 0 14px;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:11.5px;color:var(--mut)}
+.imp-legend span{display:inline-flex;align-items:center;gap:6px}.imp-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none}
+
+
 .vg-h{display:flex;align-items:center;gap:8px;min-height:24px;font-size:12.5px;color:var(--mut)}
 .vg-d{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vg-ck{display:inline-flex;padding:4px;margin:-4px 0 -4px -6px;cursor:default}
@@ -608,7 +622,7 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
 <div class="toast" id="toast"></div>
 <script>
 const MODULES=[
-{id:'produtos',label:'Produtos',icon:'▦',sheet:'PRODUTOS',desc:'Cadastro mestre de produtos e SKUs.',fields:[['sku','SKU','text',true],['produto','Produto','text',true],['categoria','Categoria'],['uso_produto','Destino do produto','select',['PARA VENDA','PEDIDO','USO NA LOJA','USO PESSOAL']],['custo_unitario','Custo unitário','number'],['estoque_minimo','Estoque mínimo','number'],['estrategia_estoque','Estratégia de estoque','select',['TESTE_DEMANDA','NORMAL','ALTA_SAIDA','BAIXA_SAIDA','SOB_DEMANDA']],['teste_limite','Limite do teste (unidades)','number'],['ativo','Ativo?','select',['SIM','NÃO']],['preco_padrao','Preço padrão','number'],['estoque_inicial','Estoque inicial','number'],['tempo_h','Tempo de impressão (h)','number'],['peso_g','Peso da peça (g)','number'],['horas_manuais','Horas manuais por peça (h)','number'],['setup_h','Setup do lote (h)','number'],['lote_un','Peças por lote','number'],['observacoes','Observações','textarea'],['motor','Motor','select',['GIRO','SOB DEMANDA','PERSONALIZADO','ATACADO']],['disponibilidade','Disponibilidade'],['nivel_servico','Nível serviço'],['cidade_foco','Cidade foco']]},
+{id:'produtos',label:'Produtos',icon:'▦',sheet:'PRODUTOS',desc:'Cadastro mestre de produtos e SKUs.',fields:[['sku','SKU','text',true],['produto','Produto','text',true],['produto_base','Produto-base / família','text'],['versao_produto','Versão / variante','text'],['categoria','Categoria'],['uso_produto','Destino do produto','select',['PARA VENDA','PEDIDO','USO NA LOJA','USO PESSOAL']],['custo_unitario','Custo unitário','number'],['estoque_minimo','Estoque mínimo','number'],['estrategia_estoque','Estratégia de estoque','select',['TESTE_DEMANDA','NORMAL','ALTA_SAIDA','BAIXA_SAIDA','SOB_DEMANDA']],['fase_comercial','Fase comercial (opcional)','select',['EM_TESTE','FUNCIONANDO','CONSOLIDADO','PAUSADO']],['teste_limite','Limite do teste (unidades)','number'],['ativo','Ativo?','select',['SIM','NÃO']],['preco_padrao','Preço padrão','number'],['estoque_inicial','Estoque inicial','number'],['tempo_h','Tempo de impressão (h)','number'],['peso_g','Peso da peça (g)','number'],['horas_manuais','Horas manuais por peça (h)','number'],['setup_h','Setup do lote (h)','number'],['lote_un','Peças por lote','number'],['observacoes','Observações','textarea'],['motor','Motor','select',['GIRO','SOB DEMANDA','PERSONALIZADO','ATACADO']],['disponibilidade','Disponibilidade'],['nivel_servico','Nível serviço'],['cidade_foco','Cidade foco']]},
 {id:'lojas',label:'Lojas parceiras',icon:'⌂',sheet:'LOJAS',fields:[['codigo','Código','text',true],['loja_empresa','Loja / Empresa','text',true],['nicho','Nicho'],['responsavel','Responsável'],['telefone','Telefone / WhatsApp'],['cidade','Cidade'],['bairro','Bairro'],['rua','Rua'],['numero','Nº'],['data_inicio','Data de início','date'],['comissao','Comissão %','number'],['status','Status','select',['ATIVA','PAUSADA','ENCERRADA']],['proxima_visita','Próxima visita','date'],['ultimo_acerto','Último acerto','date'],['observacoes','Observações','textarea']]},
 {id:'vendas',label:'Vendas',icon:'↗',sheet:'VENDAS',fields:[['data','Data','date',true],['canal','Canal','select',['DIRETA','CONSIGNADA','ONLINE','ATACADO','PERSONALIZADO','EVENTO']],['loja_cliente','Loja / Cliente'],['sku_produto','SKU produto'],['produto','Produto'],['kit_id','Kit de venda (opcional)','select',[]],['quantidade','Quantidade','number'],['valor_unitario','Preço de venda unitário','number'],['comissao_lojista_pct','Comissão do lojista %','number'],['comissao_lojista_valor','Valor do lojista R$','number'],['status_pagamento','Pagamento','select',['RECEBIDO','PENDENTE']],['forma_pagamento','Forma de pagamento'],['vencimento','Vencimento (se pendente)','date'],['receita_bruta','Receita bruta','number'],['desconto','Desconto','number'],['taxa_canal','Taxa do canal','number'],['frete','Frete','number'],['imposto','Imposto (R$)','number'],['receita_liquida','Receita líquida','number'],['custo_unitario','Custo real unitário','number'],['custo_total','Custo total','number'],['lucro','Lucro','number']]},
 {id:'consignacoes',label:'Consignações',icon:'⇄',sheet:'CONSIGNAÇÕES',fields:[['loja_empresa','Loja / Empresa','text',true],['sku','SKU'],['produto','Produto'],['qtd_enviada','Qtd. enviada','number'],['qtd_vendida','Qtd. vendida','number'],['qtd_devolvida','Qtd. devolvida','number'],['qtd_avariada','Qtd. avariada','number'],['estoque_loja','Estoque na loja','number'],['preco_unitario','Preço unit.','number'],['valor_bruto','Valor bruto','number'],['comissao_pct','Comissão do lojista %','number'],['comissao_valor','Valor do lojista R$','number'],['a_receber','A receber','number'],['status_acerto','Status acerto','select',['PENDENTE','ACERTADO','PARCIAL']],['ultimo_envio','Último envio','date'],['ultimo_acerto','Último acerto','date'],['observacoes','Observações','textarea']]},
@@ -869,56 +883,189 @@ function testeDemanda(p){
  const motivo=ritmo==='RAPIDO'?`Vendeu ${vendidasNoLote}/${ultimaQtd} em ${dias} dia(s): dentro da meta de 15 dias.`:ritmo==='LENTO'?`Vendeu ${vendidasNoLote}/${ultimaQtd} em ${dias} dia(s): acima de 30 dias, sinal de baixa saída.`:ritmo==='NORMAL'?`Vendeu ${vendidasNoLote}/${ultimaQtd} em ${dias} dia(s): faixa intermediária, mantém o lote.`:'Aguardando o lote esgotar por venda.';
  return{ativo:true,stock,limite,ultimaQtd,validado,precisa,proxima,vendas:vendas.reduce((a,x)=>a+x.q,0),ultimaVenda,ultimoLote,vendidasNoLote,dias,ritmo,motivo,subir,descer};
 }
+function faseProdutoInfo(p){
+ const manual=String(p&&p.fase_comercial||'').trim().toUpperCase().replace(/[\s-]+/g,'_'),vendas=vendasProduto(p),unidades=Math.round(vendas.reduce((a,x)=>a+num(x.q),0)),
+       estrategia=String(p&&p.estrategia_estoque||'NORMAL').toUpperCase(),limite=Math.max(1,Math.round(num(p&&p.teste_limite)||5)),loteTeste=Math.max(1,Math.round(num(p&&p.teste_ultima_quantidade)||num(p&&p.teste_lote_inicial)||1)),
+       testeValidado=!!(p&&p.teste_validado)||loteTeste>=limite;
+ let fase='SEM_HISTORICO',automatica=true;
+ if(['EM_TESTE','FUNCIONANDO','CONSOLIDADO','PAUSADO'].includes(manual)){fase=manual;automatica=false;}
+ else if(estrategia==='TESTE_DEMANDA'&&!testeValidado)fase='EM_TESTE';
+ else if(unidades>0||estrategia==='TESTE_DEMANDA'&&testeValidado)fase='FUNCIONANDO';
+ const meta={EM_TESTE:{label:'Em teste',icon:'🧪',tone:'test'},FUNCIONANDO:{label:'Funcionando',icon:'✅',tone:'working'},CONSOLIDADO:{label:'Consolidado',icon:'⭐',tone:'solid'},PAUSADO:{label:'Pausado',icon:'⏸️',tone:'paused'},SEM_HISTORICO:{label:'Sem histórico',icon:'🌱',tone:'new'}}[fase];
+ return{fase,automatica,unidades,...meta};
+}
+function setFaseProduto(id,fase){
+ const R=rows('produtos'),i=R.findIndex(x=>x._id===id);if(i<0)return;
+ const next=String(fase||'AUTO').toUpperCase(),value=['EM_TESTE','FUNCIONANDO','CONSOLIDADO','PAUSADO'].includes(next)?next:'';
+ setRows('produtos',R.map((x,j)=>j===i?{...x,fase_comercial:value}:x));syncRow('produtos',id);produtosV();
+ toast(value?`Fase de ${R[i].produto} atualizada: ${value.replaceAll('_',' ').toLowerCase()}.`:'Classificação automática ativada para '+R[i].produto+'.');
+}
 function setEstratProduto(id,estrategia){const R=rows('produtos'),i=R.findIndex(x=>x._id===id);if(i<0)return;const e=String(estrategia||'NORMAL').toUpperCase(),p=R[i],n={...p,estrategia_estoque:e};if(e==='TESTE_DEMANDA'){n.teste_limite=Math.max(1,Math.round(num(p.teste_limite)||5));n.teste_lote_inicial=Math.max(1,Math.round(num(p.teste_lote_inicial)||1));}setRows('produtos',R.map((x,j)=>j===i?n:x));syncRow('produtos',id);produtosV();toast(e==='TESTE_DEMANDA'?'🧪 Teste ativado · meta de venda em até 15 dias.':'Estratégia: '+e.replaceAll('_',' '))}
 function abrirReposicaoTeste(id,qty){const p=rows('produtos').find(x=>x._id===id);if(!p||!qty)return;NJ=njNovo();NJT=1;NJERR=false;NJSAVED=false;NJ.tipo='ESTOQUE';NJ.status='APROVADA';const m=NJ.mesas[0];njPickProd(m.id,p.sku);m.qtd=String(Math.max(1,Math.round(qty)));cur='v-nova';nav();njRender();scrollTo(0,0);toast(`Produção sugerida: ${Math.round(qty)} unidade(s) de ${p.produto}.`)}
 function concluirTesteDemandaAoProduzir(sku){const p=rows('produtos').find(x=>eq(x.sku,sku));if(!p||String(p.estrategia_estoque||'').toUpperCase()!=='TESTE_DEMANDA')return;const lt=rows('lotes').filter(x=>eq(x.sku_produto,sku)&&num(x.qtd_produzida)>0).sort((a,b)=>String(recTime(a)).localeCompare(String(recTime(b)))).pop();if(!lt)return;const q=Math.max(1,Math.round(num(lt.qtd_produzida))),lim=Math.max(1,Math.round(num(p.teste_limite)||5));setRows('produtos',rows('produtos').map(x=>eq(x.sku,sku)?{...x,teste_ultima_quantidade:q,teste_ultima_producao_em:recTime(lt),teste_validado:q>=lim}:x))}
 
+/* ===== EXPORTAÇÃO: diagnóstico completo de precificação para análise externa ===== */
+function apxRoundOrNull(v){return v===''||v===null||v===undefined||!Number.isFinite(Number(v))?null:r2(v)}
+function apxSumOrNull(items,key){const vals=(items||[]).filter(x=>liTem(x,key));return vals.length?r2(sum(vals,key)):null}
+function apxPriceAuditData(){
+ const P=PRC(),products=rows('produtos'),stock=estoque(),today=todayS();
+ const fmtName=x=>String(x||'').trim();
+ const channelRows=rows('canais').map(c=>({canal:c.canal||'',taxa_percentual:apxRoundOrNull(c.taxa_pct),taxa_fixa_R$:apxRoundOrNull(c.taxa_fixa),ativo:String(c.ativo||'SIM').toUpperCase()}));
+ const params={
+  custo_filamento_R$_kg:apxRoundOrNull(P.custo_kg),potencia_padrao_W:apxRoundOrNull(P.potencia),custo_kWh_R$:apxRoundOrNull(P.kwh),
+  valor_impressora_R$:apxRoundOrNull(P.impressora),vida_util_impressora_h:apxRoundOrNull(P.vida),custo_fixo_h_R$:apxRoundOrNull(P.fixo_h),
+  desgaste_h_R$:apxRoundOrNull(P.desgaste_h),valor_hora_trabalho_R$:apxRoundOrNull(P.hora),valor_rolo_embalagem_R$:apxRoundOrNull(P.rolo),
+  embalagens_por_rolo:apxRoundOrNull(P.emb_rolo),reserva_falhas_percentual:apxRoundOrNull(P.falhas),imposto_percentual:apxRoundOrNull(P.imposto),
+  taxa_cartao_padrao_percentual:apxRoundOrNull(P.cartao),anuncio_marketplace_padrao_percentual:apxRoundOrNull(P.anuncio),
+  margem_liquida_alvo_percentual:apxRoundOrNull(P.margem),preco_lojista_percentual_do_preco_final:apxRoundOrNull(P.lojista)
+ };
+ const outProducts=products.map(p=>{
+  const sku=fmtName(p.sku),name=fmtName(p.produto),costRow=sku?rows('custos').find(x=>eq(x.sku,sku))||null:null,
+        matrix=sku?rows('matriz_precos').find(x=>eq(x.sku,sku))||null:null,st=stock.find(x=>x._id===p._id)||{},
+        direct=sku?rows('vendas').filter(x=>eq(x.sku_produto,sku)):[],cons=sku?rows('consignacoes').filter(x=>eq(x.sku,sku)):[],
+        events=sku?rows('eventos').filter(x=>eq(x.sku_evento,sku)):[],lots=sku?rows('lotes').filter(x=>eq(x.sku_produto,sku)):[],
+        orders=sku?rows('personalizados').filter(x=>eq(x.produto_sku,sku)):[],competitors=rows('concorrentes').filter(x=>(sku&&eq(x.sku,sku))||(!x.sku&&name&&nz(x.produto)===nz(name))),
+        recipe=sku?rows('fichas').filter(x=>eq(x.sku_produto,sku)).map(x=>({material:x.material||null,codigo_material:x.codigo_material||null,quantidade:apxRoundOrNull(x.quantidade),unidade:x.unidade||null,custo_material_R$:apxRoundOrNull(x.custo_material),tempo_impressao_min:apxRoundOrNull(x.tempo_impressao),quantidade_por_impressao:apxRoundOrNull(x.qtd_por_impressao),observacoes:x.observacoes||null})):[],
+        kitLinks=sku?rows('kits').map(k=>{let parts=Array.isArray(k.componentes)?k.componentes:[];if(!parts.length){try{const parsed=JSON.parse(String(k.componentes_json||''));if(Array.isArray(parsed))parts=parsed}catch{}}const part=parts.find(x=>eq(x.sku,sku));return part?{codigo:k.codigo_kit||null,nome:k.nome||null,quantidade_no_kit:apxRoundOrNull(part.quantidade),preco_kit_R$:apxRoundOrNull(k.preco_venda),ativo:k.ativo||null}:null}).filter(Boolean):[];
+  let calc=null;try{if(num(p.tempo_h)>0&&num(p.peso_g)>0)calc=precif(pcO(p),P)}catch{}
+  const price=num(p.preco_padrao),hasRecordedCost=!!sku&&(liTem(costRow,'custo_unitario')||liTem(p,'custo_unitario')),recordedCost=hasRecordedCost?custoSku(sku):null,modelCost=calc&&calc.ok?num(calc.custo):null,
+        modeledNetProfit=calc&&calc.ok&&price>0?price-modelCost-price*(num(P.imposto)+num(P.cartao)+num(P.anuncio))/100:null;
+  const directQ=sum(direct,'quantidade'),directGross=direct.length? r2(sum(direct,v=>liTem(v,'receita_bruta')?num(v.receita_bruta):num(v.valor_unitario)*num(v.quantidade))):0,
+        directDiscount=r2(sum(direct,'desconto')),directChannelFees=r2(sum(direct,'taxa_canal')),directFreight=r2(sum(direct,'frete')),
+        directTaxes=apxSumOrNull(direct,'imposto'),directCosts=apxSumOrNull(direct,'custo_total'),directProfit=apxSumOrNull(direct,'lucro');
+  const byChannel={};direct.forEach(v=>{const ch=String(v.canal||'SEM CANAL').toUpperCase();if(!byChannel[ch])byChannel[ch]={vendas:0,unidades:0,faturamento_bruto_R$:0,descontos_R$:0,taxas_canal_R$:0,custo_registrado_R$:0,lucro_registrado_R$:0,precos_unitarios:[]};const a=byChannel[ch],q=Math.max(0,num(v.quantidade)),gross=liTem(v,'receita_bruta')?num(v.receita_bruta):num(v.valor_unitario)*q;a.vendas++;a.unidades+=q;a.faturamento_bruto_R$+=gross;a.descontos_R$+=num(v.desconto);a.taxas_canal_R$+=num(v.taxa_canal);if(liTem(v,'custo_total'))a.custo_registrado_R$+=num(v.custo_total);if(liTem(v,'lucro'))a.lucro_registrado_R$+=num(v.lucro);if(num(v.valor_unitario)>0)a.precos_unitarios.push(num(v.valor_unitario));});
+  Object.values(byChannel).forEach(a=>{a.faturamento_bruto_R$=r2(a.faturamento_bruto_R$);a.descontos_R$=r2(a.descontos_R$);a.taxas_canal_R$=r2(a.taxas_canal_R$);a.custo_registrado_R$=r2(a.custo_registrado_R$);a.lucro_registrado_R$=r2(a.lucro_registrado_R$);a.preco_medio_unitario_R$=a.precos_unitarios.length?r2(a.precos_unitarios.reduce((x,y)=>x+y,0)/a.precos_unitarios.length):null;delete a.precos_unitarios;});
+  const consSold=sum(cons,'qtd_vendida'),consSent=sum(cons,'qtd_enviada'),consReturns=sum(cons,'qtd_devolvida'),consDamaged=sum(cons,'qtd_avariada'),consGross=apxSumOrNull(cons,'valor_bruto'),consCommission=cons.length?r2(sum(cons,x=>liTem(x,'comissao_valor')?num(x.comissao_valor):num(x.valor_bruto)*num(x.comissao_pct)/100)):null,consReceivable=apxSumOrNull(cons,'a_receber');
+  const eventUnits=sum(events,'unidades_vendidas'),eventRevenue=apxSumOrNull(events,'receita');
+  const lotProduced=sum(lots,'qtd_produzida'),lotLost=sum(lots,'qtd_perdida'),lotPlanned=sum(lots,'qtd_planejada');
+  const orderStatus={};orders.forEach(o=>{const k=String(o.status||'SEM STATUS').toUpperCase();orderStatus[k]=(orderStatus[k]||0)+1});
+  const orderRevenue=orders.filter(o=>eq(o.status,'ENTREGUE')).reduce((a,o)=>a+num(o.valor_total),0);
+  const compList=competitors.map(c=>({concorrente:c.concorrente||'',canal:c.canal||'',preco_R$:apxRoundOrNull(c.preco),frete_R$:apxRoundOrNull(c.frete),preco_total_R$:apxRoundOrNull(c.preco_total),data_coleta:c.data_coleta||'',observacoes:c.observacoes||''}));
+  const costBreakdown=costRow?{materiais_R$:apxRoundOrNull(costRow.custo_materiais),impressao_R$:apxRoundOrNull(costRow.custo_impressao),mao_de_obra_R$:apxRoundOrNull(costRow.mao_obra),embalagem_R$:apxRoundOrNull(costRow.embalagem),outros_custos_R$:apxRoundOrNull(costRow.outros_custos),custo_unitario_R$:apxRoundOrNull(costRow.custo_unitario),preco_atual_R$:apxRoundOrNull(costRow.preco_atual),lucro_atual_R$:apxRoundOrNull(costRow.lucro_atual),margem_atual_percentual:apxRoundOrNull(costRow.margem_atual),preco_sugerido_R$:apxRoundOrNull(costRow.preco_sugerido),status_margem:costRow.status_margem||''}:null;
+  const modeled=calc?{valido:!!calc.ok,custo_unitario_estimado_R$:apxRoundOrNull(calc.custo),preco_tecnico_para_margem_alvo_R$:calc.ok?apxRoundOrNull(calc.preco):null,preco_minimo_estimado_sem_lucro_R$:apxRoundOrNull(calc.minimo),margem_liquida_estimada_no_preco_atual_percentual:price>0&&calc.ok?apxRoundOrNull(modeledNetProfit/price*100):null,lucro_liquido_estimado_no_preco_atual_R$:price>0&&calc.ok?apxRoundOrNull(modeledNetProfit):null,composicao_unitaria_R$:{filamento:apxRoundOrNull(calc.fil),energia:apxRoundOrNull(calc.en),depreciacao_e_desgaste:apxRoundOrNull(calc.maq),custo_fixo:apxRoundOrNull(calc.fx),embalagem:apxRoundOrNull(calc.emb),mao_de_obra:apxRoundOrNull(calc.tr),reserva_falhas:apxRoundOrNull(calc.fal)},observacao:'Simulação com os parâmetros gerais atuais e a ficha técnica cadastrada. Não substitui custo real conferido; não presume taxas específicas do canal.'}:null;
+  return{
+   sku:sku||null,nome:name||null,produto_base:fmtName(p.produto_base)||null,versao_produto:fmtName(p.versao_produto)||null,destino:usoOf(p)||'NÃO CLASSIFICADO',ativo:String(p.ativo||'SIM').toUpperCase(),categoria:p.categoria||null,
+   ficha_tecnica:{material:p.material||null,cores:p.cores||null,peso_por_unidade_g:apxRoundOrNull(p.peso_g),tempo_impressao_por_unidade_h:apxRoundOrNull(p.tempo_h),horas_manuais_por_unidade:apxRoundOrNull(p.horas_manuais),setup_h:apxRoundOrNull(p.setup_h),pecas_por_lote:apxRoundOrNull(p.lote_un),medidas:p.medidas||null,composicao_de_materiais:recipe},
+   precos:{preco_padrao_atual_R$:apxRoundOrNull(p.preco_padrao),matriz:matrix?{preco_balcao_R$:apxRoundOrNull(matrix.preco_balcao),preco_online_R$:apxRoundOrNull(matrix.preco_online),preco_atacado_R$:apxRoundOrNull(matrix.preco_atacado),preco_personalizado_R$:apxRoundOrNull(matrix.preco_personalizado),preco_minimo_R$:apxRoundOrNull(matrix.preco_minimo),margem_alvo_percentual:apxRoundOrNull(matrix.margem_alvo)}:null},
+   custos:{custo_unitario_no_produto_R$:apxRoundOrNull(p.custo_unitario),custo_unitario_na_tabela_custos_R$:costRow?apxRoundOrNull(costRow.custo_unitario):null,fonte_custo_usada_pelo_sistema_R$:apxRoundOrNull(recordedCost),detalhamento:costBreakdown,simulacao_parametros_atuais:modeled},
+   estoque:{unidades_em_casa:apxRoundOrNull(st.casa)||0,unidades_em_lojas:apxRoundOrNull(st.loja)||0,estoque_minimo:apxRoundOrNull(p.estoque_minimo)||0,estrategia:p.estrategia_estoque||'NORMAL'},
+   vendas_registradas:{registros:direct.length,unidades:directQ,faturamento_bruto_R$:direct.length?directGross:null,descontos_R$:direct.length?directDiscount:null,taxas_de_canal_registradas_R$:direct.length?directChannelFees:null,frete_registrado_R$:direct.length?directFreight:null,impostos_registrados_R$:directTaxes,custo_total_registrado_R$:directCosts,lucro_registrado_R$:directProfit,margem_sobre_faturamento_registrado_percentual:directGross>0&&directProfit!==null?apxRoundOrNull(directProfit/directGross*100):null,por_canal:byChannel,ultimas_vendas:direct.slice().sort((a,b)=>String(dt(b.data)||'').localeCompare(String(dt(a.data)||''))).slice(0,8).map(v=>({data:dt(v.data)||null,canal:v.canal||null,quantidade:apxRoundOrNull(v.quantidade),preco_unitario_R$:apxRoundOrNull(v.valor_unitario),faturamento_bruto_R$:apxRoundOrNull(v.receita_bruta),desconto_R$:apxRoundOrNull(v.desconto),taxa_canal_R$:apxRoundOrNull(v.taxa_canal),frete_R$:apxRoundOrNull(v.frete),imposto_R$:apxRoundOrNull(v.imposto),custo_total_R$:apxRoundOrNull(v.custo_total),lucro_R$:apxRoundOrNull(v.lucro),status_pagamento:v.status_pagamento||null}))},
+   consignacao:{registros:cons.length,unidades_enviadas:consSent,unidades_vendidas:consSold,unidades_devolvidas:consReturns,unidades_avariadas:consDamaged,estoque_em_loja_calculado:apxRoundOrNull(st.loja)||0,faturamento_bruto_R$:consGross,comissoes_registradas_R$:cons.length?consCommission:null,a_receber_R$:consReceivable,preco_unitario_medio_informado_R$:consSold>0&&cons.filter(x=>num(x.preco_unitario)>0).length?apxRoundOrNull(sum(cons,x=>num(x.preco_unitario)*Math.max(0,num(x.qtd_vendida)))/consSold):null},
+   eventos:{registros:events.length,unidades_vendidas:eventUnits,receita_R$:eventRevenue},
+   producao:{lotes:lots.length,unidades_planejadas:lotPlanned,unidades_produzidas:lotProduced,unidades_perdidas:lotLost,custo_total_real_registrado_R$:apxSumOrNull(lots,'custo_total_real')},
+   pedidos_personalizados:{quantidade:orders.length,por_status:orderStatus,receita_de_entregues_R$:orders.some(o=>eq(o.status,'ENTREGUE'))?r2(orderRevenue):null},
+   comparacao_concorrentes:compList,kits_que_utilizam_este_produto:kitLinks,
+   outros_dados:{motor:p.motor||null,disponibilidade:p.disponibilidade||null,nivel_servico:p.nivel_servico||null,nicho:p.nicho||null,cidade_foco:p.cidade_foco||null,observacoes:p.observacoes||null}
+  };
+ });
+ return{data_geracao:today,moeda:'BRL',periodo_vendas:'Histórico completo disponível no sistema; não limitado aos últimos 12 meses.',quantidade_total_produtos:outProducts.length,quantidade_produtos_ativos:outProducts.filter(p=>p.ativo!=='NÃO').length,quantidade_produtos_para_venda_ou_pedido:outProducts.filter(p=>['PARA VENDA','PEDIDO','NÃO CLASSIFICADO'].includes(p.destino)&&p.ativo!=='NÃO').length,quantidade_produtos_com_ficha_tecnica:outProducts.filter(p=>p.ficha_tecnica.peso_por_unidade_g>0&&p.ficha_tecnica.tempo_impressao_por_unidade_h>0).length,parametros_gerais_de_precificacao:params,canais_e_taxas_cadastrados:channelRows,produtos:outProducts};
+}
+function apxCompactAuditValue(value){
+ if(Array.isArray(value))return value.map(apxCompactAuditValue).filter(v=>v!==undefined);
+ if(value&&typeof value==='object'){const out={};Object.entries(value).forEach(([k,v])=>{if(v===null||v===undefined||v==='')return;const compact=apxCompactAuditValue(v);if(compact===undefined)return;if(Array.isArray(compact)&&!compact.length)return;if(compact&&typeof compact==='object'&&!Array.isArray(compact)&&!Object.keys(compact).length)return;out[k]=compact});return Object.keys(out).length?out:undefined}
+ return value;
+}
+function apxPriceAuditText(){
+ const data=apxCompactAuditValue(apxPriceAuditData());
+ const instructions=[
+  'Atue como consultor sênior de precificação, custos e rentabilidade de uma pequena empresa brasileira que fabrica produtos por impressão 3D.',
+  'Analise TODOS os produtos fornecidos, mas priorize os ativos destinados a PARA VENDA ou PEDIDO. Não trate itens de uso pessoal ou interno como mercadorias vendáveis.',
+  'Use exclusivamente os dados apresentados para afirmar fatos sobre esta empresa. Não invente custos, taxas, impostos, demanda, concorrentes ou dados que estejam ausentes. Quando faltar informação, sinalize o que falta e como medir/preencher.',
+  'Para cada produto, confronte: preço padrão, matriz por canal, custo unitário registrado, detalhamento de custos, simulação com parâmetros atuais, histórico de vendas, consignações, estoque, produção e concorrentes cadastrados.',
+  'Separe claramente valores registrados de estimativas. A simulação pela ficha técnica é uma referência calculada com os parâmetros gerais informados; não a apresente como custo real auditado. Aponte divergências entre custo do cadastro do produto, tabela Custos e simulação.',
+  'Calcule margem como lucro dividido pelo preço de venda, e diferencie margem de markup/adicional sobre o custo. Considere que taxas percentuais e fixas, impostos, comissão de lojista, frete, embalagem, mão de obra, falhas, depreciação e desgaste podem alterar a margem. Não desconte uma taxa duas vezes.',
+  'Não conclua que um produto é lucrativo apenas porque preço é maior que custo unitário: avalie os custos completos e os custos específicos do canal. Se os registros não permitirem calcular uma margem confiável, escreva “margem não comprovada” e explique por quê.',
+  'Avalie se preço de balcão, online, atacado, personalizado e consignação fazem sentido entre si. Não presuma que atacado deve ter o mesmo preço de varejo, nem que comissão de lojista já esteja descontada no preço.',
+  'Produza: (1) resumo executivo do negócio; (2) problemas críticos e inconsistências; (3) ranking de produtos com preço/custo/margem preocupantes; (4) produtos com boa oportunidade; (5) tabela por produto com custo confiável, preço atual, margem calculável, margem estimada, preço mínimo de equilíbrio e preço sugerido por canal quando os dados permitirem; (6) ações em ordem de prioridade; (7) dados que o proprietário deve medir ou corrigir primeiro.',
+  'Ao sugerir novos preços, mostre a conta, taxas consideradas, margem esperada e diferença percentual para o preço atual. Use reais (R$), arredondamento comercial e sugestões práticas. Não altere nenhum dado do sistema; apresente recomendações para aprovação humana.',
+  'Considere que se trata de uma pequena operação e priorize mudanças simples e de alto impacto. Não recomende aumentar todos os preços indiscriminadamente: justifique cada mudança com os dados.',
+  'Campos ausentes ou omitidos no JSON significam que não há informação cadastrada; zero significa valor zero registrado. Antes da conclusão, informe limitações da análise, especialmente quando houver poucas vendas, ficha técnica incompleta, custos zerados/desatualizados ou ausência de taxas específicas.'
+ ];
+ return 'CONTEXTO PARA AUDITORIA DE PREÇOS — A+ GESTÃO\n\n'+instructions.map((x,i)=>(i+1)+'. '+x).join('\n')+'\n\nDADOS EXPORTADOS DO SISTEMA (JSON)\n'+JSON.stringify(data,null,2);
+}
+async function copiarContextoPrecificacao(){
+ const textToCopy=apxPriceAuditText(),count=rows('produtos').length;
+ try{
+  if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(textToCopy);toast(`Contexto de ${count} produto(s) copiado. Agora cole em uma conversa do ChatGPT.`);return;}
+  throw new Error('Clipboard API indisponível');
+ }catch(e){
+  const ta=document.createElement('textarea');ta.value=textToCopy;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';ta.style.pointerEvents='none';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);
+  let ok=false;try{ok=document.execCommand('copy')}catch{}ta.remove();
+  if(ok)toast(`Contexto de ${count} produto(s) copiado. Agora cole em uma conversa do ChatGPT.`);
+  else toast('Não foi possível copiar automaticamente. Abra o sistema em HTTPS ou permita a área de transferência.');
+ }
+}
+
 /* ===== PRODUTOS: central visual por destino ===== */
 function produtosV(){
- const R=rows('produtos'),t=estoque(), stockById=Object.fromEntries(t.map(x=>[x._id,x])),
+ const R=rows('produtos'),t=estoque(),stockById=Object.fromEntries(t.map(x=>[x._id,x])),
        nc=R.filter(r=>!usoOf(r)).length,tabs=[['all','Todos','▦'],...USO.map(x=>[x[0],x[1],x[2]]),...(nc?[['NONE','Sem classificar','❔']]:[])],
-       curTab=window._prodTab||'all', q=String($('#prodq')?.value||'').trim().toLowerCase(),
-       filt=R.filter(r=>{
-         const u=usoOf(r)||'NONE';
-         const okTab=curTab==='all'||u===curTab;
-         const txt=[r.produto,r.sku,r.categoria,r.material,r.descricao_curta,u].map(x=>String(x||'').toLowerCase()).join(' ');
-         return okTab&&(!q||txt.includes(q));
+       curTab=window._prodTab||'all',stockFilter=window._prodStockFilter||'all',phaseFilter=window._prodPhaseFilter||'all',
+       q=String($('#prodq')?.value||'').trim().toLowerCase(),
+       phaseCounts=Object.fromEntries(['EM_TESTE','FUNCIONANDO','CONSOLIDADO','PAUSADO','SEM_HISTORICO'].map(k=>[k,0])),
+       stockCounts={all:R.length,available:0,empty:0},
+       enriched=R.map(r=>{const st=stockById[r._id]||{},phase=faseProdutoInfo(r),quantity=num(st.casa);phaseCounts[phase.fase]=(phaseCounts[phase.fase]||0)+1;if(quantity>0)stockCounts.available++;else stockCounts.empty++;return{r,st,phase,quantity}}),
+       filt=enriched.filter(({r,phase,quantity})=>{
+         const u=usoOf(r)||'NONE',okTab=curTab==='all'||u===curTab,
+               txt=[r.produto,r.produto_base,r.versao_produto,r.sku,r.categoria,r.material,r.descricao_curta,u].map(x=>String(x||'').toLowerCase()).join(' '),
+               okStock=stockFilter==='all'||(stockFilter==='available'?quantity>0:quantity<=0),
+               okPhase=phaseFilter==='all'||phase.fase===phaseFilter;
+         return okTab&&okStock&&okPhase&&(!q||txt.includes(q));
        }),
        count=u=>R.filter(r=>(usoOf(r)||'NONE')===u).length,
-       colors=Object.fromEntries([...USO.map(x=>[x[0],x[3]]),['NONE','pill r']]),label=u=>(USO.find(x=>x[0]===u)||[0,'Sem classificar'])[1];
+       colors=Object.fromEntries([...USO.map(x=>[x[0],x[3]]),['NONE','pill r']]),label=u=>(USO.find(x=>x[0]===u)||[0,'Sem classificar'])[1],
+       phaseTabs=[['all','Todos','▦',R.length],['EM_TESTE','Em teste','🧪',phaseCounts.EM_TESTE],['FUNCIONANDO','Funcionando','✅',phaseCounts.FUNCIONANDO],['CONSOLIDADO','Consolidados','⭐',phaseCounts.CONSOLIDADO],['PAUSADO','Pausados','⏸️',phaseCounts.PAUSADO],['SEM_HISTORICO','Sem vendas','🌱',phaseCounts.SEM_HISTORICO]],
+       stockTabs=[['all','Todos',stockCounts.all],['available','Com estoque',stockCounts.available],['empty','Sem estoque',stockCounts.empty]],
+       escCount=phaseCounts.EM_TESTE,workingCount=phaseCounts.FUNCIONANDO+phaseCounts.CONSOLIDADO;
  $('#content').innerHTML=head('Produtos',
-   `<button class="btn" data-go="estoque">📦 Ver estoque</button><button class="btn" id="pscanprod">🔎 Pesquisar no sistema</button><button class="btn p" data-f="produtos|">＋ Novo produto</button>`)+
+   `<button class="btn" data-go="estoque">📦 Ver estoque</button><button class="btn" id="pscanprod">🔎 Pesquisar no sistema</button><button class="btn p" id="prod-copy-analysis" title="Copiar produtos, custos, preços, margens, vendas e parâmetros para avaliar no ChatGPT">📋 Copiar contexto para ChatGPT</button><button class="btn" data-f="produtos|">＋ Novo produto</button>`)+
    `<div class="panel" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap">
-        <div><h3 style="margin-bottom:4px">Onde este produto é usado?</h3><p class="ok" style="margin:0">Separe o catálogo conforme a finalidade para não misturar pedido, loja, consignação e peças pessoais.</p></div>
+        <div><h3 style="margin-bottom:4px">Organize seu catálogo</h3><p class="ok" style="margin:0">Filtre o estoque disponível e acompanhe em que fase comercial cada produto está.</p></div>
         <div class="f" style="min-width:min(360px,100%);margin:0"><input id="prodq" placeholder="🔎 Buscar por nome, SKU, categoria ou material..." value="${esc($('#prodq')?.value||'')}"></div>
       </div>
-      <div class="vsw" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-        ${tabs.map(([id,n,ic])=>`<button type="button" data-ptab="${id}" class="${curTab===id?'on':''}">${ic} ${n} <span class="ok">${id==='all'?R.length:count(id)}</span></button>`).join('')}
-      </div>
+      <div class="prod-filter-block"><b>Disponibilidade</b><div class="vsw prod-filter-row">${stockTabs.map(([id,n,c])=>`<button type="button" data-pstock="${id}" class="${stockFilter===id?'on':''}">${id==='available'?'🟢':id==='empty'?'🔴':'▦'} ${n} <span>${c}</span></button>`).join('')}</div></div>
+      <div class="prod-filter-block"><b>Fase do produto</b><div class="vsw prod-filter-row">${phaseTabs.map(([id,n,ic,c])=>`<button type="button" data-pphase="${id}" class="${phaseFilter===id?'on':''}">${ic} ${n} <span>${c}</span></button>`).join('')}</div></div>
+      <div class="prod-filter-block"><b>Finalidade</b><div class="vsw prod-filter-row">${tabs.map(([id,n,ic])=>`<button type="button" data-ptab="${id}" class="${curTab===id?'on':''}">${ic} ${n} <span>${id==='all'?R.length:count(id)}</span></button>`).join('')}</div></div>
    </div>
-   <div class="k5" style="margin-bottom:16px">
-     ${tabs.slice(1).map(([id,n,ic])=>`<div class="kc2" style="cursor:default"><small>${ic} ${n}</small><b>${count(id)}</b><span>${count(id)===1?'produto':'produtos'}</span></div>`).join('')}
+   <div class="prod-overview">
+     <div class="prod-overview-card"><small>Produtos funcionando</small><b>${workingCount}</b><span>com vendas ou consolidados manualmente</span></div>
+     <div class="prod-overview-card test"><small>Em fase de teste</small><b>${escCount}</b><span>acompanhe antes de ampliar a produção</span></div>
+     <div class="prod-overview-card stock"><small>Com estoque disponível</small><b>${stockCounts.available}</b><span>unidades no estoque da empresa</span></div>
+     <div class="prod-overview-card empty"><small>Sem estoque</small><b>${stockCounts.empty}</b><span>podem precisar de reposição</span></div>
    </div>
-   ${filt.length?`<div class="cgrid" style="grid-template-columns:repeat(auto-fill,minmax(245px,1fr))">${filt.map(r=>{
-      const st=stockById[r._id]||{},u=usoOf(r)||'NONE',
-            img=safeImageUrl(r.foto), preco=num(r.preco_padrao), custo=num(r.custo_unitario);
-      return `<div class="ccard" data-f="produtos|${r._id}">
+   <div class="prod-key"><span><i class="prod-dot working"></i>Funcionando: já tem vendas</span><span><i class="prod-dot test"></i>Em teste: produto em avaliação</span><span><i class="prod-dot solid"></i>Consolidado: classificado por você</span><span><i class="prod-dot new"></i>Sem histórico: ainda não vendeu</span></div>
+   ${filt.length?`<div class="cgrid" style="grid-template-columns:repeat(auto-fill,minmax(245px,1fr))">${filt.map(({r,st,phase,quantity})=>{
+      const u=usoOf(r)||'NONE',img=safeImageUrl(r.foto),preco=num(r.preco_padrao),custo=num(r.custo_unitario),min=num(st.min),low=quantity>0&&min>0&&quantity<=min,
+            stockLabel=quantity<=0?'Sem estoque':low?'Estoque baixo':'Disponível',stockTone=quantity<=0?'empty':low?'low':'available',
+            explicit=String(r.fase_comercial||'').trim().toUpperCase(),selectValue=['EM_TESTE','FUNCIONANDO','CONSOLIDADO','PAUSADO'].includes(explicit)?explicit:'AUTO';
+      return `<div class="ccard prod-card-phase-${phase.tone}" data-f="produtos|${r._id}">
+        <div class="prod-card-ribbon ${phase.tone}"></div>
         <div class="cimg">${img?`<img src="${esc(img)}" alt="${esc(r.produto)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`:''}<div class="cph" style="${img?'display:none':''}">📦</div></div>
         <div class="cbd">
-          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><h4>${esc(r.produto||'Produto sem nome')}</h4><p>${esc(r.descricao_curta||r.categoria||'')}</p></div><span class="${colors[u]||'pill'}">${label(u)}</span></div>
-          <div class="cft"><span><small class="ok">SKU</small><br><b>${esc(r.sku||'—')}</b></span><span style="text-align:right"><small class="ok">Estoque</small><br><b>${st.casa??0}</b></span></div>
+          <div class="prod-card-statusline"><span class="prod-phase-badge ${phase.tone}">${phase.icon} ${phase.label}</span><span class="prod-stock-badge ${stockTone}">${quantity>0?'●':'○'} ${stockLabel}</span></div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><h4>${esc(r.produto||'Produto sem nome')}</h4><p>${esc(r.descricao_curta||r.categoria||'')}</p>${r.produto_base||r.versao_produto?`<p style="font-size:11px;color:var(--mut);margin:3px 0 0">${r.produto_base?`Família: ${esc(r.produto_base)}`:''}${r.versao_produto?`${r.produto_base?' · ':''}Versão: ${esc(r.versao_produto)}`:''}</p>`:''}</div><span class="${colors[u]||'pill'}">${label(u)}</span></div>
+          <div class="cft"><span><small class="ok">SKU</small><br><b>${esc(r.sku||'—')}</b></span><span style="text-align:right"><small class="ok">Estoque em mãos</small><br><b>${quantity}</b>${low?'<small class="prod-stock-note">No limite mínimo</small>':''}</span></div>
+          ${phase.unidades>0?`<div class="prod-sales-proof">📈 ${phase.unidades} unidade(s) vendida(s) no histórico${phase.automatica?' · classificação automática':''}</div>`:phase.fase==='SEM_HISTORICO'?'<div class="prod-sales-proof muted">Ainda não há vendas registradas para este SKU.</div>':''}
+          <div class="prod-phase-control" onclick="event.stopPropagation()"><label for="fase-${esc(r._id)}">Classificação comercial</label><select id="fase-${esc(r._id)}" data-fase="${esc(r._id)}"><option value="AUTO" ${selectValue==='AUTO'?'selected':''}>Automática (pelo histórico)</option><option value="EM_TESTE" ${selectValue==='EM_TESTE'?'selected':''}>🧪 Em teste</option><option value="FUNCIONANDO" ${selectValue==='FUNCIONANDO'?'selected':''}>✅ Funcionando</option><option value="CONSOLIDADO" ${selectValue==='CONSOLIDADO'?'selected':''}>⭐ Consolidado</option><option value="PAUSADO" ${selectValue==='PAUSADO'?'selected':''}>⏸️ Pausado</option></select></div>
           <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span><small class="ok">Custo</small><br>${custo?money(custo):'—'}</span><span style="text-align:right"><small class="ok">Preço</small><br><b>${preco?money(preco):'—'}</b></span></div>
           ${lucroIndicadoresHTML(r,'produtos')}
           ${(()=>{const td=testeDemanda(r),es=String(r.estrategia_estoque||'NORMAL').toUpperCase(),labE={TESTE_DEMANDA:'🧪 Teste de demanda',ALTA_SAIDA:'🔥 Alta saída',BAIXA_SAIDA:'🐌 Baixa saída',SOB_DEMANDA:'⏱️ Sob demanda',NORMAL:'⚖️ Estoque normal'}[es]||'⚖️ Estoque normal';return `<div class="panel" style="margin-top:10px;padding:10px;background:var(--soft)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><small class="ok">${labE}</small>${td.ativo&&td.precisa?`<span class="pill a">Produzir ${td.proxima}</span>`:''}</div>${td.ativo?(td.validado?`<small class="ok" style="display:block;margin-top:5px">Teste validado no lote de ${td.ultimaQtd} un. · ${td.vendas} vendida(s). Considere migrar para Normal ou Alta saída.</small>`:td.precisa?`<small class="ok" style="display:block;margin-top:5px">${esc(td.motivo)} Próximo lote: <b>${td.proxima} un.</b>${td.proxima<td.ultimaQtd?' · reduzir':td.proxima>td.ultimaQtd?' · aumentar':' · manter'}</small><button type="button" class="btn p" style="margin-top:7px;width:100%" data-teste-repor="${r._id}" data-qtd="${td.proxima}">🖨️ Abrir produção de ${td.proxima} un.</button>`:`<small class="ok" style="display:block;margin-top:5px">Estoque: <b>${td.stock}</b> · lote atual: ${td.ultimaQtd} · ${td.vendas} vendida(s). ${td.motivo}</small>`):`<small class="ok" style="display:block;margin-top:5px">Estratégia manual. A+ não sugere produção.</small>`}</div>`})()}
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:10px">${USO.map(x=>`<button type="button" class="btn s${u===x[0]?' p':''}" data-uso="${r._id}|${x[0]}" title="${x[1]}">${x[2]}</button>`).join('')}<button type="button" class="btn s" data-estrat="${r._id}|TESTE_DEMANDA" title="Testar saída">🧪</button><button type="button" class="btn s" data-estrat="${r._id}|ALTA_SAIDA" title="Alta saída">🔥</button><button type="button" class="btn s" data-estrat="${r._id}|NORMAL" title="Estoque normal">⚖️</button></div>
         </div></div>`;
-   }).join('')}</div>`:`<div class="empty"><b>Nenhum produto nesta seção</b>${q?'Tente outro termo de busca.':'Cadastre ou classifique seus produtos para eles aparecerem aqui.'}<div class="ph"><button class="btn p" data-f="produtos|">＋ Cadastrar produto</button></div></div>`}`+
-   `<p class="foot">Toque nos ícones do cartão para classificar o produto. 🧪 <b>Teste de demanda</b> usa o ciclo de visitas de <b>15 dias</b>: se o lote inteiro vender em até 15 dias, a A+ aumenta o próximo lote; entre 16 e 30 dias, mantém; acima de 30 dias, reduz um estágio. A progressão padrão é 1 → 2 → 4 → 5, sem imprimir sozinho.</p>`;
+   }).join('')}</div>`:`<div class="empty"><b>Nenhum produto encontrado</b>${q?'Tente outro termo de busca.':'Altere os filtros para visualizar outros produtos.'}<div class="ph"><button class="btn p" data-f="produtos|">＋ Cadastrar produto</button><button class="btn" type="button" id="prod-clear-filters">Limpar filtros</button></div></div>`}`+
+   `<p class="foot">A classificação automática considera vendas registradas no SKU: produtos com vendas aparecem como <b>Funcionando</b>; produtos em estratégia de teste permanecem em <b>Em teste</b>; produtos sem vendas aparecem como <b>Sem histórico</b>. Você pode alterar a fase manualmente em cada cartão. O estoque disponível considera somente as unidades em mãos na empresa; itens enviados às lojas aparecem no saldo das lojas, não como estoque livre para venda direta.</p>`;
  $('#prodq').oninput=()=>produtosV();
  document.querySelectorAll('[data-ptab]').forEach(b=>b.onclick=()=>{window._prodTab=b.dataset.ptab;produtosV()});
+ document.querySelectorAll('[data-pstock]').forEach(b=>b.onclick=()=>{window._prodStockFilter=b.dataset.pstock;produtosV()});
+ document.querySelectorAll('[data-pphase]').forEach(b=>b.onclick=()=>{window._prodPhaseFilter=b.dataset.pphase;produtosV()});
  document.querySelectorAll('[data-f]').forEach(el=>el.style.cursor='pointer');
- const ps=$('#pscanprod');if(ps)ps.onclick=pesquisarProdutosSistema;document.querySelectorAll('[data-uso]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[i,u]=b.dataset.uso.split('|');setRows('produtos',rows('produtos').map(r=>r._id===i?{...r,uso_produto:u}:r));syncRow('produtos',i);produtosV()});document.querySelectorAll('[data-estrat]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[i,x]=b.dataset.estrat.split('|');setEstratProduto(i,x)});document.querySelectorAll('[data-teste-repor]').forEach(b=>b.onclick=e=>{e.stopPropagation();abrirReposicaoTeste(b.dataset.testeRepor,num(b.dataset.qtd))});
+ const clear=$('#prod-clear-filters');if(clear)clear.onclick=()=>{window._prodTab='all';window._prodStockFilter='all';window._prodPhaseFilter='all';const inp=$('#prodq');if(inp)inp.value='';produtosV()};
+ const ps=$('#pscanprod');if(ps)ps.onclick=pesquisarProdutosSistema;const pa=$('#prod-copy-analysis');if(pa)pa.onclick=e=>{e.stopPropagation();copiarContextoPrecificacao()};
+ document.querySelectorAll('[data-uso]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[i,u]=b.dataset.uso.split('|');setRows('produtos',rows('produtos').map(r=>r._id===i?{...r,uso_produto:u}:r));syncRow('produtos',i);produtosV()});
+ document.querySelectorAll('[data-estrat]').forEach(b=>b.onclick=e=>{e.stopPropagation();const[i,x]=b.dataset.estrat.split('|');setEstratProduto(i,x)});
+ document.querySelectorAll('[data-fase]').forEach(sel=>{sel.onclick=e=>e.stopPropagation();sel.onchange=e=>{e.stopPropagation();setFaseProduto(sel.dataset.fase,sel.value)}});
+ document.querySelectorAll('[data-teste-repor]').forEach(b=>b.onclick=e=>{e.stopPropagation();abrirReposicaoTeste(b.dataset.testeRepor,num(b.dataset.qtd))});
  wire();
 }
 const VIEWS={'v-hoje':hoje,'v-lojas':lojasV,'v-pedidos':pedidosV,'v-estoque':estoqueV,'v-mais':maisV,'v-preco':precoV,'v-nova':novaV,'produtos':produtosV};let bk=null;
@@ -1080,7 +1227,7 @@ try{if(!localStorage.getItem('aplus_canais_seed')){if(!rows('canais').length)set
 /* ===== Catálogo de produtos (vitrine) ===== */
 (()=>{const M=mod('produtos');[['nicho','Nicho'],['foto','Foto principal (link da imagem)','url'],['fotos_extras','Fotos extras (um link por linha)','textarea'],['descricao_curta','Descrição curta'],['descricao_completa','Descrição completa','textarea'],['medidas','Medidas'],['material','Material'],['cores','Cores disponíveis'],['destaque','Destaque no catálogo','select',['NÃO','SIM']]].forEach(f=>{if(!M.fields.some(x=>x[0]===f[0]))M.fields.push(f)});
 Object.defineProperty(PREM,'produtos',{get:()=>({nicho:rows('nichos').map(r=>r.nicho).filter(Boolean)}),configurable:true});
-const sty=document.createElement('style');sty.textContent='.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.ccard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .12s,box-shadow .12s}.ccard:hover{transform:translateY(-3px);box-shadow:0 10px 26px #0003}.cimg{aspect-ratio:1/1;background:var(--acc2);display:flex;align-items:center;justify-content:center;overflow:hidden}.cimg img{width:100%;height:100%;object-fit:cover}.cimg img+.cph{display:none}.cph{font-size:48px;opacity:.5}.cbd{padding:12px 14px}.cbd h4{margin:2px 0 4px;font-size:16px}.cbd p{margin:0 0 8px;color:var(--mut);font-size:13px;min-height:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.cft{display:flex;justify-content:space-between;align-items:center;gap:8px}.cstar{position:absolute;top:8px;right:10px;color:#f59e0b;font-size:20px;z-index:1}.cpr{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:24px 32px;display:none}.cpr.on{display:block}.cprh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.cpr .cgrid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}#cdv{z-index:50}.cdt{display:grid;grid-template-columns:1fr 1fr;gap:18px}.cdt .cimg{border-radius:12px}.cth{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.cth img{width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent}.cth img.on{border-color:var(--acc)}@media(max-width:700px){.cdt{grid-template-columns:1fr}.cpr{padding:16px}}';document.head.appendChild(sty);
+const sty=document.createElement('style');sty.textContent='.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.ccard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .12s,box-shadow .12s}.ccard[class*=prod-card-phase-]{border-color:color-mix(in srgb,var(--prod-phase) 40%,var(--line));box-shadow:inset 0 3px 0 var(--prod-phase)}.prod-card-ribbon{height:4px;background:var(--prod-phase);position:absolute;left:0;right:0;top:0;z-index:2}.prod-card-phase-test{--prod-phase:#a78bfa}.prod-card-phase-working{--prod-phase:#22a06b}.prod-card-phase-solid{--prod-phase:#d69e24}.prod-card-phase-paused{--prod-phase:#64748b}.prod-card-phase-new{--prod-phase:#64748b}.prod-card-statusline{display:flex;gap:6px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:9px}.prod-phase-badge,.prod-stock-badge{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;line-height:1.2}.prod-phase-badge.test{color:#8b5cf6;background:#8b5cf620}.prod-phase-badge.working{color:#16a065;background:#16a06520}.prod-phase-badge.solid{color:#b7791f;background:#d69e2424}.prod-phase-badge.paused,.prod-phase-badge.new{color:var(--mut);background:var(--inp)}.prod-stock-badge.available{color:#168653;background:#16a06520}.prod-stock-badge.low{color:#b7791f;background:#d69e2424}.prod-stock-badge.empty{color:#dc3545;background:#dc354520}.prod-stock-note{display:block;color:var(--warn);font-size:10px}.prod-sales-proof{font-size:11px;color:var(--acc);background:var(--acc2);border-radius:8px;padding:6px 8px;margin-top:8px}.prod-sales-proof.muted{color:var(--mut);background:var(--inp)}.prod-phase-control{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-top:8px}.prod-phase-control label{font-size:11px;color:var(--mut)}.prod-phase-control select{min-width:0;max-width:62%;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--inp);color:var(--ink);font:inherit;font-size:11px}.prod-filter-block{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}.prod-filter-block>b{font-size:12px;color:var(--mut);min-width:105px}.prod-filter-row{flex-wrap:wrap;max-width:100%}.prod-filter-row button{font-size:12px}.prod-filter-row button span{opacity:.7;margin-left:3px}.prod-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0 0 14px}.prod-overview-card{border:1px solid #22a06b44;background:color-mix(in srgb,#22a06b 8%,var(--card));border-radius:13px;padding:12px 14px}.prod-overview-card.test{border-color:#a78bfa55;background:color-mix(in srgb,#a78bfa 9%,var(--card))}.prod-overview-card.stock{border-color:#16865344;background:color-mix(in srgb,#168653 8%,var(--card))}.prod-overview-card.empty{border-color:#dc354544;background:color-mix(in srgb,#dc3545 7%,var(--card))}.prod-overview-card small,.prod-overview-card span{display:block;color:var(--mut);font-size:11px}.prod-overview-card b{display:block;font-size:24px;margin:2px 0}.prod-key{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0 0 14px;color:var(--mut);font-size:11px}.prod-key>span{display:flex;align-items:center;gap:5px}.prod-dot{width:8px;height:8px;border-radius:50%;display:inline-block}.prod-dot.working{background:#22a06b}.prod-dot.test{background:#a78bfa}.prod-dot.solid{background:#d69e24}.prod-dot.new{background:#64748b}.ccard:hover{transform:translateY(-3px);box-shadow:0 10px 26px #0003}.cimg{aspect-ratio:1/1;background:var(--acc2);display:flex;align-items:center;justify-content:center;overflow:hidden}.cimg img{width:100%;height:100%;object-fit:cover}.cimg img+.cph{display:none}.cph{font-size:48px;opacity:.5}.cbd{padding:12px 14px}.cbd h4{margin:2px 0 4px;font-size:16px}.cbd p{margin:0 0 8px;color:var(--mut);font-size:13px;min-height:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.cft{display:flex;justify-content:space-between;align-items:center;gap:8px}.cstar{position:absolute;top:8px;right:10px;color:#f59e0b;font-size:20px;z-index:1}.cpr{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:24px 32px;display:none}.cpr.on{display:block}.cprh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.cpr .cgrid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}#cdv{z-index:50}.cdt{display:grid;grid-template-columns:1fr 1fr;gap:18px}.cdt .cimg{border-radius:12px}.cth{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.cth img{width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent}.cth img.on{border-color:var(--acc)}@media(max-width:700px){.cdt{grid-template-columns:1fr}.cpr{padding:16px}}';document.head.appendChild(sty);
 const cpr=document.createElement('div');cpr.className='cpr';cpr.id='cpr';document.body.appendChild(cpr);
 const cdv=document.createElement('div');cdv.className='ov';cdv.id='cdv';cdv.innerHTML='<div class="modal" style="width:min(820px,100%)"><div class="mh"><h2 id="cdt_t"></h2><button class="btn s" id="cdx">Fechar</button></div><div class="mb" id="cdb"></div></div>';document.body.appendChild(cdv);
 const CT={q:'',n:'',c:'',d:'',dest:0,pr:1},emp=()=>{try{return JSON.parse(localStorage.getItem('aplus_empresa'))||{}}catch{return{}}},
@@ -1404,7 +1551,65 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 /* cartões das listagens padrão (um por registro) */
 const VGT=['loja_empresa','cliente','evento','tarefa','acao','nome','nicho','material','descricao','produto','empresa','pessoa','cidade','indicador','concorrente','canal','lote','op','pedido_sku','sku_evento','codigo','sku','contato_id'],
  vgSt=f=>/status|ativo|prioridade|situacao|atrasado/.test(f[0]),vgHas=(r,f)=>r[f[0]]!==''&&r[f[0]]!=null&&String(r[f[0]]).trim()!=='';
+function impCardInfo(r){
+ const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase(),
+  status=norm(r.status),tipo=norm(r.tipo),resultado=norm(r.resultado_teste),producao=rows('producao').find(x=>x._imp===r._id),
+  failedTest=tipo==='TESTE'&&(status==='TESTE FRACASSADO'||resultado==='FRACASSADO'),
+  approvedTest=tipo==='TESTE'&&(status==='TESTE APROVADO'||((status==='CONCLUIDA'||status==='CONCLUIDO')&&resultado==='APROVADO')),
+  completed=status==='CONCLUIDA'||status==='CONCLUIDO'||status==='TESTE APROVADO'||status==='TESTE FRACASSADO',
+  cancelled=status.includes('CANCEL');
+ let tone='draft',label='Orçamento',detail='Estimativa registrada; ainda não há produção nem baixa de materiais.',color='#64748b';
+ if(cancelled){tone='cancelled';label='Cancelada';detail='Registro cancelado; confira o histórico antes de iniciar outra produção.';color='#dc2626';}
+ else if(failedTest){tone='failed';label='Teste fracassado';detail='Teste encerrado sem aprovação. As peças não entram no estoque para venda.';color='#dc2626';}
+ else if(approvedTest){tone='success';label='Teste aprovado';detail='Teste validado; as unidades aprovadas foram encaminhadas ao estoque.';color='#15803d';}
+ else if(completed){
+  const jobMesas=Array.isArray(r._job?.mesas)?r._job.mesas:[],groups=new Map();
+  jobMesas.forEach(m=>{const k=String(m.produtoGrupoId||m.nome||m.id);if(!groups.has(k))groups.set(k,m)});
+  const planned=Math.max(0,num(r.qtd_pecas)),jobLost=sum([...groups.values()],m=>Math.max(0,num(m.qtdPerdidas))),
+   lost=producao?Math.max(0,num(producao.qtd_perdida)):jobLost,
+   good=producao?Math.max(0,num(producao.qtd_produzida)):(groups.size?sum([...groups.values()],m=>Math.max(0,num(m.qtdBoas))):Math.max(0,planned-lost)),
+   hasLoss=lost>0||norm(r.resultado_producao)==='COM_PERDAS';
+  if(hasLoss&&good<=0){tone='failed';label='Produção perdida';detail=`Produção finalizada sem unidades boas${lost?` · ${lost} perdida(s)`:''}. Confira as causas e o consumo registrado.`;color='#dc2626';}
+  else if(hasLoss){tone='partial';label='Concluída com perdas';detail=`Produção finalizada com ${good} boa(s)${lost?` e ${lost} perdida(s)`:''}. O cartão sinaliza que houve perda.`;color='#b45309';}
+  else{tone='success';label='Concluída';detail=`Produção finalizada${good?` · ${good} unidade(s) produzida(s)`:''}, sem perdas registradas.`;color='#15803d';}
+ }else if(status==='APROVADA'){
+  tone='approved';label='Aprovada';color='#2563eb';
+  detail=tipo==='ESTOQUE'||tipo==='LOJA'?'Aprovada: cadastro do produto e SKU devem existir; estoque físico só entra após concluir a impressão.':tipo==='ENCOMENDA'?'Aprovada: ordem de produção aberta; ainda não é uma entrega concluída.':'Aprovada para seguir à execução.';
+ }else if(status==='AGUARDANDO APROVACAO'){
+  tone='pending';label='Aguardando aprovação';detail='Aguardando decisão do cliente; não deve ser tratada como produção concluída.';color='#b45309';
+ }else if(status==='ORCAMENTO'){
+  tone='draft';label='Orçamento';detail='Proposta em elaboração; sem entrada de produto no estoque.';color='#64748b';
+ }else if(status.includes('PRODU')){
+  tone='approved';label='Em produção';detail='Execução em andamento; ainda não representa estoque disponível.';color='#2563eb';
+ }
+ const catalogExpected=(['ESTOQUE','LOJA'].includes(tipo)&&(['APROVADA','CONCLUIDA','CONCLUIDO'].includes(status)))||approvedTest;
+ let catalogHtml='',catalogMissing=false;
+ if(catalogExpected){
+  const mesas=Array.isArray(r._job?.mesas)?r._job.mesas:[],groups=new Map();
+  mesas.forEach(m=>{const k=String(m.produtoGrupoId||m.nome||m.id);if(!groups.has(k))groups.set(k,m)});
+  const productRows=[...groups.values()].map(m=>(m.sku&&acharProduto(m.sku))||acharProduto(m.nome)).filter(Boolean),
+   unique=[...new Map(productRows.map(x=>[x.sku||x.produto,x])).values()],codes=unique.map(x=>x.sku).filter(Boolean),
+   expectedCount=Math.max(1,groups.size||String(r.produtos||'').split(/\s*,\s*/).filter(Boolean).length||1);
+  catalogMissing=unique.length<expectedCount;
+  catalogHtml=catalogMissing
+   ?`<div class="imp-card-note bad"><span>⚠</span><span><strong>Vínculo de produto incompleto.</strong> ${unique.length}/${expectedCount} produto(s) encontrados em Produtos. Confira o SKU antes de usar em vendas ou consignações.</span></div>`
+   :`<div class="imp-card-meta"><span>Catálogo</span><b>${codes.length?codes.join(' · '):'Produto cadastrado'}</b></div>`;
+ }
+ const planned=Math.max(0,num(r.qtd_pecas)),loss=producao?Math.max(0,num(producao.qtd_perdida)):0,
+  good=producao?Math.max(0,num(producao.qtd_produzida)):0,
+  stats=`<div class="vg-st"><div><small>Unidades</small><b>${planned||'—'}</b></div><div><small>Filamento</small><b>${r.peso_total_g!=null?f2(r.peso_total_g)+' g':'—'}</b></div><div><small>Tempo</small><b>${r.tempo_total_h!=null?fmtH(r.tempo_total_h):'—'}</b></div><div><small>Custo</small><b>${r.custo_total!=null?money(r.custo_total):'—'}</b></div></div>`,
+  opHtml=producao?`<div class="imp-card-meta"><span>${esc(producao.op||'Ordem de produção')}</span><b>${esc(producao.status||'')}</b>${completed&&tipo!=='TESTE'?`<span>· ${good} boa(s) / ${loss} perdida(s)</span>`:''}</div>`:'',
+  date=dt(r.data),id=esc(r._id||''),code=esc(r.codigo||'Impressão'),preview=imagePreview(r.foto,r.produtos||'Produto','card'),
+  client=r.cliente?`<div class="vg-kv"><span>Cliente</span><b>${esc(r.cliente)}</b></div>`:'',
+  typeLabel=({ESTOQUE:'Para venda',ENCOMENDA:'Encomenda',TESTE:'Teste',LOJA:'Uso na loja',PESSOAL:'Uso pessoal'})[tipo]||tipo||'Impressão';
+ return{tone,label,detail,color,catalogHtml,catalogMissing,planned,stats,opHtml,date,id,code,preview,client,typeLabel};
+}
+function impStatusBadge(r){const x=impCardInfo(r);return`<span class="imp-state-pill" style="--imp-tone:${x.color}">${esc(x.label)}</span>`}
 function vgCard(m,r){
+ if(m.id==='impressoes'){
+  const x=impCardInfo(r),name=String(r.produtos||'Produto sem nome').trim();
+  return`<article class="vg-card imp-card" style="--imp-tone:${x.color}" data-e="${x.id}" tabindex="0" role="button" aria-label="Abrir ${x.code} · ${esc(name)} · ${esc(x.label)}"><div class="vg-h"><span class="vg-ck"><input type="checkbox" data-sel="${x.id}" aria-label="Selecionar" ${selIds.has(r._id)?'checked':''}></span><span class="vg-d">${x.code}${x.date?' · '+x.date.split('-').reverse().join('/') :''}</span><span class="imp-state-pill" style="--imp-tone:${x.color}">${esc(x.label)}</span></div>${x.preview}<h4 class="vg-t">${esc(name)}</h4><div class="imp-card-meta"><span>Tipo</span><b>${esc(x.typeLabel)}</b></div>${x.client}${x.stats}<div class="imp-card-note" style="--imp-tone:${x.color}"><span>${x.tone==='success'?'✓':x.tone==='failed'?'⚠':x.tone==='partial'?'⚠':x.tone==='approved'?'●':x.tone==='pending'?'◷':'○'}</span><span>${esc(x.detail)}</span></div>${x.catalogHtml}${x.opHtml}</article>`;
+ }
  if(m.id==='vendas'){const id=esc(r._id||''),cli=String(r.loja_cliente||'Cliente não informado').trim(),prod=produtoNome(r.sku_produto||r.produto,r)||String(r.produto||r.sku_produto||'Produto não informado'),d=dt(r.data),q=Math.max(0,num(r.quantidade)),vu=num(r.valor_unitario),tot=num(r.receita_bruta)||q*vu,con=eq(r.canal,'CONSIGNADA'),cv=con?(liTem(r,'comissao_lojista_valor')?num(r.comissao_lojista_valor):tot*(hasValue(r.comissao_lojista_pct)?num(r.comissao_lojista_pct):30)/100):0;
   return`<article class="vg-card" data-e="${id}" tabindex="0" role="button" aria-label="Abrir venda para ${esc(cli)}"><div class="vg-h"><span class="vg-ck"><input type="checkbox" data-sel="${id}" aria-label="Selecionar" ${selIds.has(r._id)?'checked':''}></span><span class="vg-d">${d?d.split('-').reverse().join('/'):'Sem data'}</span>${r.status_pagamento?pill(r.status_pagamento,'status_pagamento'):''}</div><h4 class="vg-t">${esc(cli)}</h4><div class="vg-kv"><span>Produto</span><b>${esc(prod)}</b></div><div class="vg-kv"><span>Canal</span><b>${esc(r.canal||'—')}</b></div><div class="vg-st"><div><small>Quantidade</small><b>${q||'—'}</b></div><div><small>Unitário</small><b>${money(vu)}</b></div><div><small>Total</small><b>${money(tot)}</b></div>${con?`<div><small>Lojista</small><b>${money(cv)}</b></div>`:''}</div></article>`}
  if(m.id==='consignacoes'){const id=esc(r._id||''),loja=String(r.loja_empresa||'Loja não informada').trim(),prod=String(r.produto||produtoTexto(r.sku,r)||r.sku||'Produto não informado').trim(),env=Math.max(0,num(r.qtd_enviada)),vend=Math.max(0,num(r.qtd_vendida)),dev=Math.max(0,num(r.qtd_devolvida)),saldo=(r.estoque_loja!==''&&r.estoque_loja!=null)?num(r.estoque_loja):Math.max(0,env-vend-dev),pu=num(r.preco_unitario),br=num(r.valor_bruto)||vend*pu,pct=(r.comissao_pct!==''&&r.comissao_pct!=null)?num(r.comissao_pct):30,com=(r.comissao_valor!==''&&r.comissao_valor!=null)?num(r.comissao_valor):br*pct/100,receber=(r.a_receber!==''&&r.a_receber!=null)?num(r.a_receber):br-com,dEnv=dt(r.ultimo_envio),dAc=dt(r.ultimo_acerto),stt=String(r.status_acerto||'PENDENTE');
@@ -1662,7 +1867,7 @@ const stockQtyLabel=q=>`${num(q).toLocaleString('pt-BR',{minimumFractionDigits:M
 const cell=(v,f,r)=>{
  const k=f[0],archiveStock=cur==='materiais'?stockArchiveBobinaInfo(r):null;
  if(k==='foto')return imagePreview(v,r.produto||r.produtos||r.cliente||'Produto','thumb')||'<span class="ok">—</span>';
- let base=(cur==='materiais'&&k==='estoque_atual'&&archiveStock)?`<b>${esc(stockQtyLabel(archiveStock.quantity))}</b><small style="display:block;color:var(--mut)">Saldo físico em ${archiveStock.bobinas.length} bobina(s)</small>`:v===''||v==null?'<span class="ok">—</span>':/status|ativo|prioridade|situacao|atrasado/.test(k)?pill(v,k):k==='lucro'?`<span>${money(v)}</span>`:cur==='personalizados'&&k==='valor_total'?`<span>${money(v)}</span>`:cur==='consignacoes'&&k==='a_receber'?`<span>${money(v)}</span>`:cur==='custos'&&k==='lucro_atual'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:cur==='matriz_precos'&&k==='preco_balcao'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:(k==='produtos'||k==='produto')?produtosTexto(v,r):(['sku_produto','produto_sku','produto_solucao'].includes(k))?produtoTexto(v,r):f[2]==='date'?esc(dt(v).split('-').reverse().join('/')||v):f[2]==='number'?(SUM.test(k)&&!/pct|%/.test(f[1])?money(v):esc(typeof v==='number'?v.toLocaleString('pt-BR',{maximumFractionDigits:2}):v)):esc(v);
+ let base=cur==='impressoes'&&k==='status'?impStatusBadge(r):(cur==='materiais'&&k==='estoque_atual'&&archiveStock)?`<b>${esc(stockQtyLabel(archiveStock.quantity))}</b><small style="display:block;color:var(--mut)">Saldo físico em ${archiveStock.bobinas.length} bobina(s)</small>`:v===''||v==null?'<span class="ok">—</span>':/status|ativo|prioridade|situacao|atrasado/.test(k)?pill(v,k):k==='lucro'?`<span>${money(v)}</span>`:cur==='personalizados'&&k==='valor_total'?`<span>${money(v)}</span>`:cur==='consignacoes'&&k==='a_receber'?`<span>${money(v)}</span>`:cur==='custos'&&k==='lucro_atual'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:cur==='matriz_precos'&&k==='preco_balcao'?`<span>${money(v)}</span>${lucroIndicadoresHTML(r,cur)}`:(k==='produtos'||k==='produto')?produtosTexto(v,r):(['sku_produto','produto_sku','produto_solucao'].includes(k))?produtoTexto(v,r):f[2]==='date'?esc(dt(v).split('-').reverse().join('/')||v):f[2]==='number'?(SUM.test(k)&&!/pct|%/.test(f[1])?money(v):esc(typeof v==='number'?v.toLocaleString('pt-BR',{maximumFractionDigits:2}):v)):esc(v);
  const showIndicator=(cur==='impressoes'&&k==='produtos')||(cur==='vendas'&&k==='produto')||(cur==='consignacoes'&&k==='produto')||(cur==='personalizados'&&k==='produto_sku')||(cur==='produtos'&&k==='produto')||(cur==='kits'&&k==='nome');
  if(showIndicator)base+=lucroIndicadoresHTML(r,cur);
  return base;
@@ -1671,7 +1876,8 @@ function list(){const m=mod(cur),R=rows(cur),hasSt=m.fields.some(f=>f[0]==='stat
  const prodScan=cur==='produtos'?'<button class="btn" id="pscan">🔎 Pesquisar produtos no sistema</button>':'';
  const migratedSpoolRows=cur==='materiais'?R.map(x=>({m:x,b:stockArchiveBobinaInfo(x)})).filter(x=>x.b):[];
  const spoolNotice=migratedSpoolRows.length?`<div class="note" style="margin:10px 0"><b>Estoque transferido para bobinas (não perdido):</b> ${migratedSpoolRows.map(x=>`${esc(x.m.material)}: <b>${stockQtyLabel(x.b.quantity)}</b> em ${x.b.bobinas.length} bobina(s)`).join(' · ')}. Esses cadastros antigos ficam com saldo interno zerado para evitar dupla contagem; o saldo físico é controlado na tela <b>Bobinas</b>.</div>`:'';
- $('#content').innerHTML=`<div class="ph">${tabOf(cur)==='v-mais'?'<button class="btn s" data-go="v-mais">‹ Mais</button>':''}<h2>${ICON[cur]} ${esc(m.label)}</h2></div><div class="bar"><input id="q" placeholder="Buscar em ${esc(m.label.toLowerCase())}…" aria-label="Buscar"><span class="ok" id="cnt"></span>${vtog()}<button class="btn" id="ex">Exportar</button>${prodScan}${cur==='consignacoes'?'<button class="btn p" type="button" data-lote="">📦 Envio em lote</button>':''}<button class="btn${cur==='consignacoes'?'':' p'}" id="nw">+ Novo</button></div>${spoolNotice}${hasSt?'<div class="chips" id="chips"></div>':''}<div class="note" id="bulk" hidden><span id="bn"></span><button class="btn s" id="bed">Editar em massa</button><button class="btn s" id="bdel">Excluir selecionados</button><button class="btn s" id="bclr">Limpar seleção</button></div><div class="tw" id="tw"></div>`;
+ const impressionLegend=cur==='impressoes'?`<div class="imp-legend" aria-label="Legenda das cores das impressões"><span><i style="background:#64748b"></i>Orçamento</span><span><i style="background:#b45309"></i>Aguardando aprovação / com perdas</span><span><i style="background:#2563eb"></i>Aprovada / em produção</span><span><i style="background:#15803d"></i>Concluída / teste aprovado</span><span><i style="background:#dc2626"></i>Teste fracassado / perda total / cancelada</span></div>`:'';
+ $('#content').innerHTML=`<div class="ph">${tabOf(cur)==='v-mais'?'<button class="btn s" data-go="v-mais">‹ Mais</button>':''}<h2>${ICON[cur]} ${esc(m.label)}</h2></div><div class="bar"><input id="q" placeholder="Buscar em ${esc(m.label.toLowerCase())}…" aria-label="Buscar"><span class="ok" id="cnt"></span>${vtog()}<button class="btn" id="ex">Exportar</button>${prodScan}${cur==='consignacoes'?'<button class="btn p" type="button" data-lote="">📦 Envio em lote</button>':''}<button class="btn${cur==='consignacoes'?'':' p'}" id="nw">+ Novo</button></div>${spoolNotice}${impressionLegend}${hasSt?'<div class="chips" id="chips"></div>':''}<div class="note" id="bulk" hidden><span id="bn"></span><button class="btn s" id="bed">Editar em massa</button><button class="btn s" id="bdel">Excluir selecionados</button><button class="btn s" id="bclr">Limpar seleção</button></div><div class="tw" id="tw"></div>`;
  $('#q').oninput=table;$('#ex').onclick=()=>exportMod(cur);if($('#pscan'))$('#pscan').onclick=pesquisarProdutosSistema;$('#nw').onclick=()=>form(cur);$('#bdel').onclick=bulkDel;$('#bed').onclick=bulkEdit;$('#bclr').onclick=()=>{selIds.clear();table()};bindGo();table()}
 function table(){const m=mod(cur),R=rows(cur),q=($('#q')?.value||'').toLowerCase(),C=cols(m);let F=R.filter(r=>(!flt||String(r.status)===flt)&&Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)));
  if(sk)F=[...F].sort((a,b)=>{const x=a[sk],y=b[sk];return(typeof x==='number'&&typeof y==='number'?x-y:String(x??'').localeCompare(String(y??''),'pt-BR',{numeric:true}))*sd});
@@ -2855,7 +3061,7 @@ function njSaveImpl(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
  }
  if(old)njRevert(old._id,true);
  J.mesas.forEach(m=>m.fils.forEach(f=>{if(st==='CONCLUIDA'){if(f.price==null)f.price=njFilInfo(f.key).price}else delete f.price}));c=njCalc(J);
- const id=J.id||uid(),codigo=J.codigo||nextId(mod('impressoes')),productGroups=njProductGroups(J,c),names=productGroups.map(m=>m.displayName).join(', '),primaryPhoto=(productGroups.find(m=>safeImageUrl(m.foto))||{}).foto||'',ok=st==='APROVADA'||st==='CONCLUIDA',approvedTest=J.tipo==='TESTE'&&st==='CONCLUIDA'&&J.testResult==='APROVADO',failedTest=J.tipo==='TESTE'&&st==='CONCLUIDA'&&J.testResult==='FRACASSADO',stockOutput=st==='CONCLUIDA'&&(isStk(J.tipo)||approvedTest),sinal=Math.min(num(J.sinal),c.preco);let cid=J.cliente.id;
+ const id=J.id||uid(),codigo=J.codigo||nextId(mod('impressoes')),productGroups=njProductGroups(J,c),names=productGroups.map(m=>m.displayName).join(', '),primaryPhoto=(productGroups.find(m=>safeImageUrl(m.foto))||{}).foto||'',ok=st==='APROVADA'||st==='CONCLUIDA',approvedTest=J.tipo==='TESTE'&&st==='CONCLUIDA'&&J.testResult==='APROVADO',failedTest=J.tipo==='TESTE'&&st==='CONCLUIDA'&&J.testResult==='FRACASSADO',stockOutput=st==='CONCLUIDA'&&(isStk(J.tipo)||approvedTest),catalogOutput=(st==='APROVADA'&&isStk(J.tipo))||stockOutput,sinal=Math.min(num(J.sinal),c.preco);let cid=J.cliente.id;
  if(J.tipo==='ENCOMENDA')cid=njContato(J.cliente);
  /* pedido */
  const P0=rows('personalizados').filter(r=>r._imp!==id||J.tipo==='ENCOMENDA');
@@ -2865,13 +3071,14 @@ function njSaveImpl(keep){const J=NJ,st=J.status,hoje=todayS();let c=njCalc(J);
  else if(oldPed)setRows('personalizados',rows('personalizados').filter(r=>r._imp!==id));
  /* ordem de produção */
  const stockSkuByMesa=new Map();
- if(stockOutput){
-  const costContext={...c,mes:productGroups.map(g=>{const source=g.parts[0].source,good=Math.max(0,num(source.qtdBoas==null?g.q:source.qtdBoas));return{...g,q:good}})};
+ if(catalogOutput){
+  const costContext={...c,mes:productGroups.map(g=>{const source=g.parts[0].source,good=st==='CONCLUIDA'?Math.max(0,num(source.qtdBoas==null?g.q:source.qtdBoas)):g.q;return{...g,q:good}})};
   productGroups.forEach(g=>{
-   const source=g.parts[0].source,good=Math.max(0,num(source.qtdBoas==null?g.q:source.qtdBoas)),existing=acharProduto(g.nome);
-   // A montagem vira um único SKU e recebe o custo somado de todas as partes.
-   const sku=good>0?njProduto({...g,q:good},costContext,J):(existing?existing.sku:njProduto({...g,q:g.q},costContext,J));
-   g.parts.forEach(part=>stockSkuByMesa.set(part.source.id,sku));
+   const source=g.parts[0].source,good=st==='CONCLUIDA'?Math.max(0,num(source.qtdBoas==null?g.q:source.qtdBoas)):g.q,existing=acharProduto(g.nome);
+   // Na aprovação, cria apenas o cadastro e o SKU; não altera custo de produto já existente nem lança estoque.
+   // Na conclusão, atualiza os custos reais e mantém o SKU já vinculado.
+   const sku=st==='APROVADA'?(existing?existing.sku:njProduto({...g,q:g.q},costContext,J)):(good>0?njProduto({...g,q:good},costContext,J):(existing?existing.sku:njProduto({...g,q:g.q},costContext,J)));
+   g.parts.forEach(part=>{stockSkuByMesa.set(part.source.id,sku);if(sku)part.source.sku=sku;});
   });
  }
  if(ok){
@@ -3640,13 +3847,39 @@ function migTesteFracassadoResultado(){
  if(n)setRows('impressoes',R);return n
 }
 
+function repararCatalogoImpressaoAprovada(){
+ const before=rows('impressoes');let created=0,linked=0,changed=false;
+ const after=before.map(r=>{
+  const tipo=String(r.tipo||'').toUpperCase(),status=String(r.status||'').toUpperCase();
+  if(!['ESTOQUE','LOJA'].includes(tipo)||!['APROVADA','CONCLUIDA','CONCLUÍDA'].includes(status)||!r._job||!Array.isArray(r._job.mesas)||!r._job.mesas.length)return r;
+  try{
+   const J=JSON.parse(JSON.stringify(r._job));J.id=r._id;J.codigo=r.codigo||J.codigo||'';J.tipo=tipo;
+   const c=njCalc(J),groups=njProductGroups(J,c);let jobChanged=false;
+   groups.forEach(g=>{
+    const current=g.parts[0]&&g.parts[0].source;if(!current)return;
+    let p=(current.sku&&acharProduto(current.sku))||acharProduto(g.nome);
+    if(!p){
+     const sku=njProduto({...g,q:g.q},c,J);
+     p=rows('produtos').find(x=>eq(x.sku,sku))||acharProduto(g.nome);
+     if(p)created++;
+    }
+    if(!p||!p.sku)return;
+    g.parts.forEach(part=>{if(part.source.sku!==p.sku){part.source.sku=p.sku;jobChanged=true;linked++;}});
+   });
+   if(!jobChanged)return r;
+   changed=true;return{...r,_job:{...J,mesas:J.mesas}};
+  }catch(e){console.warn('A+ Gestão: não foi possível sincronizar o catálogo da impressão '+(r.codigo||r._id),e);return r}
+ });
+ if(changed)setRows('impressoes',after);
+ return{created,linked};
+}
 async function aplusPostLoadRepair(){
- let repaired=0;
- const ok=withDbTransaction(()=>{stockMigrateMaterialPurpose();stockRepairMaterialCodes();stockEnsureOpeningLots();repairHistoricalDataConsistency();resourceMigrateReceived();resourceFixMoveleiroDuplicates();syncAllConsignacaoMovimentos();repaired+=repararOrdensProducao();migTesteFracassadoResultado();fixLinks();return true});
+ let repaired=0,catalogCreated=0,catalogLinked=0;
+ const ok=withDbTransaction(()=>{stockMigrateMaterialPurpose();stockRepairMaterialCodes();stockEnsureOpeningLots();repairHistoricalDataConsistency();resourceMigrateReceived();resourceFixMoveleiroDuplicates();syncAllConsignacaoMovimentos();const catalogRepair=repararCatalogoImpressaoAprovada();catalogCreated+=catalogRepair.created;catalogLinked+=catalogRepair.linked;repaired+=repararOrdensProducao();migTesteFracassadoResultado();fixLinks();return true});
  if(ok===false||!await waitForDbIdle())throw new Error('O IndexedDB não confirmou a revisão de consistência.');
  const lucroOk=await migLucrosKatanaEEntregas();
  if(lucroOk===false||!await waitForDbIdle())throw new Error('O IndexedDB não confirmou a atualização dos indicadores de lucro.');
- return repaired;
+ return{ordens:repaired,produtos:catalogCreated,vinculos:catalogLinked};
 }
 async function startAplusAfterDatabase(){
  const gate=document.createElement('div');gate.id='aplus-db-startup';gate.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:#08080bea;color:#fff;font:600 15px Montserrat,system-ui,sans-serif;text-align:center';gate.textContent='A+ Gestão · Preparando seu banco de dados com segurança…';document.body.appendChild(gate);
@@ -3658,7 +3891,10 @@ async function startAplusAfterDatabase(){
   if(await migLucrosV3()===false)throw new Error('A atualização dos indicadores de lucro não foi confirmada no banco.');
   if(!await waitForDbIdle())throw new Error('Há gravações pendentes que não foram confirmadas.');
   go('v-hoje');snapAuto();
-  if(_prodReparadas)toast(_prodReparadas+' ordem(ns) de produção corrigida(s) automaticamente.');
+  const repairNotes=[];
+  if(_prodReparadas.produtos)repairNotes.push(_prodReparadas.produtos+' produto(s) integrado(s) ao catálogo a partir de impressão(ões) aprovada(s)');
+  if(_prodReparadas.ordens)repairNotes.push(_prodReparadas.ordens+' ordem(ns) de produção vinculada(s) ao SKU correto');
+  if(repairNotes.length)toast(repairNotes.join(' · ')+'. O estoque físico só é lançado quando a impressão é concluída.');
   if(dbInfo.mode!=='indexeddb')setTimeout(()=>toast('Aviso: IndexedDB não ficou disponível neste navegador. O sistema está usando o armazenamento local; evite modo privado e faça backups frequentes.'),900);
  }catch(e){console.error('A+ Gestão: falha ao iniciar o banco',e);try{go('v-hoje')}catch{}toast('O banco não pôde ser preparado corretamente. Faça um backup antes de continuar.');}
  finally{gate.remove()}
