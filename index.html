@@ -1414,7 +1414,7 @@ function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'
  ${kc('Potencial para você',money(T.net),'var(--acc)','Após comissão estimada dos lojistas')}
  ${kc('Lucro potencial',money(T.profit),T.profit>=0?'var(--acc)':'var(--bad)','Potencial líquido − custo das peças')}
  ${kc('A receber agora',money(T.recv),'#3b82f6','Já vendido e ainda não acertado')}
- </div><div class="grid">${RS.map(([l,r])=>{const v=dt(l.proxima_visita),last=dt(l.ultimo_acerto),mLoja=lucroIndicadoresResumo(r.all.filter(x=>num(x.qtd_vendida)>0),'consignacoes'),products=r.stock.map(x=>{const q=num(x.estoque_loja),cu=cost(x),pv=price(x),pc=pct(x,l),gb=q*pv,nv=gb*(1-pc/100);return`<div class="rw" style="align-items:flex-start"><span><b>${esc(x.produto||produtoTexto(x.sku,x)||x.sku||'Produto')}</b><small class="ok">${q} un · custo ${money(cu)}/un · venda ${money(pv)}/un</small></span><span style="text-align:right"><b>${money(gb)}</b><small class="ok">potencial · ${money(nv)} p/ você</small></span></div><button class="btn s" type="button" data-avaria-cons="${esc(x._id)}">⚠️ Registrar avaria deste produto</button>`}).join('');
+ </div><div class="grid">${RS.map(([l,r])=>{const v=dt(l.proxima_visita),last=dt(l.ultimo_acerto),mLoja=lucroIndicadoresResumo(r.all.filter(x=>num(x.qtd_vendida)>0),'consignacoes'),products=r.stock.map(x=>{const q=num(x.estoque_loja),cu=cost(x),pv=price(x),pc=pct(x,l),gb=q*pv,nv=gb*(1-pc/100),lastSale=dt(x.ultima_venda_data);return`<div class="rw" style="align-items:flex-start"><span><b>${esc(x.produto||produtoTexto(x.sku,x)||x.sku||'Produto')}</b><small class="ok">${q} un na loja · ${f2(num(x.qtd_vendida))} vendida(s) · custo ${money(cu)}/un · venda ${money(pv)}/un${lastSale?' · última venda '+lastSale.split('-').reverse().join('/') :''}</small></span><span style="text-align:right"><b>${money(gb)}</b><small class="ok">potencial · ${money(nv)} p/ você</small></span></div><div class="ac" style="margin:6px 0 10px"><button class="btn s p" type="button" data-cons-venda="${esc(x._id)}">＋ Registrar venda</button><button class="btn s" type="button" data-avaria-cons="${esc(x._id)}">⚠️ Registrar avaria</button></div>`}).join('');
  return`<div class="lc" style="display:flex;flex-direction:column;gap:10px"><div><h3>${esc(l.loja_empresa)}</h3><span class="ok">${esc(l.cidade||'')} ${l.status?pill(l.status):''} · comissão padrão ${f2(hasValue(l.comissao)?num(l.comissao):30)}%</span></div>
  <div class="nums" style="grid-template-columns:repeat(3,1fr)"><div><small>Na loja</small>${f2(r.units)} un</div><div><small>Vendido</small>${f2(r.sold)} un</div><div><small>A receber</small>${money(r.recv)}</div></div>
  <div class="panel" style="padding:12px;margin:0"><b style="font-size:13px">Capital e potencial nesta loja</b>
@@ -1454,7 +1454,7 @@ function syncConsignacaoMovimentos(r){
  const envio=r._saldo_acerto?0:Math.max(0,num(r.qtd_enviada));
  consMoveUpsert('c:'+r._id+':env',envio>0?{data:dt(r.ultimo_envio)||String(r._criadoEm||'').slice(0,10)||todayS(),tipo:'ENVIO CONSIGNAÇÃO',sku,produto,quantidade:envio,origem:ref,observacoes:'Gerado automaticamente ao registrar o envio consignado. Movimento informativo; o saldo físico é controlado pela própria consignação.'}:null);
  const vend=Math.max(0,num(r.qtd_vendida));
- consMoveUpsert('c:'+r._id+':vend',vend>0?{data:dt(r.ultimo_acerto)||todayS(),tipo:'VENDA CONSIGNADA',sku,produto,quantidade:vend,origem:ref,observacoes:'Gerado automaticamente pela quantidade vendida informada na consignação. Movimento informativo.'}:null);
+ consMoveUpsert('c:'+r._id+':vend',vend>0?{data:dt(r.ultima_venda_data)||dt(r.ultimo_acerto)||todayS(),tipo:'VENDA CONSIGNADA',sku,produto,quantidade:vend,origem:ref,observacoes:'Gerado automaticamente pela quantidade vendida informada na consignação. Movimento informativo; o valor só entra no caixa no acerto da loja.'}:null);
  const dev=Math.max(0,num(r.qtd_devolvida));
  consMoveUpsert('c:'+r._id+':dev',dev>0?{data:dt(r.ultimo_acerto)||todayS(),tipo:'DEVOLUÇÃO CONSIGNAÇÃO',sku,produto,quantidade:dev,origem:ref,observacoes:'Gerado automaticamente pela devolução da loja. Movimento informativo; a devolução já é considerada pela própria consignação.'}:null);
 }
@@ -1612,8 +1612,8 @@ function vgCard(m,r){
  }
  if(m.id==='vendas'){const id=esc(r._id||''),cli=String(r.loja_cliente||'Cliente não informado').trim(),prod=produtoNome(r.sku_produto||r.produto,r)||String(r.produto||r.sku_produto||'Produto não informado'),d=dt(r.data),q=Math.max(0,num(r.quantidade)),vu=num(r.valor_unitario),tot=num(r.receita_bruta)||q*vu,con=eq(r.canal,'CONSIGNADA'),cv=con?(liTem(r,'comissao_lojista_valor')?num(r.comissao_lojista_valor):tot*(hasValue(r.comissao_lojista_pct)?num(r.comissao_lojista_pct):30)/100):0;
   return`<article class="vg-card" data-e="${id}" tabindex="0" role="button" aria-label="Abrir venda para ${esc(cli)}"><div class="vg-h"><span class="vg-ck"><input type="checkbox" data-sel="${id}" aria-label="Selecionar" ${selIds.has(r._id)?'checked':''}></span><span class="vg-d">${d?d.split('-').reverse().join('/'):'Sem data'}</span>${r.status_pagamento?pill(r.status_pagamento,'status_pagamento'):''}</div><h4 class="vg-t">${esc(cli)}</h4><div class="vg-kv"><span>Produto</span><b>${esc(prod)}</b></div><div class="vg-kv"><span>Canal</span><b>${esc(r.canal||'—')}</b></div><div class="vg-st"><div><small>Quantidade</small><b>${q||'—'}</b></div><div><small>Unitário</small><b>${money(vu)}</b></div><div><small>Total</small><b>${money(tot)}</b></div>${con?`<div><small>Lojista</small><b>${money(cv)}</b></div>`:''}</div></article>`}
- if(m.id==='consignacoes'){const id=esc(r._id||''),loja=String(r.loja_empresa||'Loja não informada').trim(),prod=String(r.produto||produtoTexto(r.sku,r)||r.sku||'Produto não informado').trim(),env=Math.max(0,num(r.qtd_enviada)),vend=Math.max(0,num(r.qtd_vendida)),dev=Math.max(0,num(r.qtd_devolvida)),saldo=(r.estoque_loja!==''&&r.estoque_loja!=null)?num(r.estoque_loja):Math.max(0,env-vend-dev),pu=num(r.preco_unitario),br=num(r.valor_bruto)||vend*pu,pct=(r.comissao_pct!==''&&r.comissao_pct!=null)?num(r.comissao_pct):30,com=(r.comissao_valor!==''&&r.comissao_valor!=null)?num(r.comissao_valor):br*pct/100,receber=(r.a_receber!==''&&r.a_receber!=null)?num(r.a_receber):br-com,dEnv=dt(r.ultimo_envio),dAc=dt(r.ultimo_acerto),stt=String(r.status_acerto||'PENDENTE');
-  return`<article class="vg-card" data-e="${id}" tabindex="0" role="button" aria-label="Abrir envio ou acerto da loja ${esc(loja)}"><div class="vg-h"><span class="vg-ck"><input type="checkbox" data-sel="${id}" aria-label="Selecionar" ${selIds.has(r._id)?'checked':''}></span><span class="vg-d">${dEnv?'Envio '+dEnv.split('-').reverse().join('/'):(dAc?'Acerto '+dAc.split('-').reverse().join('/'):'Sem data')}</span>${pill(stt,'status_acerto')}</div><h4 class="vg-t">${esc(loja)}</h4><div class="vg-kv"><span>Produto</span><b>${esc(prod)}</b></div><div class="vg-kv"><span>Comissão do lojista</span><b>${f2(pct)}%${com>0?' · '+money(com):''}</b></div><div class="vg-st"><div><small>Enviado</small><b>${env}</b></div><div><small>Vendido</small><b>${vend}</b></div><div><small>Saldo na loja</small><b>${saldo}</b></div><div><small>A receber</small><b>${money(receber)}</b></div></div>${dAc?`<div class="vg-kv"><span>Último acerto</span><b>${dAc.split('-').reverse().join('/')}</b></div>`:''}</article>`}
+ if(m.id==='consignacoes'){const id=esc(r._id||''),loja=String(r.loja_empresa||'Loja não informada').trim(),prod=String(r.produto||produtoTexto(r.sku,r)||r.sku||'Produto não informado').trim(),env=Math.max(0,num(r.qtd_enviada)),vend=Math.max(0,num(r.qtd_vendida)),dev=Math.max(0,num(r.qtd_devolvida)),saldo=(r.estoque_loja!==''&&r.estoque_loja!=null)?num(r.estoque_loja):Math.max(0,env-vend-dev),pu=num(r.preco_unitario),br=num(r.valor_bruto)||vend*pu,pct=(r.comissao_pct!==''&&r.comissao_pct!=null)?num(r.comissao_pct):30,com=(r.comissao_valor!==''&&r.comissao_valor!=null)?num(r.comissao_valor):br*pct/100,receber=(r.a_receber!==''&&r.a_receber!=null)?num(r.a_receber):br-com,dEnv=dt(r.ultimo_envio),dAc=dt(r.ultimo_acerto),lastSale=dt(r.ultima_venda_data),stt=String(r.status_acerto||'PENDENTE');
+  return`<article class="vg-card" data-e="${id}" tabindex="0" role="button" aria-label="Abrir envio ou acerto da loja ${esc(loja)}"><div class="vg-h"><span class="vg-ck"><input type="checkbox" data-sel="${id}" aria-label="Selecionar" ${selIds.has(r._id)?'checked':''}></span><span class="vg-d">${dEnv?'Envio '+dEnv.split('-').reverse().join('/'):(dAc?'Acerto '+dAc.split('-').reverse().join('/'):'Sem data')}</span>${pill(stt,'status_acerto')}</div><h4 class="vg-t">${esc(loja)}</h4><div class="vg-kv"><span>Produto</span><b>${esc(prod)}</b></div><div class="vg-kv"><span>Comissão do lojista</span><b>${f2(pct)}%${com>0?' · '+money(com):''}</b></div><div class="vg-st"><div><small>Enviado</small><b>${env}</b></div><div><small>Vendido</small><b>${vend}</b></div><div><small>Saldo na loja</small><b>${saldo}</b></div><div><small>A receber</small><b>${money(receber)}</b></div></div>${lastSale?`<div class="vg-kv"><span>Última venda registrada</span><b>${lastSale.split('-').reverse().join('/')}</b></div>`:''}${dAc?`<div class="vg-kv"><span>Último acerto</span><b>${dAc.split('-').reverse().join('/')}</b></div>`:''}</article>`}
  const F=m.fields.filter(f=>f[2]!=='textarea'),k=VGT.find(x=>F.some(f=>f[0]===x&&vgHas(r,f))),
   T=F.find(f=>f[0]===k)||F.find(f=>vgHas(r,f))||F[0],
   D=F.find(f=>f[2]==='date'&&vgHas(r,f)&&f!==T),
@@ -5226,4 +5226,86 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 addEventListener('offline',()=>{try{toast('Sem internet: você pode continuar trabalhando. Os dados ficam neste aparelho.')}catch(e){}});
 addEventListener('online',()=>{try{toast('Conexão restabelecida. Os dados locais continuam disponíveis.')}catch(e){}});
 </script>
+
+<script id="aplus-venda-consignada-rapida">
+/* ===== A+ Lojas: registro rápido de venda consignada =====
+   A venda atualiza o saldo e o valor a receber no próprio envio.
+   Não cria venda comum nem entrada no caixa: o caixa só recebe no acerto da loja. */
+function consignacaoVendaOpen(consignacaoId){
+ const c=rows('consignacoes').find(x=>String(x._id)===String(consignacaoId));
+ if(!c){toast('O envio consignado não foi encontrado.');return;}
+ if(eq(c.status_acerto,'ACERTADO')){toast('Este envio já foi acertado. Registre a venda no saldo aberto da loja.');return;}
+ const available=Math.max(0,Math.floor(num(c.estoque_loja)));
+ if(available<1){toast('Este produto não tem unidades disponíveis neste envio.');return;}
+ const loja=rows('lojas').find(x=>eq(x.loja_empresa,c.loja_empresa));
+ const p=rows('produtos').find(x=>eq(x.sku,c.sku));
+ const priceDefault=num(c.preco_unitario)||num(p&&p.preco_padrao);
+ const pctDefault=(c.comissao_pct!==''&&c.comissao_pct!=null)?num(c.comissao_pct):((loja&&loja.comissao!==''&&loja.comissao!=null)?num(loja.comissao):30);
+ const productName=c.produto||produtoTexto(c.sku,c)||c.sku||'Produto';
+ const body=`
+  <div class="note"><span>Registre o que a loja vendeu. O estoque consignado será reduzido e o valor líquido ficará em <b>A receber</b> até o acerto. Nenhuma entrada será criada no caixa agora.</span></div>
+  <div class="panel" style="padding:12px;margin-bottom:14px">
+   <b>${esc(productName)}</b><small class="ok" style="display:block">${esc(c.sku||'Sem SKU')} · ${esc(c.loja_empresa||'Loja parceira')}</small>
+   <div class="rw"><span>Disponível agora</span><b id="cv-avail">${available} un.</b></div>
+   <div class="rw"><span>Preço de referência</span><b>${money(priceDefault)}</b></div>
+  </div>
+  <div class="fg">
+   <div class="f"><label>Data da venda *</label><input id="cv-date" type="date" value="${todayS()}" required></div>
+   <div class="f"><label>Quantidade vendida *</label><input id="cv-qty" type="number" min="1" max="${available}" step="1" value="1" inputmode="numeric" required></div>
+   <div class="f"><label>Preço real por unidade (R$) *</label><input id="cv-price" type="number" min="0.01" step="0.01" value="${priceDefault.toFixed(2)}" inputmode="decimal" required></div>
+   <div class="f"><label>Comissão da loja (%) *</label><input id="cv-pct" type="number" min="0" max="100" step="0.01" value="${pctDefault}" inputmode="decimal" required></div>
+   <div class="f full"><label>Observações (opcional)</label><textarea id="cv-notes" placeholder="Ex.: venda no balcão, desconto combinado, referência do comprovante…"></textarea></div>
+  </div>
+  <div class="panel" style="padding:14px;margin-top:14px">
+   <b>Resumo desta venda</b>
+   <div class="rw"><span>Venda bruta</span><b id="cv-gross">${money(priceDefault)}</b></div>
+   <div class="rw"><span>Comissão da loja</span><b id="cv-commission">${money(priceDefault*pctDefault/100)}</b></div>
+   <div class="rw"><span>Você tem a receber</span><b id="cv-net" style="color:var(--acc)">${money(priceDefault*(1-pctDefault/100))}</b></div>
+   <div class="rw"><span>Saldo depois da venda</span><b id="cv-left">${Math.max(0,available-1)} un.</b></div>
+  </div>`;
+ const ov=stockModal('Registrar venda consignada',body,()=>consignacaoVendaCreate(ov,consignacaoId),'Registrar venda');
+ const g=id=>ov.querySelector('#'+id);
+ const update=()=>{
+  const q=Math.max(0,Math.floor(num(g('cv-qty').value))),pu=Math.max(0,num(g('cv-price').value)),pc=Math.min(100,Math.max(0,num(g('cv-pct').value))),gross=q*pu,commission=gross*pc/100;
+  g('cv-gross').textContent=money(gross);g('cv-commission').textContent=money(commission);g('cv-net').textContent=money(gross-commission);g('cv-left').textContent=f2(Math.max(0,available-q))+' un.';
+  g('cv-left').style.color=q>available?'var(--bad)':'var(--ink)';
+ };
+ ['cv-qty','cv-price','cv-pct'].forEach(id=>g(id).addEventListener('input',update));update();
+}
+function consignacaoVendaCreate(ov,consignacaoId){
+ const g=id=>ov.querySelector('#'+id),date=dt(g('cv-date').value),qty=num(g('cv-qty').value),price=num(g('cv-price').value),pct=num(g('cv-pct').value),notes=g('cv-notes').value.trim();
+ const current=rows('consignacoes').find(x=>String(x._id)===String(consignacaoId));
+ if(!current){toast('O envio consignado não foi encontrado. Atualize a tela e tente novamente.');return false;}
+ if(eq(current.status_acerto,'ACERTADO')){toast('Este envio já foi acertado; não é possível acrescentar venda a um histórico fechado.');return false;}
+ const available=Math.max(0,Math.floor(num(current.estoque_loja)));
+ if(!date){toast('Informe a data da venda.');return false;}
+ if(!Number.isInteger(qty)||qty<1){toast('A quantidade vendida deve ser um inteiro maior que zero.');return false;}
+ if(qty>available){toast(`Estoque insuficiente na loja. Disponível: ${available} unidade(s).`);return false;}
+ if(!Number.isFinite(price)||price<=0){toast('Informe um preço real por unidade maior que zero.');return false;}
+ if(!Number.isFinite(pct)||pct<0||pct>100){toast('A comissão deve estar entre 0% e 100%.');return false;}
+ const saleGross=Math.round(qty*price*100)/100,saleCommission=Math.round(saleGross*pct)/100,saleNet=Math.round((saleGross-saleCommission)*100)/100;
+ const oldQty=Math.max(0,num(current.qtd_vendida));
+ const oldGross=(current.valor_bruto!==''&&current.valor_bruto!=null)?Math.max(0,num(current.valor_bruto)):Math.round(oldQty*num(current.preco_unitario)*100)/100;
+ const oldCommission=(current.comissao_valor!==''&&current.comissao_valor!=null)?Math.max(0,num(current.comissao_valor)):Math.round(oldGross*num(current.comissao_pct)/100*100)/100;
+ const oldNet=(current.a_receber!==''&&current.a_receber!=null)?Math.max(0,num(current.a_receber)):Math.max(0,Math.round((oldGross-oldCommission)*100)/100);
+ const gross=Math.round((oldGross+saleGross)*100)/100,commission=Math.round((oldCommission+saleCommission)*100)/100,receivable=Math.round((oldNet+saleNet)*100)/100;
+ const hist=Array.isArray(current.historico_vendas)?current.historico_vendas.slice():[];
+ const sale={_id:uid(),data:date,quantidade:qty,valor_unitario:Math.round(price*100)/100,valor_bruto:saleGross,comissao_pct:pct,comissao_valor:saleCommission,a_receber:saleNet,observacoes:notes,_criadoEm:new Date().toISOString()};
+ const updated={...current,qtd_vendida:oldQty+qty,estoque_loja:Math.max(0,available-qty),valor_bruto:gross,comissao_valor:commission,a_receber:receivable,comissao_pct:gross>0?Math.round(commission/gross*1000000)/10000:pct,ultima_venda_data:date,historico_vendas:[...hist,sale]};
+ const ok=withDbTransaction(()=>{
+  setRows('consignacoes',rows('consignacoes').map(x=>String(x._id)===String(consignacaoId)?updated:x));
+  syncConsignacaoMovimentos(updated);
+  return true;
+ });
+ if(!ok)return false;
+ toast(`${qty} unidade(s) de ${updated.produto||updated.sku} registradas como vendidas · ${money(saleNet)} a receber no próximo acerto.`);
+ return true;
+}
+document.addEventListener('click',e=>{
+ const b=e.target&&e.target.closest?e.target.closest('[data-cons-venda]'):null;
+ if(!b)return;
+ e.preventDefault();e.stopPropagation();consignacaoVendaOpen(b.getAttribute('data-cons-venda'));
+},true);
+</script>
+
 </body></html>
