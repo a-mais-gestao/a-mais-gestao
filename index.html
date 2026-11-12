@@ -605,6 +605,17 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
 @media(max-width:700px){.apx-preview-overlay{padding:7px}.apx-preview-modal{padding:15px;border-radius:15px}.apx-preview-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.apx-preview-grid{grid-template-columns:1fr}.apx-preview-foot{align-items:flex-start;flex-direction:column}.apx-preview-foot>div{width:100%}.apx-preview-foot button{flex:1}.apx-preview-periods{grid-template-columns:1fr}.apx-perf-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
+
+<style id="apx-product-card-finance-style">
+.apx-product-techline,.apx-product-moneyline{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
+.apx-product-techline span,.apx-product-moneyline span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.apx-product-techline small,.apx-product-moneyline small{font-size:10px;color:var(--mut);line-height:1.3}
+.apx-product-techline b,.apx-product-moneyline b{font-size:13px;overflow-wrap:anywhere}
+.apx-product-cost-alert{display:flex;flex-direction:column;gap:3px;margin-top:8px;padding:9px 10px;border:1px solid color-mix(in srgb,var(--warn) 36%,transparent);border-radius:10px;background:var(--warn2)}
+.apx-product-cost-alert b{font-size:12px;color:var(--warn)}
+.apx-product-cost-alert small{font-size:11px;color:var(--ink);line-height:1.4}
+@media(max-width:560px){.apx-product-techline b,.apx-product-moneyline b{font-size:12px}}
+</style>
 </head>
 <body><div class="app"><div class="scrim" id="scrim"></div><aside class="sb" id="sb"><div class="brand"><span class="logo">A<i>+</i></span><div>Gestão<small>Controle do negócio</small></div></div><nav class="sn" id="tabs"></nav><div class="sbf"><span class="av">A+</span><div><b>Meu negócio</b><small>Salvo automaticamente neste aparelho</small></div></div></aside><main class="main"><header class="top"><button class="btn mn" id="burger" aria-label="Menu">☰</button><div class="grow"></div><span class="save-state" id="save-state" aria-live="polite">✓ Salvo neste aparelho</span><button class="btn hm" id="pal">Buscar Ctrl+K</button><button class="btn" id="theme" aria-label="Tema">◐</button><div class="qa"><button class="btn p" id="qa">+ Registrar ▾</button><div class="qm" id="qm"></div></div><button id="imp" hidden></button><button id="add" hidden></button></header>
 <div class="hubwrap" id="hubbar"></div><section class="content" id="content"></section></main></div>
@@ -981,7 +992,7 @@ function apxChannelPriceSimulation(p,cost,matrix,P,timeline){
   const minPrice=den>0?(num(cost)+fixedUnit)/den:null,suggested=targetDen>0?(num(cost)+fixedUnit)/targetDen:null;
   const currentPrice=Math.max(0,num(matrix&&matrix[spec.precoKey])||num(p.preco_padrao)),profit=currentPrice>0?currentPrice*(1-variablePct/100)-fixedUnit-num(cost):null;
   const pctMargin=profit!==null&&currentPrice>0?profit/currentPrice*100:null;
-  const warnings=[];if(spec.canal!=='CONSIGNADA'&&!row)warnings.push('Taxa própria do canal não cadastrada; a simulação considera 0% temporariamente.');if(row&&/preencha a taxa/i.test(String(row.observacoes||'')))warnings.push('Taxa deste canal ainda está marcada como não confirmada; a simulação considera 0% temporariamente.');if(row&&String(row.ativo||'SIM').toUpperCase()==='NÃO')warnings.push('Canal marcado como inativo.');if(spec.canal==='CONSIGNADA')warnings.push('Usa a comissão padrão de 20%; lojas com condição personalizada podem divergir.');if(spec.paymentLabel==='Taxa padrão de cartão'&&!Object.prototype.hasOwnProperty.call(savedParams,'cartao'))warnings.push('Taxa de cartão ainda usa o padrão do sistema; confirme o percentual real.');if(spec.paymentLabel==='Anúncio / marketplace padrão'&&!Object.prototype.hasOwnProperty.call(savedParams,'anuncio'))warnings.push('Taxa de anúncio/marketplace ainda usa o padrão do sistema; confirme o percentual real.');if(!Object.prototype.hasOwnProperty.call(savedParams,'imposto'))warnings.push('Imposto ainda usa o padrão do sistema; confirme o percentual real.');if(fixedSale>0&&sales.length===0)warnings.push('Taxa fixa por venda rateada como se fosse uma unidade por pedido, pois não há histórico neste canal.');
+  const warnings=[];if(String(p&&p.custo_status||'').toUpperCase()==='PARCIAL')warnings.push('CUSTO PARCIAL: faltam custos de acabamento/mão de obra/embalagem; trate o preço calculado como piso provisório, não como preço final aprovado.');if(spec.canal!=='CONSIGNADA'&&!row)warnings.push('Taxa própria do canal não cadastrada; a simulação considera 0% temporariamente.');if(row&&/preencha a taxa/i.test(String(row.observacoes||'')))warnings.push('Taxa deste canal ainda está marcada como não confirmada; a simulação considera 0% temporariamente.');if(row&&String(row.ativo||'SIM').toUpperCase()==='NÃO')warnings.push('Canal marcado como inativo.');if(spec.canal==='CONSIGNADA')warnings.push('Usa a comissão padrão de 20%; lojas com condição personalizada podem divergir.');if(spec.paymentLabel==='Taxa padrão de cartão'&&!Object.prototype.hasOwnProperty.call(savedParams,'cartao'))warnings.push('Taxa de cartão ainda usa o padrão do sistema; confirme o percentual real.');if(spec.paymentLabel==='Anúncio / marketplace padrão'&&!Object.prototype.hasOwnProperty.call(savedParams,'anuncio'))warnings.push('Taxa de anúncio/marketplace ainda usa o padrão do sistema; confirme o percentual real.');if(!Object.prototype.hasOwnProperty.call(savedParams,'imposto'))warnings.push('Imposto ainda usa o padrão do sistema; confirme o percentual real.');if(fixedSale>0&&sales.length===0)warnings.push('Taxa fixa por venda rateada como se fosse uma unidade por pedido, pois não há histórico neste canal.');
   return{canal:spec.canal,cenario:spec.cenario,canal_ativo:row?String(row.ativo||'SIM').toUpperCase()!=='NÃO':true,preco_atual_R$:currentPrice>0?r2(currentPrice):null,custo_unitario_usado_R$:r2(cost),imposto_percentual:r2(tax),taxa_do_canal_percentual:r2(channelFee),taxa_de_pagamento_ou_anuncio_percentual:r2(spec.paymentPct),comissao_da_loja_percentual:r2(commission),taxa_fixa_por_venda_R$:r2(fixedSale),media_unidades_por_venda_no_historico:r2(avgUnits),taxa_fixa_alocada_por_unidade_R$:r2(fixedUnit),preco_minimo_de_equilibrio_R$:minPrice===null?null:r2(minPrice),preco_sugerido_para_margem_alvo_R$:suggested===null?null:r2(suggested),margem_alvo_percentual:r2(target),lucro_estimado_no_preco_atual_R$:profit===null?null:r2(profit),margem_estimada_no_preco_atual_percentual:pctMargin===null?null:r2(pctMargin),observacoes:[spec.paymentLabel,...warnings].join(' ')};
  });
 }
@@ -1020,14 +1031,14 @@ function apxPriceAuditData(){
   const orderStatus={};orders.forEach(o=>{const k=String(o.status||'SEM STATUS').toUpperCase();orderStatus[k]=(orderStatus[k]||0)+1});
   const orderRevenue=orders.filter(o=>eq(o.status,'ENTREGUE')).reduce((a,o)=>a+num(o.valor_total),0);
   const compList=competitors.map(c=>({concorrente:c.concorrente||'',canal:c.canal||'',preco_R$:apxRoundOrNull(c.preco),frete_R$:apxRoundOrNull(c.frete),preco_total_R$:apxRoundOrNull(c.preco_total),data_coleta:c.data_coleta||'',observacoes:c.observacoes||''}));
-  const costBreakdown=costRow?{materiais_R$:apxRoundOrNull(costRow.custo_materiais),impressao_R$:apxRoundOrNull(costRow.custo_impressao),mao_de_obra_R$:apxRoundOrNull(costRow.mao_obra),embalagem_R$:apxRoundOrNull(costRow.embalagem),outros_custos_R$:apxRoundOrNull(costRow.outros_custos),custo_unitario_R$:apxRoundOrNull(costRow.custo_unitario),preco_atual_R$:apxRoundOrNull(costRow.preco_atual),lucro_atual_R$:apxRoundOrNull(costRow.lucro_atual),margem_atual_percentual:apxRoundOrNull(costRow.margem_atual),preco_sugerido_R$:apxRoundOrNull(costRow.preco_sugerido),status_margem:costRow.status_margem||''}:null;
+  const costBreakdown=costRow?{materiais_R$:apxRoundOrNull(costRow.custo_materiais),impressao_R$:apxRoundOrNull(costRow.custo_impressao),mao_de_obra_R$:apxRoundOrNull(costRow.mao_obra),embalagem_R$:apxRoundOrNull(costRow.embalagem),outros_custos_R$:apxRoundOrNull(costRow.outros_custos),custo_unitario_R$:apxRoundOrNull(costRow.custo_unitario),preco_atual_R$:apxRoundOrNull(costRow.preco_atual),lucro_atual_R$:apxRoundOrNull(costRow.lucro_atual),margem_atual_percentual:apxRoundOrNull(costRow.margem_atual),preco_sugerido_R$:apxRoundOrNull(costRow.preco_sugerido),status_margem:costRow.status_margem||'',status_completude:costRow.status_custo||p.custo_status||'NÃO INFORMADO',origem_lote:costRow.custo_origem||p.custo_origem_lote||null,pendencias:costRow.custo_pendencias||p.custo_pendencias||null}:null;
   const modeled=calc?{valido:!!calc.ok,custo_unitario_estimado_R$:apxRoundOrNull(calc.custo),preco_tecnico_para_margem_alvo_R$:calc.ok?apxRoundOrNull(calc.preco):null,preco_minimo_estimado_sem_lucro_R$:apxRoundOrNull(calc.minimo),margem_liquida_estimada_no_preco_atual_percentual:price>0&&calc.ok?apxRoundOrNull(modeledNetProfit/price*100):null,lucro_liquido_estimado_no_preco_atual_R$:price>0&&calc.ok?apxRoundOrNull(modeledNetProfit):null,composicao_unitaria_R$:{filamento:apxRoundOrNull(calc.fil),energia:apxRoundOrNull(calc.en),depreciacao_e_desgaste:apxRoundOrNull(calc.maq),custo_fixo:apxRoundOrNull(calc.fx),embalagem:apxRoundOrNull(calc.emb),mao_de_obra:apxRoundOrNull(calc.tr),reserva_falhas:apxRoundOrNull(calc.fal)},observacao:'Simulação com os parâmetros gerais atuais e a ficha técnica cadastrada. Não substitui custo real conferido; não presume taxas específicas do canal.'}:null;
-  const costForChannel=recordedCost>0?recordedCost:modelCost>0?modelCost:null,costSource=recordedCost>0?'CUSTO_REGISTRADO':modelCost>0?'ESTIMATIVA_FICHA_TECNICA':'SEM_CUSTO_CONFIAVEL';
+  const partialCost=String(p.custo_status||costRow&&costRow.status_custo||'').toUpperCase()==='PARCIAL',costForChannel=recordedCost>0?recordedCost:modelCost>0?modelCost:null,costSource=recordedCost>0?(partialCost?'CUSTO_REGISTRADO_PARCIAL':'CUSTO_REGISTRADO'):modelCost>0?'ESTIMATIVA_FICHA_TECNICA':'SEM_CUSTO_CONFIAVEL';
   return{
    sku:sku||null,nome:name||null,produto_base:fmtName(p.produto_base)||null,versao_produto:fmtName(p.versao_produto)||null,destino:usoOf(p)||'NÃO CLASSIFICADO',ativo:String(p.ativo||'SIM').toUpperCase(),categoria:p.categoria||null,
    ficha_tecnica:{material:p.material||null,cores:p.cores||null,peso_por_unidade_g:apxRoundOrNull(p.peso_g),tempo_impressao_por_unidade_h:apxRoundOrNull(p.tempo_h),horas_manuais_por_unidade:apxRoundOrNull(p.horas_manuais),setup_h:apxRoundOrNull(p.setup_h),pecas_por_lote:apxRoundOrNull(p.lote_un),medidas:p.medidas||null,composicao_de_materiais:recipe},
    precos:{preco_padrao_atual_R$:apxRoundOrNull(p.preco_padrao),matriz:matrix?{preco_balcao_R$:apxRoundOrNull(matrix.preco_balcao),preco_online_R$:apxRoundOrNull(matrix.preco_online),preco_atacado_R$:apxRoundOrNull(matrix.preco_atacado),preco_personalizado_R$:apxRoundOrNull(matrix.preco_personalizado),preco_minimo_R$:apxRoundOrNull(matrix.preco_minimo),margem_alvo_percentual:apxRoundOrNull(matrix.margem_alvo)}:null},
-   custos:{custo_unitario_no_produto_R$:apxRoundOrNull(p.custo_unitario),custo_unitario_na_tabela_custos_R$:costRow?apxRoundOrNull(costRow.custo_unitario):null,fonte_custo_usada_pelo_sistema_R$:apxRoundOrNull(recordedCost),detalhamento:costBreakdown,simulacao_parametros_atuais:modeled},
+   custos:{custo_unitario_no_produto_R$:apxRoundOrNull(p.custo_unitario),custo_unitario_na_tabela_custos_R$:costRow?apxRoundOrNull(costRow.custo_unitario):null,fonte_custo_usada_pelo_sistema_R$:apxRoundOrNull(recordedCost),completude:partialCost?'PARCIAL':'NÃO CONFIRMADA',pendencias:p.custo_pendencias||costRow&&costRow.custo_pendencias||null,detalhamento:costBreakdown,simulacao_parametros_atuais:modeled},
    simulacao_de_preco_por_canal:{fonte_do_custo:costSource,custo_unitario_usado_R$:apxRoundOrNull(costForChannel),canais:apxChannelPriceSimulation(p,costForChannel,matrix,P,timeline)},
    desempenho_por_periodo:periods,
    estoque:{unidades_em_casa:apxRoundOrNull(st.casa)||0,unidades_em_lojas:apxRoundOrNull(st.loja)||0,estoque_minimo:apxRoundOrNull(p.estoque_minimo)||0,estrategia:p.estrategia_estoque||'NORMAL'},
@@ -1058,7 +1069,7 @@ function apxPriceAuditText(){
   'Analise TODOS os produtos fornecidos, mas priorize os ativos destinados a PARA VENDA ou PEDIDO. Não trate itens de uso pessoal ou interno como mercadorias vendáveis.',
   'Use exclusivamente os dados apresentados para afirmar fatos sobre esta empresa. Não invente custos, taxas, impostos, demanda, concorrentes ou dados que estejam ausentes. Quando faltar informação, sinalize o que falta e como medir/preencher.',
   'Para cada produto, confronte: preço padrão, matriz por canal, custo unitário registrado, detalhamento de custos, simulação geral e simulação individual por canal, desempenho móvel dos últimos 30, 90 e 365 dias, histórico de vendas, consignações, estoque, produção e concorrentes cadastrados.',
-  'Separe claramente valores registrados de estimativas. A simulação pela ficha técnica é uma referência calculada com os parâmetros gerais informados; não a apresente como custo real auditado. Aponte divergências entre custo do cadastro do produto, tabela Custos e simulação.',
+  'Separe claramente valores registrados de estimativas. Custos com status PARCIAL são apenas limite inferior/piso provisório: não trate a simulação de preço como preço final seguro, não conclua margem e não recomende aplicar o preço sem antes quantificar os itens pendentes (acabamento, mão de obra, embalagem, montagem ou perdas). A simulação pela ficha técnica usa parâmetros gerais e não substitui custo real auditado. Aponte divergências entre custo do cadastro, tabela Custos, lote de produção e simulação.',
   'Calcule margem como lucro dividido pelo preço de venda, e diferencie margem de markup/adicional sobre o custo. Considere que taxas percentuais e fixas, impostos, comissão de lojista, frete, embalagem, mão de obra, falhas, depreciação e desgaste podem alterar a margem. Não desconte uma taxa duas vezes.',
   'Não conclua que um produto é lucrativo apenas porque preço é maior que custo unitário: avalie os custos completos e os custos específicos do canal. Se os registros não permitirem calcular uma margem confiável, escreva “margem não comprovada” e explique por quê.',
   'Avalie separadamente venda direta por Pix/dinheiro, venda direta por cartão, online/marketplace, atacado, personalizado e consignação. A simulação usa as taxas cadastradas por canal, o imposto geral, a taxa de cartão, o parâmetro de anúncio/marketplace e a comissão padrão de 20% para lojas. Mostre explicitamente toda hipótese, taxa ausente ou taxa fixa rateada por unidade; não trate taxa não cadastrada como zero comprovado.',
@@ -1071,15 +1082,15 @@ function apxPriceAuditText(){
 }
 function apxPriceAuditPreviewStats(data){
  const products=data.produtos||[],sale=products.filter(p=>['PARA VENDA','PEDIDO','NÃO CLASSIFICADO'].includes(p.destino)&&p.ativo!=='NÃO'),
-  withCost=sale.filter(p=>num(p.custos.fonte_custo_usada_pelo_sistema_R$)>0||num(p.custos.simulacao_parametros_atuais&&p.custos.simulacao_parametros_atuais.custo_unitario_estimado_R$)>0),
+  withCost=sale.filter(p=>num(p.custos.fonte_custo_usada_pelo_sistema_R$)>0||num(p.custos.simulacao_parametros_atuais&&p.custos.simulacao_parametros_atuais.custo_unitario_estimado_R$)>0),partialCost=sale.filter(p=>p.custos.completude==='PARCIAL'),
   withTech=sale.filter(p=>num(p.ficha_tecnica.peso_por_unidade_g)>0&&num(p.ficha_tecnica.tempo_impressao_por_unidade_h)>0),
   missingPrice=sale.filter(p=>!(num(p.precos.preco_padrao_atual_R$)>0)),noSales90=sale.filter(p=>num(p.desempenho_por_periodo.ultimos_90_dias.unidades)<=0),
   noComp=sale.filter(p=>!(p.comparacao_concorrentes||[]).length);
- return{total:products.length,vendaveis:sale.length,withCost:withCost.length,withTech:withTech.length,missingPrice:missingPrice.length,noSales90:noSales90.length,noComp:noComp.length,periods:data.desempenho_global||{},channels:(data.canais_e_taxas_cadastrados||[]).length,unconfirmedChannelFees:(data.canais_e_taxas_cadastrados||[]).filter(c=>!c.taxas_confirmadas).length,simulations:products.filter(p=>(p.simulacao_de_preco_por_canal&&p.simulacao_de_preco_por_canal.canais||[]).some(c=>c.preco_sugerido_para_margem_alvo_R$!==null)).length};
+ return{total:products.length,vendaveis:sale.length,withCost:withCost.length,partialCost:partialCost.length,withTech:withTech.length,missingPrice:missingPrice.length,noSales90:noSales90.length,noComp:noComp.length,periods:data.desempenho_global||{},channels:(data.canais_e_taxas_cadastrados||[]).length,unconfirmedChannelFees:(data.canais_e_taxas_cadastrados||[]).filter(c=>!c.taxas_confirmadas).length,simulations:products.filter(p=>(p.simulacao_de_preco_por_canal&&p.simulacao_de_preco_por_canal.canais||[]).some(c=>c.preco_sugerido_para_margem_alvo_R$!==null)).length};
 }
 function abrirPreviaContextoPrecificacao(){
  const data=apxPriceAuditData(),st=apxPriceAuditPreviewStats(data),periods=[30,90,365].map(d=>st.periods['ultimos_'+d+'_dias']||{}),fmt=n=>Number(n||0).toLocaleString('pt-BR'),
-  warnings=[st.missingPrice?`${st.missingPrice} produto(s) sem preço padrão.`:'Todos os produtos vendáveis têm preço padrão.',st.vendaveis-st.withCost?`${st.vendaveis-st.withCost} produto(s) sem custo confiável ou simulação técnica.`:'Os produtos vendáveis possuem algum custo disponível.',st.noSales90?`${st.noSales90} produto(s) sem venda nos últimos 90 dias.`:'Todos os produtos vendáveis tiveram alguma venda nos últimos 90 dias.',st.noComp?`${st.noComp} produto(s) sem comparação de concorrentes cadastrada.`:'Todos têm pelo menos uma referência de concorrente.',st.unconfirmedChannelFees?`${st.unconfirmedChannelFees} canal(is) ainda têm taxas marcadas como não confirmadas.`:'As taxas dos canais não têm avisos de preenchimento pendente.'];
+  warnings=[st.missingPrice?`${st.missingPrice} produto(s) sem preço padrão.`:'Todos os produtos vendáveis têm preço padrão.',st.vendaveis-st.withCost?`${st.vendaveis-st.withCost} produto(s) sem custo confiável ou simulação técnica.`:'Os produtos vendáveis possuem algum custo disponível.',st.partialCost?`${st.partialCost} produto(s) têm custo PARCIAL; simulações são apenas piso provisório até medir acabamento, mão de obra e embalagem.`:'Nenhum custo está marcado como parcial.',st.noSales90?`${st.noSales90} produto(s) sem venda nos últimos 90 dias.`:'Todos os produtos vendáveis tiveram alguma venda nos últimos 90 dias.',st.noComp?`${st.noComp} produto(s) sem comparação de concorrentes cadastrada.`:'Todos têm pelo menos uma referência de concorrente.',st.unconfirmedChannelFees?`${st.unconfirmedChannelFees} canal(is) ainda têm taxas marcadas como não confirmadas.`:'As taxas dos canais não têm avisos de preenchimento pendente.'];
  const old=document.getElementById('apx-price-preview');if(old)old.remove();
  const ov=document.createElement('div');ov.id='apx-price-preview';ov.className='apx-preview-overlay';
  ov.innerHTML=`<section class="apx-preview-modal" role="dialog" aria-modal="true" aria-labelledby="apx-preview-title"><header class="apx-preview-head"><div><small>PAINEL DE INTELIGÊNCIA COMERCIAL</small><h2 id="apx-preview-title">Prévia do contexto para ChatGPT</h2><p>Confira o que será enviado antes de copiar. Nenhum preço ou cadastro será alterado.</p></div><button type="button" class="btn" data-apx-preview-close aria-label="Fechar">✕</button></header>
@@ -1149,8 +1160,10 @@ function produtosV(){
    </div>
    <div class="prod-key"><span><i class="prod-dot working"></i>Funcionando: já tem vendas</span><span><i class="prod-dot test"></i>Em teste: produto em avaliação</span><span><i class="prod-dot solid"></i>Consolidado: classificado por você</span><span><i class="prod-dot new"></i>Sem histórico: ainda não vendeu</span></div>
    ${filt.length?`<div class="cgrid" style="grid-template-columns:repeat(auto-fill,minmax(245px,1fr))">${filt.map(({r,st,phase,quantity})=>{
-      const u=usoOf(r)||'NONE',img=safeImageUrl(r.foto),preco=num(r.preco_padrao),custo=num(r.custo_unitario),min=num(st.min),low=quantity>0&&min>0&&quantity<=min,
+      const u=usoOf(r)||'NONE',img=safeImageUrl(r.foto),costRow=rows('custos').find(x=>eq(x.sku,r.sku)),matrixRow=rows('matriz_precos').find(x=>eq(x.sku,r.sku)),preco=num(r.preco_padrao)||num(matrixRow&&matrixRow.preco_balcao),custo=num(r.custo_unitario)||num(costRow&&costRow.custo_unitario),partialCost=String(r.custo_status||costRow&&costRow.status_custo||'').toUpperCase()==='PARCIAL',min=num(st.min),low=quantity>0&&min>0&&quantity<=min,
             stockLabel=quantity<=0?'Sem estoque':low?'Estoque baixo':'Disponível',stockTone=quantity<=0?'empty':low?'low':'available',
+            timeMins=Math.round(num(r.tempo_h)*60),timeLabel=timeMins?`${Math.floor(timeMins/60)}h ${String(timeMins%60).padStart(2,'0')}min`:'Não informado',weightLabel=num(r.peso_g)>0?`${f2(r.peso_g)} g${r.peso_estimado?' · estimado':''}`:'Não informado',
+            pixQuote=partialCost&&custo>0&&u!=='USO NA LOJA'?(()=>{try{return apxChannelPriceSimulation(r,custo,matrixRow,PRC(),apxProductSalesTimeline(r)).find(x=>x.cenario==='Venda direta · Pix/dinheiro')}catch{return null}})():null,
             explicit=String(r.fase_comercial||'').trim().toUpperCase(),selectValue=['EM_TESTE','FUNCIONANDO','CONSOLIDADO','PAUSADO'].includes(explicit)?explicit:'AUTO';
       return `<div class="ccard prod-card-phase-${phase.tone}" data-f="produtos|${r._id}">
         <div class="prod-card-ribbon ${phase.tone}"></div>
@@ -1161,8 +1174,10 @@ function produtosV(){
           <div class="cft"><span><small class="ok">SKU</small><br><b>${esc(r.sku||'—')}</b></span><span style="text-align:right"><small class="ok">Estoque em mãos</small><br><b>${quantity}</b>${low?'<small class="prod-stock-note">No limite mínimo</small>':''}</span></div>
           ${phase.unidades>0?`<div class="prod-sales-proof">📈 ${phase.unidades} unidade(s) vendida(s) no histórico${phase.automatica?' · classificação automática':''}</div>`:phase.fase==='SEM_HISTORICO'?'<div class="prod-sales-proof muted">Ainda não há vendas registradas para este SKU.</div>':''}
           <div class="prod-phase-control" onclick="event.stopPropagation()"><label for="fase-${esc(r._id)}">Classificação comercial</label><select id="fase-${esc(r._id)}" data-fase="${esc(r._id)}"><option value="AUTO" ${selectValue==='AUTO'?'selected':''}>Automática (pelo histórico)</option><option value="EM_TESTE" ${selectValue==='EM_TESTE'?'selected':''}>🧪 Em teste</option><option value="FUNCIONANDO" ${selectValue==='FUNCIONANDO'?'selected':''}>✅ Funcionando</option><option value="CONSOLIDADO" ${selectValue==='CONSOLIDADO'?'selected':''}>⭐ Consolidado</option><option value="PAUSADO" ${selectValue==='PAUSADO'?'selected':''}>⏸️ Pausado</option></select></div>
-          <div style="display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><span><small class="ok">Custo</small><br>${custo?money(custo):'—'}</span><span style="text-align:right"><small class="ok">Preço</small><br><b>${preco?money(preco):'—'}</b></span></div>
-          ${lucroIndicadoresHTML(r,'produtos')}
+          <div class="apx-product-techline"><span><small>Filamento por unidade</small><b>${weightLabel}</b></span><span><small>Tempo de impressão</small><b>${timeLabel}${r.tempo_estimado?' · estimado':''}</b></span></div>
+          <div class="apx-product-moneyline"><span><small>${partialCost?'Custo conhecido · parcial':'Custo unitário'}</small><b>${custo>0?money(custo):'Não cadastrado'}</b></span><span><small>${u==='USO NA LOJA'?'Preço de venda':'Preço atual'}</small><b>${u==='USO NA LOJA'?'Não aplicável':preco>0?money(preco):'Não definido'}</b></span></div>
+          ${partialCost?`<div class="apx-product-cost-alert"><b>⚠ Custo parcial</b><small>${esc(r.custo_pendencias||costRow&&costRow.custo_pendencias||'Ainda faltam custos de acabamento, mão de obra ou embalagem.')}</small>${pixQuote&&pixQuote.preco_sugerido_para_margem_alvo_R$!==null?`<small>Simulação Pix (piso provisório): <b>${money(pixQuote.preco_sugerido_para_margem_alvo_R$)}</b>. Ainda não é um preço seguro para cadastrar.</small>`:''}<small>Origem: ${esc(r.custo_origem_lote||costRow&&costRow.custo_origem||'lote registrado')}.</small></div>`:''}
+          ${partialCost?`<div class="li-lucros" style="margin-top:5px"><small class="ok">Lucro e margem ainda não são confiáveis: o custo está incompleto.</small></div>`:lucroIndicadoresHTML(r,'produtos')}
           ${(()=>{const td=testeDemanda(r),es=String(r.estrategia_estoque||'NORMAL').toUpperCase(),labE={TESTE_DEMANDA:'🧪 Teste de demanda',ALTA_SAIDA:'🔥 Alta saída',BAIXA_SAIDA:'🐌 Baixa saída',SOB_DEMANDA:'⏱️ Sob demanda',NORMAL:'⚖️ Estoque normal'}[es]||'⚖️ Estoque normal';return `<div class="panel" style="margin-top:10px;padding:10px;background:var(--soft)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><small class="ok">${labE}</small>${td.ativo&&td.precisa?`<span class="pill a">Produzir ${td.proxima}</span>`:''}</div>${td.ativo?(td.validado?`<small class="ok" style="display:block;margin-top:5px">Teste validado no lote de ${td.ultimaQtd} un. · ${td.vendas} vendida(s). Considere migrar para Normal ou Alta saída.</small>`:td.precisa?`<small class="ok" style="display:block;margin-top:5px">${esc(td.motivo)} Próximo lote: <b>${td.proxima} un.</b>${td.proxima<td.ultimaQtd?' · reduzir':td.proxima>td.ultimaQtd?' · aumentar':' · manter'}</small><button type="button" class="btn p" style="margin-top:7px;width:100%" data-teste-repor="${r._id}" data-qtd="${td.proxima}">🖨️ Abrir produção de ${td.proxima} un.</button>`:`<small class="ok" style="display:block;margin-top:5px">Estoque: <b>${td.stock}</b> · lote atual: ${td.ultimaQtd} · ${td.vendas} vendida(s). ${td.motivo}</small>`):`<small class="ok" style="display:block;margin-top:5px">Estratégia manual. A+ não sugere produção.</small>`}</div>`})()}
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:10px">${USO.map(x=>`<button type="button" class="btn s${u===x[0]?' p':''}" data-uso="${r._id}|${x[0]}" title="${x[1]}">${x[2]}</button>`).join('')}<button type="button" class="btn s" data-estrat="${r._id}|TESTE_DEMANDA" title="Testar saída">🧪</button><button type="button" class="btn s" data-estrat="${r._id}|ALTA_SAIDA" title="Alta saída">🔥</button><button type="button" class="btn s" data-estrat="${r._id}|NORMAL" title="Estoque normal">⚖️</button></div>
         </div></div>`;
@@ -4097,13 +4112,84 @@ function repararCatalogoImpressaoAprovada(){
  if(changed)setRows('impressoes',after);
  return{created,linked};
 }
+function repararCartoesProdutosPorLotes(){
+ const targets=['P3D-030','P3D-031','P3D-032','P3D-033',...Array.from({length:10},(_,i)=>'P3D-'+String(34+i).padStart(3,'0')),'P3D-044','P3D-045'];
+ const colorMap={
+  'P3D-030':'PLA MATTE Preto 9 g · PLA Azul 2 g · PLA MATTE Nude 2 g · PLA +Plus Laranja 2 g',
+  'P3D-031':'PLA MATTE Preto 6 g',
+  'P3D-032':'PLA MATTE Preto 54 g · PLA White 2 g · PLA Vermelho 3 g · PLA Amarelo 4 g (placas somadas)',
+  'P3D-033':'PLA +Plus Verde 22 g · PLA MATTE Preto 1 g (placas somadas)',
+  'P3D-044':'PLA White 125 g no lote de 12 unidades',
+  'P3D-045':'PLA MATTE Preto 8 g · PLA White 1 g'
+ };
+ const pending={
+  'P3D-030':'Caneta acrílica, verniz brilhante e tempo de acabamento manual não quantificados.',
+  'P3D-031':'Caneta acrílica, verniz brilhante e tempo de acabamento manual não quantificados.',
+  'P3D-032':'Montagem manual, mão de obra e embalagem não quantificadas; filamento, Clicky Silencioso e Mosqueteiro Italiano incluídos no lote.',
+  'P3D-033':'Montagem manual, mão de obra e embalagem não quantificadas; filamento, Clicky Silencioso e Mosqueteiro Italiano incluídos no lote.',
+  'P3D-044':'Pintura manual dos olhos, mão de obra e embalagem não quantificadas; mosqueteiro incluído no lote.',
+  'P3D-045':'Peça de uso interno; mão de obra/embalagem não quantificadas.'
+ };
+ for(let i=34;i<=43;i++)pending['P3D-'+String(i).padStart(3,'0')]='Rateio estimado da placa compartilhada de 26/10; filamento individual por cor, ajustes/acabamento manual, mão de obra e embalagem não quantificados.';
+ for(let i=34;i<=43;i++)colorMap['P3D-'+String(i).padStart(3,'0')]='Misto · placa compartilhada; cores individuais não medidas';
+ const P=rows('produtos').slice(),L=rows('lotes'),C=rows('custos').slice();let productChanged=false,costChanged=false,priceFixed=false,createdCostCount=0;
+ targets.forEach(sku=>{
+  const pi=P.findIndex(x=>eq(x.sku,sku));if(pi<0)return;
+  const p={...P[pi]},lot=L.filter(x=>eq(x.sku_produto,sku)&&num(x.qtd_produzida)>0).sort((a,b)=>String(a.data||'').localeCompare(String(b.data||''))).pop();
+  if(!lot)return;
+  const q=Math.max(1,num(lot.qtd_produzida)),unit=num(lot.custo_unitario_real)||num(lot.custo_total_real)/q,matUnit=num(lot.custo_materiais_real)/q,printUnit=Math.max(0,num(lot.custo_total_real)-num(lot.custo_materiais_real))/q;
+  const costIndex=C.findIndex(x=>eq(x.sku,sku));let cost=costIndex>=0?{...C[costIndex]}:null;
+  if(!p.peso_g||num(p.peso_g)<=0){p.peso_g=Math.round((num(lot.material_consumido)/q)*10000)/10000;productChanged=true;}
+  if(!p.tempo_h||num(p.tempo_h)<=0){p.tempo_h=Math.round((num(lot.tempo_total)/q)*10000)/10000;productChanged=true;}
+  if(!p.material){p.material='PLA';productChanged=true;}
+  if(!p.cores){p.cores=colorMap[sku]||'Misto';productChanged=true;}
+  if(!p.custo_unitario||num(p.custo_unitario)<=0){p.custo_unitario=r2(unit);productChanged=true;}
+  if(!p.custo_origem_lote){p.custo_origem_lote=lot.lote||lot._id;productChanged=true;}
+  if(!p.custo_status&&(!cost||String(cost.status_custo||'').toUpperCase()==='PARCIAL')){p.custo_status='PARCIAL';productChanged=true;}
+  if(!p.custo_pendencias&&(!cost||String(cost.status_custo||'').toUpperCase()==='PARCIAL')){p.custo_pendencias=pending[sku]||'Custos de acabamento, mão de obra ou embalagem não quantificados.';productChanged=true;}
+  if(+sku.slice(-3)>=34&&+sku.slice(-3)<=43){
+   if(!p.peso_estimado){p.peso_estimado=true;productChanged=true;}
+   if(!p.tempo_estimado){p.tempo_estimado=true;productChanged=true;}
+   if(!/rateio estimado/i.test(String(p.observacoes||''))){p.observacoes=(String(p.observacoes||'').trim()+' Rateio de peso, tempo e custo por produto é estimado a partir da placa compartilhada; não representa medição individual.').trim();productChanged=true;}
+  }
+  if(sku==='P3D-045'&&p.uso_produto!=='USO NA LOJA'){p.uso_produto='USO NA LOJA';productChanged=true;}
+  if(JSON.stringify(p)!==JSON.stringify(P[pi]))P[pi]=p;
+  if(!cost){
+   cost={sku,produto:p.produto||'',custo_materiais:r2(matUnit),custo_impressao:r2(printUnit),mao_obra:'',embalagem:'',outros_custos:'',custo_unitario:r2(unit),preco_atual:'',lucro_atual:'',margem_atual:'',preco_sugerido:'',status_margem:'',status_custo:'PARCIAL',custo_origem:lot.lote||lot._id,custo_pendencias:pending[sku]||'Mão de obra/acabamento e embalagem não quantificados.',observacoes:`Custo parcial do lote ${lot.lote||''}. Materiais: ${money(r2(matUnit))}/un.; impressão e demais custos capturados: ${money(r2(printUnit))}/un. Não inclui: ${pending[sku]||'custos indiretos não quantificados.'}`,_id:uid(),_criadoEm:new Date().toISOString()};
+   C.unshift(cost);costChanged=true;createdCostCount++;
+  }else{
+   if(!p.custo_unitario&&num(cost.custo_unitario)>0){p.custo_unitario=num(cost.custo_unitario);productChanged=true;}
+   if(!p.custo_status&&String(cost.status_custo||'').toUpperCase()==='PARCIAL'){p.custo_status='PARCIAL';productChanged=true;}
+   if(!p.custo_pendencias&&String(cost.status_custo||'').toUpperCase()==='PARCIAL'&&cost.custo_pendencias){p.custo_pendencias=cost.custo_pendencias;productChanged=true;}
+   let ch=false;
+   if(!liTem(cost,'custo_unitario')){cost.custo_unitario=r2(unit);ch=true;}
+   if(!liTem(cost,'custo_materiais')){cost.custo_materiais=r2(matUnit);ch=true;}
+   if(!liTem(cost,'custo_impressao')){cost.custo_impressao=r2(printUnit);ch=true;}
+   if(!cost.status_custo&&!cost.status_completude){cost.status_custo=p.custo_status||'PARCIAL';ch=true;}
+   if(!cost.custo_origem){cost.custo_origem=lot.lote||lot._id;ch=true;}
+   if(!cost.custo_pendencias){cost.custo_pendencias=p.custo_pendencias;ch=true;}
+   if(ch){C[costIndex]=cost;costChanged=true;}
+  }
+ });
+ // Corrige somente a suposição antiga que ainda conserva o fingerprint original e não possui venda vinculada.
+ const goku=P.find(x=>eq(x.sku,'P3D-030')),imp=rows('impressoes').find(x=>eq(x.codigo,'IMP-022'));
+ if(goku&&imp){
+  const sold=rows('vendas').some(x=>eq(x.sku_produto,'P3D-030'))||rows('consignacoes').some(x=>eq(x.sku,'P3D-030')&&num(x.qtd_vendida)>0),j=imp._job||{};
+  const fake=!sold&&Math.abs(num(goku.preco_padrao)-9.99)<.001&&Math.abs(num(imp.preco_total)-9.99)<.001&&Math.abs(num(imp.lucro)-4.87)<.02&&String(j.margem||'')==='100'&&Math.abs(num(j.precoFinal)-9.99)<.001;
+  if(fake){P.forEach((x,i)=>{if(eq(x.sku,'P3D-030'))P[i]={...x,preco_padrao:''}});if(!productChanged)productChanged=true;setRows('impressoes',rows('impressoes').map(x=>x._id===imp._id?{...x,preco_total:0,lucro:0,lucro_potencial:0,lucro_virgem:0,lucro_sem_ajustes:0,margem:0,margem_virgem:0,margem_sem_ajustes:0,versao_lucros:3,lucro_realizado:null,lucros_estimados:false,fonte_lucros:'Preço de venda não informado; lucro/margem não calculados.',observacoes:(String(x.observacoes||'').trim()+' Preço não informado; o valor anterior de R$ 9,99 era uma suposição e foi removido.').trim(),_job:{...j,modoPreco:'PRECO',precoFinal:''}}:x));priceFixed=true;}
+ }
+ if(productChanged)setRows('produtos',P);
+ if(costChanged)setRows('custos',C);
+ return{produtos:targets.length,custos:C.length,criados:createdCostCount,precoCorrigido:priceFixed};
+}
+
 async function aplusPostLoadRepair(){
  let repaired=0,catalogCreated=0,catalogLinked=0;
- const ok=withDbTransaction(()=>{stockMigrateMaterialPurpose();stockRepairMaterialCodes();stockEnsureOpeningLots();repairHistoricalDataConsistency();resourceMigrateReceived();resourceFixMoveleiroDuplicates();syncAllConsignacaoMovimentos();const catalogRepair=repararCatalogoImpressaoAprovada();catalogCreated+=catalogRepair.created;catalogLinked+=catalogRepair.linked;repaired+=repararOrdensProducao();migTesteFracassadoResultado();fixLinks();return true});
+ const ok=withDbTransaction(()=>{stockMigrateMaterialPurpose();stockRepairMaterialCodes();stockEnsureOpeningLots();repairHistoricalDataConsistency();resourceMigrateReceived();resourceFixMoveleiroDuplicates();syncAllConsignacaoMovimentos();const catalogRepair=repararCatalogoImpressaoAprovada();catalogCreated+=catalogRepair.created;catalogLinked+=catalogRepair.linked;const cardRepair=repararCartoesProdutosPorLotes();repaired+=repararOrdensProducao();migTesteFracassadoResultado();fixLinks();window._apxProductCardRepair=cardRepair;return true});
  if(ok===false||!await waitForDbIdle())throw new Error('O IndexedDB não confirmou a revisão de consistência.');
  const lucroOk=await migLucrosKatanaEEntregas();
  if(lucroOk===false||!await waitForDbIdle())throw new Error('O IndexedDB não confirmou a atualização dos indicadores de lucro.');
- return{ordens:repaired,produtos:catalogCreated,vinculos:catalogLinked};
+ return{ordens:repaired,produtos:catalogCreated,vinculos:catalogLinked,cartoesProdutos:window._apxProductCardRepair||null};
 }
 async function startAplusAfterDatabase(){
  const gate=document.createElement('div');gate.id='aplus-db-startup';gate.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:#08080bea;color:#fff;font:600 15px Montserrat,system-ui,sans-serif;text-align:center';gate.textContent='A+ Gestão · Preparando seu banco de dados com segurança…';document.body.appendChild(gate);
@@ -4119,6 +4205,8 @@ async function startAplusAfterDatabase(){
   const repairNotes=[];
   if(_prodReparadas.produtos)repairNotes.push(_prodReparadas.produtos+' produto(s) integrado(s) ao catálogo a partir de impressão(ões) aprovada(s)');
   if(_prodReparadas.ordens)repairNotes.push(_prodReparadas.ordens+' ordem(ns) de produção vinculada(s) ao SKU correto');
+  if(_prodReparadas.cartoesProdutos&&(_prodReparadas.cartoesProdutos.produtos||_prodReparadas.cartoesProdutos.criados))repairNotes.push('dados técnicos e custos parciais dos produtos recuperados dos lotes');
+  if(_prodReparadas.cartoesProdutos&&_prodReparadas.cartoesProdutos.precoCorrigido)repairNotes.push('preço não informado do Goku removido');
   if(repairNotes.length)toast(repairNotes.join(' · ')+'. O estoque físico só é lançado quando a impressão é concluída.');
   if(dbInfo.mode!=='indexeddb')setTimeout(()=>toast('Aviso: IndexedDB não ficou disponível neste navegador. O sistema está usando o armazenamento local; evite modo privado e faça backups frequentes.'),900);
  }catch(e){console.error('A+ Gestão: falha ao iniciar o banco',e);try{go('v-hoje')}catch{}toast('O banco não pôde ser preparado corretamente. Faça um backup antes de continuar.');}
