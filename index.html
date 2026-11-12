@@ -618,26 +618,29 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
 </style>
 
 <style id="apx-sidebar-stock-labels">
-/* A+ UX: manter os dois módulos de estoque em uma única linha no menu lateral. */
+/* Mantém os dois nomes em uma linha sem reduzir a tipografia dos demais itens. */
 #tabs.sn button[data-go="hub:estoque"],
 #tabs.sn button[data-go="hub:estoque_materiais"]{
   white-space:nowrap;
-  font-size:13px;
-  letter-spacing:-.025em;
-  gap:8px;
-  padding-left:8px;
-  padding-right:7px;
+  font-size:14.5px; /* mesmo tamanho definido em .sn button */
+  letter-spacing:normal;
+  gap:11px;
+  padding-left:12px;
+  padding-right:12px;
   min-width:0;
 }
 #tabs.sn button[data-go="hub:estoque"] .ni,
 #tabs.sn button[data-go="hub:estoque_materiais"] .ni{
-  flex:0 0 20px;
-  width:20px;
+  flex:0 0 22px;
+  width:22px;
 }
-@media(max-width:900px){
-  #tabs.sn button[data-go="hub:estoque"],
-  #tabs.sn button[data-go="hub:estoque_materiais"]{font-size:13px;}
-}
+</style>
+
+<style id="apx-store-product-card-spacing">
+/* Lojas parceiras: separa visualmente o título do resumo do produto. */
+.loja-product-info{display:block;min-width:0;flex:1 1 auto;}
+.loja-product-info>b{display:block;line-height:1.35;margin:0 0 5px;overflow-wrap:anywhere;}
+.loja-product-info>small{display:block;line-height:1.5;white-space:normal;overflow-wrap:anywhere;}
 </style>
 </head>
 <body><div class="app"><div class="scrim" id="scrim"></div><aside class="sb" id="sb"><div class="brand"><span class="logo">A<i>+</i></span><div>Gestão<small>Controle do negócio</small></div></div><nav class="sn" id="tabs"></nav><div class="sbf"><span class="av">A+</span><div><b>Meu negócio</b><small>Salvo automaticamente neste aparelho</small></div></div></aside><main class="main"><header class="top"><button class="btn mn" id="burger" aria-label="Menu">☰</button><div class="grow"></div><span class="save-state" id="save-state" aria-live="polite">✓ Salvo neste aparelho</span><button class="btn hm" id="pal">Buscar Ctrl+K</button><button class="btn" id="theme" aria-label="Tema">◐</button><div class="qa"><button class="btn p" id="qa">+ Registrar ▾</button><div class="qm" id="qm"></div></div><button id="imp" hidden></button><button id="add" hidden></button></header>
@@ -1183,9 +1186,15 @@ function produtosV(){
    </div>
    <div class="prod-key"><span><i class="prod-dot working"></i>Funcionando: já tem vendas</span><span><i class="prod-dot test"></i>Em teste: produto em avaliação</span><span><i class="prod-dot solid"></i>Consolidado: classificado por você</span><span><i class="prod-dot new"></i>Sem histórico: ainda não vendeu</span></div>
    ${filt.length?`<div class="cgrid" style="grid-template-columns:repeat(auto-fill,minmax(245px,1fr))">${filt.map(({r,st,phase,quantity})=>{
-      const u=usoOf(r)||'NONE',img=safeImageUrl(r.foto),costRow=rows('custos').find(x=>eq(x.sku,r.sku)),matrixRow=rows('matriz_precos').find(x=>eq(x.sku,r.sku)),preco=num(r.preco_padrao)||num(matrixRow&&matrixRow.preco_balcao),custo=num(r.custo_unitario)||num(costRow&&costRow.custo_unitario),partialCost=String(r.custo_status||costRow&&costRow.status_custo||'').toUpperCase()==='PARCIAL',min=num(st.min),low=quantity>0&&min>0&&quantity<=min,
+      const u=usoOf(r)||'NONE',img=safeImageUrl(r.foto),costRow=rows('custos').find(x=>eq(x.sku,r.sku)),matrixRow=rows('matriz_precos').find(x=>eq(x.sku,r.sku)),
+            productLots=rows('lotes').filter(x=>eq(x.sku_produto,r.sku)&&num(x.qtd_produzida)>0).sort((a,b)=>String(a.data||'').localeCompare(String(b.data||''))),sourceLot=productLots[productLots.length-1]||null,
+            lotQty=Math.max(1,num(sourceLot&&sourceLot.qtd_produzida)||1),lotCost=num(sourceLot&&sourceLot.custo_unitario_real)||num(sourceLot&&sourceLot.custo_total_real)/lotQty,
+            preco=num(r.preco_padrao)||num(matrixRow&&matrixRow.preco_balcao),custo=num(r.custo_unitario)||num(costRow&&costRow.custo_unitario)||lotCost,
+            hasLotCost=!!sourceLot&&lotCost>0,partialCost=String(r.custo_status||costRow&&costRow.status_custo||'').toUpperCase()==='PARCIAL'||(hasLotCost&&!(num(r.custo_unitario)>0||num(costRow&&costRow.custo_unitario)>0)),min=num(st.min),low=quantity>0&&min>0&&quantity<=min,
             stockLabel=quantity<=0?'Sem estoque':low?'Estoque baixo':'Disponível',stockTone=quantity<=0?'empty':low?'low':'available',
-            timeMins=Math.round(num(r.tempo_h)*60),timeLabel=timeMins?`${Math.floor(timeMins/60)}h ${String(timeMins%60).padStart(2,'0')}min`:'Não informado',weightLabel=num(r.peso_g)>0?`${f2(r.peso_g)} g${r.peso_estimado?' · estimado':''}`:'Não informado',
+            weightValue=num(r.peso_g)>0?num(r.peso_g):num(sourceLot&&sourceLot.material_consumido)/lotQty,
+            timeValue=num(r.tempo_h)>0?num(r.tempo_h):num(sourceLot&&sourceLot.tempo_total)/lotQty,
+            timeMins=Math.round(timeValue*60),timeLabel=timeMins?`${Math.floor(timeMins/60)}h ${String(timeMins%60).padStart(2,'0')}min${!num(r.tempo_h)&&sourceLot?' · lote':''}`:'Não informado',weightLabel=weightValue>0?`${f2(weightValue)} g${r.peso_estimado?' · estimado':(!num(r.peso_g)&&sourceLot?' · lote':'')}`:'Não informado',
             pixQuote=partialCost&&custo>0&&u!=='USO NA LOJA'?(()=>{try{return apxChannelPriceSimulation(r,custo,matrixRow,PRC(),apxProductSalesTimeline(r)).find(x=>x.cenario==='Venda direta · Pix/dinheiro')}catch{return null}})():null,
             explicit=String(r.fase_comercial||'').trim().toUpperCase(),selectValue=['EM_TESTE','FUNCIONANDO','CONSOLIDADO','PAUSADO'].includes(explicit)?explicit:'AUTO';
       return `<div class="ccard prod-card-phase-${phase.tone}" data-f="produtos|${r._id}">
@@ -1199,7 +1208,7 @@ function produtosV(){
           <div class="prod-phase-control" onclick="event.stopPropagation()"><label for="fase-${esc(r._id)}">Classificação comercial</label><select id="fase-${esc(r._id)}" data-fase="${esc(r._id)}"><option value="AUTO" ${selectValue==='AUTO'?'selected':''}>Automática (pelo histórico)</option><option value="EM_TESTE" ${selectValue==='EM_TESTE'?'selected':''}>🧪 Em teste</option><option value="FUNCIONANDO" ${selectValue==='FUNCIONANDO'?'selected':''}>✅ Funcionando</option><option value="CONSOLIDADO" ${selectValue==='CONSOLIDADO'?'selected':''}>⭐ Consolidado</option><option value="PAUSADO" ${selectValue==='PAUSADO'?'selected':''}>⏸️ Pausado</option></select></div>
           <div class="apx-product-techline"><span><small>Filamento por unidade</small><b>${weightLabel}</b></span><span><small>Tempo de impressão</small><b>${timeLabel}${r.tempo_estimado?' · estimado':''}</b></span></div>
           <div class="apx-product-moneyline"><span><small>${partialCost?'Custo conhecido · parcial':'Custo unitário'}</small><b>${custo>0?money(custo):'Não cadastrado'}</b></span><span><small>${u==='USO NA LOJA'?'Preço de venda':'Preço atual'}</small><b>${u==='USO NA LOJA'?'Não aplicável':preco>0?money(preco):'Não definido'}</b></span></div>
-          ${partialCost?`<div class="apx-product-cost-alert"><b>⚠ Custo parcial</b><small>${esc(r.custo_pendencias||costRow&&costRow.custo_pendencias||'Ainda faltam custos de acabamento, mão de obra ou embalagem.')}</small>${pixQuote&&pixQuote.preco_sugerido_para_margem_alvo_R$!==null?`<small>Simulação Pix (piso provisório): <b>${money(pixQuote.preco_sugerido_para_margem_alvo_R$)}</b>. Ainda não é um preço seguro para cadastrar.</small>`:''}<small>Origem: ${esc(r.custo_origem_lote||costRow&&costRow.custo_origem||'lote registrado')}.</small></div>`:''}
+          ${partialCost?`<div class="apx-product-cost-alert"><b>⚠ Custo parcial</b><small>${esc(r.custo_pendencias||costRow&&costRow.custo_pendencias||'Ainda faltam custos de acabamento, mão de obra ou embalagem.')}</small>${pixQuote&&pixQuote.preco_sugerido_para_margem_alvo_R$!==null?`<small>Preço de referência provisório · Pix: <b>${money(pixQuote.preco_sugerido_para_margem_alvo_R$)}</b>. É apenas uma simulação com o custo conhecido; não altera o preço cadastrado.</small>`:''}<small>Origem: ${esc(r.custo_origem_lote||costRow&&costRow.custo_origem||sourceLot&&sourceLot.lote||'lote registrado')}.</small></div>`:''}
           ${partialCost?`<div class="li-lucros" style="margin-top:5px"><small class="ok">Lucro e margem ainda não são confiáveis: o custo está incompleto.</small></div>`:lucroIndicadoresHTML(r,'produtos')}
           ${(()=>{const td=testeDemanda(r),es=String(r.estrategia_estoque||'NORMAL').toUpperCase(),labE={TESTE_DEMANDA:'🧪 Teste de demanda',ALTA_SAIDA:'🔥 Alta saída',BAIXA_SAIDA:'🐌 Baixa saída',SOB_DEMANDA:'⏱️ Sob demanda',NORMAL:'⚖️ Estoque normal'}[es]||'⚖️ Estoque normal';return `<div class="panel" style="margin-top:10px;padding:10px;background:var(--soft)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><small class="ok">${labE}</small>${td.ativo&&td.precisa?`<span class="pill a">Produzir ${td.proxima}</span>`:''}</div>${td.ativo?(td.validado?`<small class="ok" style="display:block;margin-top:5px">Teste validado no lote de ${td.ultimaQtd} un. · ${td.vendas} vendida(s). Considere migrar para Normal ou Alta saída.</small>`:td.precisa?`<small class="ok" style="display:block;margin-top:5px">${esc(td.motivo)} Próximo lote: <b>${td.proxima} un.</b>${td.proxima<td.ultimaQtd?' · reduzir':td.proxima>td.ultimaQtd?' · aumentar':' · manter'}</small><button type="button" class="btn p" style="margin-top:7px;width:100%" data-teste-repor="${r._id}" data-qtd="${td.proxima}">🖨️ Abrir produção de ${td.proxima} un.</button>`:`<small class="ok" style="display:block;margin-top:5px">Estoque: <b>${td.stock}</b> · lote atual: ${td.ultimaQtd} · ${td.vendas} vendida(s). ${td.motivo}</small>`):`<small class="ok" style="display:block;margin-top:5px">Estratégia manual. A+ não sugere produção.</small>`}</div>`})()}
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:10px">${USO.map(x=>`<button type="button" class="btn s${u===x[0]?' p':''}" data-uso="${r._id}|${x[0]}" title="${x[1]}">${x[2]}</button>`).join('')}<button type="button" class="btn s" data-estrat="${r._id}|TESTE_DEMANDA" title="Testar saída">🧪</button><button type="button" class="btn s" data-estrat="${r._id}|ALTA_SAIDA" title="Alta saída">🔥</button><button type="button" class="btn s" data-estrat="${r._id}|NORMAL" title="Estoque normal">⚖️</button></div>
@@ -1564,7 +1573,7 @@ function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'
  ${kc('Potencial para você',money(T.net),'var(--acc)','Após comissão estimada dos lojistas')}
  ${kc('Lucro potencial',money(T.profit),T.profit>=0?'var(--acc)':'var(--bad)','Potencial líquido − custo das peças')}
  ${kc('A receber agora',money(T.recv),'#3b82f6','Já vendido e ainda não acertado')}
- </div><div class="grid">${RS.map(([l,r])=>{const v=dt(l.proxima_visita),last=dt(l.ultimo_acerto),mLoja=lucroIndicadoresResumo(r.all.filter(x=>num(x.qtd_vendida)>0),'consignacoes'),products=r.stock.map(x=>{const q=num(x.estoque_loja),cu=cost(x),pv=price(x),pc=pct(x,l),gb=q*pv,nv=gb*(1-pc/100),lastSale=dt(x.ultima_venda_data);return`<div class="rw" style="align-items:flex-start"><span><b>${esc(x.produto||produtoTexto(x.sku,x)||x.sku||'Produto')}</b><small class="ok">${q} un na loja · ${f2(num(x.qtd_vendida))} vendida(s) · custo ${money(cu)}/un · venda ${money(pv)}/un${lastSale?' · última venda '+lastSale.split('-').reverse().join('/') :''}</small></span><span style="text-align:right"><b>${money(gb)}</b><small class="ok">potencial · ${money(nv)} p/ você</small></span></div><div class="ac" style="margin:6px 0 10px"><button class="btn s p" type="button" data-cons-venda="${esc(x._id)}">＋ Registrar venda</button><button class="btn s" type="button" data-avaria-cons="${esc(x._id)}">⚠️ Registrar avaria</button></div>`}).join('');
+ </div><div class="grid">${RS.map(([l,r])=>{const v=dt(l.proxima_visita),last=dt(l.ultimo_acerto),mLoja=lucroIndicadoresResumo(r.all.filter(x=>num(x.qtd_vendida)>0),'consignacoes'),products=r.stock.map(x=>{const q=num(x.estoque_loja),cu=cost(x),pv=price(x),pc=pct(x,l),gb=q*pv,nv=gb*(1-pc/100),lastSale=dt(x.ultima_venda_data);return`<div class="rw" style="align-items:flex-start"><span class="loja-product-info"><b>${esc(x.produto||produtoTexto(x.sku,x)||x.sku||'Produto')}</b><small class="ok">${q} un na loja · ${f2(num(x.qtd_vendida))} vendida(s) · custo ${money(cu)}/un · venda ${money(pv)}/un${lastSale?' · última venda '+lastSale.split('-').reverse().join('/') :''}</small></span><span style="text-align:right"><b>${money(gb)}</b><small class="ok">potencial · ${money(nv)} p/ você</small></span></div><div class="ac" style="margin:6px 0 10px"><button class="btn s p" type="button" data-cons-venda="${esc(x._id)}">＋ Registrar venda</button><button class="btn s" type="button" data-avaria-cons="${esc(x._id)}">⚠️ Registrar avaria</button></div>`}).join('');
  return`<div class="lc" style="display:flex;flex-direction:column;gap:10px"><div><h3>${esc(l.loja_empresa)}</h3><span class="ok">${esc(l.cidade||'')} ${l.status?pill(l.status):''} · comissão padrão ${f2(hasValue(l.comissao)?num(l.comissao):DEFAULT_STORE_COMMISSION)}%</span></div>
  <div class="nums" style="grid-template-columns:repeat(3,1fr)"><div><small>Na loja</small>${f2(r.units)} un</div><div><small>Vendido</small>${f2(r.sold)} un</div><div><small>A receber</small>${money(r.recv)}</div></div>
  <div class="panel" style="padding:12px;margin:0"><b style="font-size:13px">Capital e potencial nesta loja</b>
@@ -4185,10 +4194,13 @@ function repararCartoesProdutosPorLotes(){
    if(!p.custo_status&&String(cost.status_custo||'').toUpperCase()==='PARCIAL'){p.custo_status='PARCIAL';productChanged=true;}
    if(!p.custo_pendencias&&String(cost.status_custo||'').toUpperCase()==='PARCIAL'&&cost.custo_pendencias){p.custo_pendencias=cost.custo_pendencias;productChanged=true;}
    let ch=false;
-   if(!liTem(cost,'custo_unitario')){cost.custo_unitario=r2(unit);ch=true;}
-   if(!liTem(cost,'custo_materiais')){cost.custo_materiais=r2(matUnit);ch=true;}
-   if(!liTem(cost,'custo_impressao')){cost.custo_impressao=r2(printUnit);ch=true;}
-   if(!cost.status_custo&&!cost.status_completude){cost.status_custo=p.custo_status||'PARCIAL';ch=true;}
+   // Para custos originados de lotes, zero/vazio significa dado ausente quando o lote comprova valor positivo.
+   // Preserva qualquer valor positivo já lançado manualmente.
+   if(num(cost.custo_unitario)<=0&&unit>0){cost.custo_unitario=r2(unit);ch=true;}
+   if(num(cost.custo_materiais)<=0&&matUnit>0){cost.custo_materiais=r2(matUnit);ch=true;}
+   if(num(cost.custo_impressao)<=0&&printUnit>0){cost.custo_impressao=r2(printUnit);ch=true;}
+   if(!String(cost.status_custo||cost.status_completude||'').trim()){cost.status_custo=p.custo_status||'PARCIAL';ch=true;}
+   if(!cost.produto&&p.produto){cost.produto=p.produto;ch=true;}
    if(!cost.custo_origem){cost.custo_origem=lot.lote||lot._id;ch=true;}
    if(!cost.custo_pendencias){cost.custo_pendencias=p.custo_pendencias;ch=true;}
    if(ch){C[costIndex]=cost;costChanged=true;}
@@ -5689,8 +5701,13 @@ document.addEventListener('click',e=>{
     const history=rows(CONF_TABLE).filter(x=>eq(x.loja_empresa,name)).sort((a,b)=>String(b.periodo||'').localeCompare(String(a.periodo||''))),last=history[0]||null;
     const btn=document.createElement('button');btn.type='button';btn.className='btn s '+(!rec?'p':'');btn.setAttribute('data-loja-conferencia',name);
     btn.textContent=rec?(rec.status==='EM_ANDAMENTO'?'Continuar conferência':rec.status==='PENDENTE_APURACAO'?'Resolver pendências':'Ver conferência'):'✓ Conferir estoque';
-    action.insertBefore(btn,action.firstChild);
-    if(history.length){const hb=document.createElement('button');hb.type='button';hb.className='btn s';hb.setAttribute('data-loja-conf-history',name);hb.textContent='Histórico';action.insertBefore(hb,btn.nextSibling);}
+    // Mantém a conferência junto do acerto financeiro, que é sua ação complementar natural.
+    const settleBtn=action.querySelector('[data-ac]');
+    const lotBtn=action.querySelector('[data-lote]');
+    if(settleBtn)settleBtn.insertAdjacentElement('afterend',btn);
+    else if(lotBtn)lotBtn.insertAdjacentElement('afterend',btn);
+    else action.appendChild(btn);
+    if(history.length){const hb=document.createElement('button');hb.type='button';hb.className='btn s';hb.setAttribute('data-loja-conf-history',name);hb.textContent='Histórico';btn.insertAdjacentElement('afterend',hb);}
     const statusRec=rec||last,statusLabel=rec?confStatusText(rec):last?`Última: ${confMonthLabel(last.periodo)} · ${confStatusText(last)}`:'Pendente';
     const old=card.querySelector('.loja-conf-status');if(old)old.remove();
     const status=document.createElement('div');status.className='loja-conf-status';status.innerHTML=`<span class="loja-conf-dot" style="background:${confStatusColor(statusRec)}"></span><span>${esc(statusLabel)}${rec&&rec.data_conclusao?' · '+dt(rec.data_conclusao).split('-').reverse().join('/') : rec&&rec.data_atualizacao?' · rascunho atualizado':''}</span>`;
