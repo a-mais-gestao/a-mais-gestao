@@ -659,40 +659,42 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
 .loja-product-info>small{display:block;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
 </style>
 <style id="apx-lojas-cons-view">
-/* Lojas parceiras: visualização em grade/lista e filtros por tipo de chaveiro. */
+/* Lojas parceiras: lista visual com fotos ampliadas, sem grade apertada. */
 .lojas-cons-toolbar{display:flex;flex-direction:column;gap:12px;margin:0 0 16px;padding:14px 16px}
 .lojas-cons-toolbar-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .lojas-cons-toolbar-head h3{margin:0;font-size:15px}
 .lojas-cons-toolbar-head small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
-.lojas-cons-view-switch{display:flex;gap:5px;align-items:center;background:var(--bg);border:1px solid var(--line);padding:4px;border-radius:11px}
-.lojas-cons-view-switch .btn{padding:6px 11px}
 .lojas-cons-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .lojas-cons-filters .chip{display:inline-flex;align-items:center;gap:6px}
 .lojas-cons-filters .chip small{font-size:10px;opacity:.78}
-.loja-cons-products{padding-top:10px}
-.loja-cons-products.is-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:10px}
-.loja-cons-products.is-list{display:flex;flex-direction:column;gap:8px}
-.loja-cons-product-card{min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:13px;padding:12px;display:flex;flex-direction:column;gap:11px}
-.loja-cons-product-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0}
-.loja-cons-product-main{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;flex:1}
+.loja-cons-products{padding-top:10px;display:flex;flex-direction:column;gap:10px}
+.loja-cons-product-card{min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:15px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 2px 8px #00000008}
+.loja-cons-product-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;min-width:0}
+.loja-cons-product-main{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;flex:1}
 .loja-cons-product-tags{display:flex;gap:5px;flex-wrap:wrap}
-.loja-cons-product-value{flex:0 0 auto;text-align:right;min-width:76px}
-.loja-cons-product-value b{display:block;font-size:15px;line-height:1.25}
-.loja-cons-product-value small{display:block;color:var(--mut);font-size:11px;line-height:1.35;margin-top:3px}
-.loja-cons-product-card .loja-product-info{width:100%;gap:3px}
-.loja-cons-product-card .loja-product-info>b{font-size:13px}
-.loja-cons-product-card .loja-product-info>small{font-size:11px;color:var(--mut)}
-.loja-cons-product-card .ac{margin:0!important;gap:6px}
-.loja-cons-products.is-grid .loja-cons-product-card .ac{margin-top:auto!important}
-.loja-cons-products.is-list .loja-cons-product-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 16px;padding:10px 12px}
-.loja-cons-products.is-list .loja-cons-product-head{align-items:center}
-.loja-cons-products.is-list .loja-cons-product-card .ac{grid-column:1/-1;justify-content:flex-end}
+.loja-cons-product-value{flex:0 0 auto;text-align:right;min-width:112px;padding-left:12px;border-left:1px solid var(--line)}
+.loja-cons-product-value b{display:block;font-size:16px;line-height:1.25}
+.loja-cons-product-value small{display:block;color:var(--mut);font-size:11px;line-height:1.4;margin-top:4px}
+.loja-cons-product-card .loja-product-summary{gap:14px;align-items:center}
+.loja-cons-product-card .apx-product-thumb{width:92px!important;height:92px!important;border-radius:14px;background:var(--card);box-shadow:0 2px 8px #0000000d}
+.loja-cons-product-card .loja-product-info{width:auto;flex:1 1 auto;min-width:0;gap:5px}
+.loja-cons-product-card .loja-product-info>b{font-size:15px;line-height:1.35}
+.loja-cons-product-card .loja-product-info>small{font-size:12px;color:var(--mut);line-height:1.5}
+.loja-cons-product-card .ac{margin:0!important;gap:7px;display:flex;flex-wrap:wrap;justify-content:flex-start}
+.loja-cons-product-card .ac .btn{padding:7px 11px;min-height:34px}
 .loja-cons-empty-filter{padding:14px;border:1px dashed var(--line);border-radius:11px;color:var(--mut);font-size:13px}
+.return-product-preview{display:flex;align-items:center;gap:14px;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--bg);margin-bottom:14px}
+.return-product-preview .apx-product-thumb{width:88px!important;height:88px!important;border-radius:14px}
+.return-product-preview-copy{min-width:0}
+.return-product-preview-copy b,.return-product-preview-copy small{display:block;overflow-wrap:anywhere}
+.return-product-preview-copy small{font-size:12px;color:var(--mut);margin-top:4px}
 @media(max-width:650px){
- .loja-cons-products.is-grid{grid-template-columns:repeat(auto-fill,minmax(185px,1fr))}
- .loja-cons-products.is-list .loja-cons-product-card{grid-template-columns:minmax(0,1fr)}
- .loja-cons-products.is-list .loja-cons-product-value{text-align:left;display:flex;gap:6px;align-items:baseline}
- .loja-cons-products.is-list .loja-cons-product-card .ac{grid-column:1;justify-content:flex-start}
+ .loja-cons-product-card{padding:11px}
+ .loja-cons-product-head{grid-template-columns:minmax(0,1fr);gap:10px}
+ .loja-cons-product-card .apx-product-thumb{width:78px!important;height:78px!important}
+ .loja-cons-product-value{border-left:0;border-top:1px solid var(--line);padding:9px 0 0;text-align:left;display:flex;gap:12px;align-items:baseline;min-width:0}
+ .loja-cons-product-value small{margin:0}
+ .loja-cons-product-card .ac{justify-content:flex-start}
  .lojas-cons-toolbar-head{align-items:flex-start}
 }
 </style>
@@ -715,7 +717,7 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
 </style>
 <style id="apx-product-images-everywhere">
 .apx-product-thumb{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--inp);vertical-align:middle}
-.apx-product-thumb img{display:block;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.apx-product-thumb img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;padding:4px;background:var(--card)}
 .apx-product-thumb-empty{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:19px;opacity:.55}
 .apx-product-ident{display:flex;align-items:center;gap:9px;min-width:0}
 .apx-product-ident-copy{min-width:0}
@@ -958,7 +960,7 @@ const safeImageUrl=(value,depth=0)=>{
  return parsed.href;
 };
 const imagePreview=(value,alt='Produto',size='card')=>{const src=safeImageUrl(value);if(!src)return'';const dims=size==='thumb'?'width:48px;height:48px':size==='print'?'width:min(220px,100%);max-height:150px':'width:100%;max-height:170px';return `<div aria-label="Prévia da imagem" style="display:block;${dims};overflow:hidden;border-radius:10px;border:1px solid var(--line);background:var(--inp);margin:6px 0"><img loading="lazy" src="${esc(src)}" alt="${esc(alt)}" referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;max-height:170px;object-fit:cover;display:block;pointer-events:none" onerror="this.hidden=true;const f=this.nextElementSibling;if(f)f.hidden=false"><span hidden style="display:flex;align-items:center;justify-content:center;min-height:48px;height:100%;padding:8px;text-align:center;color:var(--mut);font-size:12px">⚠ Prévia indisponível</span></div>`};
-const productThumb=(product,alt='Produto',size=44)=>{const value=typeof product==='string'?product:(product&&product.foto)||'',src=safeImageUrl(value),px=Math.max(30,Math.min(72,Number(size)||44));return `<span class="apx-product-thumb" style="width:${px}px;height:${px}px" aria-label="Imagem de ${esc(alt)}">${src?`<img loading="lazy" src="${esc(src)}" alt="${esc(alt)}" referrerpolicy="strict-origin-when-cross-origin" onerror="this.hidden=true;this.nextElementSibling.hidden=false">`:''}<span class="apx-product-thumb-empty" ${src?'hidden':''}>📦</span></span>`};
+const productThumb=(product,alt='Produto',size=44)=>{const value=typeof product==='string'?product:(product&&product.foto)||'',src=safeImageUrl(value),px=Math.max(30,Math.min(136,Number(size)||44));return `<span class="apx-product-thumb" style="width:${px}px;height:${px}px" aria-label="Imagem de ${esc(alt)}">${src?`<img loading="lazy" src="${esc(src)}" alt="${esc(alt)}" referrerpolicy="strict-origin-when-cross-origin" onerror="this.hidden=true;this.nextElementSibling.hidden=false">`:''}<span class="apx-product-thumb-empty" ${src?'hidden':''}>📦</span></span>`};
 
 /* Fotos fornecidas pelo usuário: aplicadas aos produtos existentes pelo SKU.
    Só preenche foto vazia; nunca substitui uma imagem cadastrada manualmente. */
@@ -1886,9 +1888,9 @@ function lojaConsTipoProduto(row){
 }
 function lojasConsUi(){
  const filters=['TODOS','2D','ARTICULADO','CLICKER','ANIMAIS','OUTROS_CHAVEIROS','A_CLASSIFICAR','OUTROS_PRODUTOS'];
- let view='grid',filter='TODOS';
- try{view=localStorage.getItem('aplus_lojas_cons_view')==='list'?'list':'grid';const saved=localStorage.getItem('aplus_lojas_cons_filter');if(filters.includes(saved))filter=saved}catch(e){}
- return{view,filter,filters};
+ let filter='TODOS';
+ try{const saved=localStorage.getItem('aplus_lojas_cons_filter');if(filters.includes(saved))filter=saved}catch(e){}
+ return{view:'list',filter,filters};
 }
 function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'),t=todayS(),kc=(l,v,c,s)=>`<div class="kc2" style="--c:${c||'var(--acc)'}"><small>${l}</small><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
  const hasValue=v=>v!==undefined&&v!==null&&String(v).trim()!=='',prod=sku=>P.find(p=>eq(p.sku,sku)),cost=r=>num((prod(r.sku)||{}).custo_unitario),price=r=>num(r.preco_unitario)||num((prod(r.sku)||{}).preco_padrao),pct=(r,l)=>hasValue(r.comissao_pct)?num(r.comissao_pct):hasValue(l&&l.comissao)?num(l.comissao):DEFAULT_STORE_COMMISSION;
@@ -1907,8 +1909,8 @@ function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'
  ${kc('Lucro potencial',money(T.profit),T.profit>=0?'var(--acc)':'var(--bad)','Potencial líquido − custo das peças')}
  ${kc('A receber agora',money(T.recv),'#3b82f6','Já vendido e ainda não acertado')}
  </div>
- <section class="panel lojas-cons-toolbar"><div class="lojas-cons-toolbar-head"><div><h3>Produtos consignados</h3><small>${allStock.length} registro(s) com saldo nas lojas · filtro atual: ${esc(filterLabel)}</small></div><div class="lojas-cons-view-switch" role="group" aria-label="Visualização dos produtos consignados"><button type="button" class="btn s ${ui.view==='grid'?'p':''}" data-lojas-view="grid" aria-pressed="${ui.view==='grid'}">▦ Grade</button><button type="button" class="btn s ${ui.view==='list'?'p':''}" data-lojas-view="list" aria-pressed="${ui.view==='list'}">☷ Lista</button></div></div><div class="lojas-cons-filters" aria-label="Filtrar produtos consignados">${filterDefs.map(([k,label])=>`<button type="button" class="chip ${ui.filter===k?'on':''}" data-lojas-filter="${k}" aria-pressed="${ui.filter===k}">${label} <small>${filterCount(k)}</small></button>`).join('')}</div></section>
- <div class="grid">${RS.map(([l,r])=>{const v=dt(l.proxima_visita),last=dt(l.ultimo_acerto),mLoja=lucroIndicadoresResumo(r.all.filter(x=>num(x.qtd_vendida)>0),'consignacoes'),visibleStock=r.stock.filter(x=>ui.filter==='TODOS'||lojaConsTipoProduto(x).key===ui.filter),products=visibleStock.map(x=>{const q=num(x.estoque_loja),cu=cost(x),pv=price(x),pc=pct(x,l),gb=q*pv,nv=gb*(1-pc/100),lastSale=dt(x.ultima_venda_data),type=lojaConsTipoProduto(x),p=prod(x.sku)||{};return`<article class="loja-cons-product-card"><div class="loja-cons-product-head"><div class="loja-cons-product-main"><div class="loja-cons-product-tags">${productTaxonomyTags({...p,produto:x.produto||p.produto},true)||`<span class="pill ${type.key==='OUTROS_PRODUTOS'?'':type.key==='A_CLASSIFICAR'?'r':'g'}">${esc(type.label)}</span>`}</div><div class="loja-product-summary">${productThumb(p,x.produto||p.produto||'Produto',46)}<span class="loja-product-info"><b>${esc(x.produto||produtoTexto(x.sku,x)||x.sku||'Produto')}</b><small>${q} un na loja · ${f2(num(x.qtd_vendida))} vendida(s) · custo ${money(cu)}/un · venda ${money(pv)}/un${lastSale?' · última venda '+lastSale.split('-').reverse().join('/') :''}</small></span></div></div><div class="loja-cons-product-value"><b>${money(gb)}</b><small>potencial<br>${money(nv)} p/ você</small></div></div><div class="ac"><button class="btn s p" type="button" data-cons-venda="${esc(x._id)}">＋ Registrar venda</button><button class="btn s" type="button" data-avaria-cons="${esc(x._id)}">⚠️ Registrar avaria</button><button class="btn s" type="button" data-avaria-repair-return="${esc(x._id)}">↩️ Retorno para reparo</button></div></article>`}).join('');
+ <section class="panel lojas-cons-toolbar"><div class="lojas-cons-toolbar-head"><div><h3>Produtos consignados</h3><small>${allStock.length} registro(s) com saldo nas lojas · fotos ampliadas · filtro atual: ${esc(filterLabel)}</small></div></div><div class="lojas-cons-filters" aria-label="Filtrar produtos consignados">${filterDefs.map(([k,label])=>`<button type="button" class="chip ${ui.filter===k?'on':''}" data-lojas-filter="${k}" aria-pressed="${ui.filter===k}">${label} <small>${filterCount(k)}</small></button>`).join('')}</div></section>
+ <div class="grid">${RS.map(([l,r])=>{const v=dt(l.proxima_visita),last=dt(l.ultimo_acerto),mLoja=lucroIndicadoresResumo(r.all.filter(x=>num(x.qtd_vendida)>0),'consignacoes'),visibleStock=r.stock.filter(x=>ui.filter==='TODOS'||lojaConsTipoProduto(x).key===ui.filter),products=visibleStock.map(x=>{const q=num(x.estoque_loja),cu=cost(x),pv=price(x),pc=pct(x,l),gb=q*pv,nv=gb*(1-pc/100),lastSale=dt(x.ultima_venda_data),type=lojaConsTipoProduto(x),p=prod(x.sku)||{};return`<article class="loja-cons-product-card"><div class="loja-cons-product-head"><div class="loja-cons-product-main"><div class="loja-cons-product-tags">${productTaxonomyTags({...p,produto:x.produto||p.produto},true)||`<span class="pill ${type.key==='OUTROS_PRODUTOS'?'':type.key==='A_CLASSIFICAR'?'r':'g'}">${esc(type.label)}</span>`}</div><div class="loja-product-summary">${productThumb(p,x.produto||p.produto||'Produto',92)}<span class="loja-product-info"><b>${esc(x.produto||produtoTexto(x.sku,x)||x.sku||'Produto')}</b><small>${esc(x.sku||'Sem SKU')}${p.versao_produto?' · versão '+esc(p.versao_produto):''} · ${q} un na loja · ${f2(num(x.qtd_vendida))} vendida(s)</small><small>Custo ${money(cu)}/un · venda ${money(pv)}/un${lastSale?' · última venda '+lastSale.split('-').reverse().join('/') :''}</small></span></div></div><div class="loja-cons-product-value"><b>${money(gb)}</b><small>potencial<br>${money(nv)} p/ você</small></div></div><div class="ac"><button class="btn s p" type="button" data-cons-venda="${esc(x._id)}">＋ Registrar venda</button><button class="btn s" type="button" data-cons-retorno="${esc(x._id)}">↩️ Registrar retorno à empresa</button><button class="btn s" type="button" data-avaria-cons="${esc(x._id)}">⚠️ Registrar avaria</button><button class="btn s" type="button" data-avaria-repair-return="${esc(x._id)}">🛠️ Retorno para reparo</button></div></article>`}).join('');
  return`<div class="lc" style="display:flex;flex-direction:column;gap:10px"><div><h3>${esc(l.loja_empresa)}</h3><span class="ok">${esc(l.cidade||'')} ${l.status?pill(l.status):''} · comissão padrão ${f2(hasValue(l.comissao)?num(l.comissao):DEFAULT_STORE_COMMISSION)}%</span></div>
  <div class="nums" style="grid-template-columns:repeat(3,1fr)"><div><small>Na loja</small>${f2(r.units)} un</div><div><small>Vendido</small>${f2(r.sold)} un</div><div><small>A receber</small>${money(r.recv)}</div></div>
  <div class="panel" style="padding:12px;margin:0"><b style="font-size:13px">Capital e potencial nesta loja</b>
@@ -1923,9 +1925,52 @@ function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'
  <div class="ac"><button class="btn s" type="button" data-avaria-store="${esc(l.loja_empresa)}">⚠️ Registrar avaria</button><button class="btn s" data-f='consignacoes|' data-p='${esc(JSON.stringify({loja_empresa:l.loja_empresa,comissao_pct:hasValue(l.comissao)?num(l.comissao):DEFAULT_STORE_COMMISSION,ultimo_envio:t}))}'>+ Envio</button><button class="btn s" type="button" data-lote="${esc(l.loja_empresa)}">📦 Lote</button>${r.pend.length?`<button class="btn s p" data-ac="${esc(l.loja_empresa)}">Acertar ${money(r.recv)}</button>`:''}<button class="btn s" data-f="lojas|${l._id}">Editar</button></div></div>`}).join('')}</div>`:'<div class="empty"><b>Cadastre sua primeira loja parceira</b>Depois registre os envios e acerte tudo por aqui.</div>')+
  '<p class="foot"><b>Dinheiro parado</b> usa o custo real cadastrado de cada produto. <b>Venda potencial</b> usa o preço de venda da consignação. <b>Potencial para você</b> desconta a comissão do lojista. Esses valores são projeções do estoque que ainda está nas lojas.</p>';
  document.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>acertar(b.dataset.ac));
- document.querySelectorAll('[data-lojas-view]').forEach(b=>b.onclick=()=>{try{localStorage.setItem('aplus_lojas_cons_view',b.dataset.lojasView)}catch(e){}lojasV()});
  document.querySelectorAll('[data-lojas-filter]').forEach(b=>b.onclick=()=>{try{localStorage.setItem('aplus_lojas_cons_filter',b.dataset.lojasFilter)}catch(e){}lojasV()});
  wire()}
+
+
+/* ===== Retorno físico normal da loja para a empresa (não é avaria nem venda) ===== */
+function consignacaoRetornoOpen(consignacaoId){
+ const current=rows('consignacoes').find(x=>String(x._id)===String(consignacaoId));
+ if(!current)return toast('O envio consignado não foi encontrado. Atualize a tela e tente novamente.');
+ if(eq(current.status_acerto,'ACERTADO'))return toast('Este envio já foi acertado e encerrado.');
+ const available=Math.max(0,Math.floor(current.estoque_loja!==''&&current.estoque_loja!=null?num(current.estoque_loja):num(current.qtd_enviada)-num(current.qtd_vendida)-num(current.qtd_devolvida)-num(current.qtd_avariada)));
+ if(available<1)return toast('Não há unidades disponíveis na loja para retornar.');
+ const product=rows('produtos').find(p=>eq(p.sku,current.sku))||{};
+ const name=current.produto||product.produto||current.sku||'Produto';
+ const body=`<p class="ok" style="margin-top:0">Registre as unidades que saíram fisicamente da loja e voltaram para sua casa. O sistema <b>reduz o saldo consignado e aumenta o estoque em casa</b>. Não registra venda, comissão, avaria nem receita.</p>
+ <div class="return-product-preview">${productThumb(product,name,88)}<div class="return-product-preview-copy"><b>${esc(name)}</b><small>${esc(current.sku||'Sem SKU')}${product.versao_produto?' · '+esc(product.versao_produto):''} · ${esc(current.loja_empresa||'Loja parceira')}</small><small>Disponível na loja: <b>${available} un.</b></small></div></div>
+ <div class="fg"><div class="f"><label>Data do retorno *</label><input id="cr-date" type="date" value="${todayS()}" required></div>
+ <div class="f"><label>Quantidade que voltou *</label><input id="cr-qty" type="number" min="1" max="${available}" step="1" value="1" inputmode="numeric" required></div>
+ <div class="f full"><label>Motivo do retorno</label><select id="cr-reason"><option>Recolhimento para estoque da empresa</option><option>Fim da exposição / consignação</option><option>Troca de produtos na loja</option><option>Outro</option></select></div>
+ <div class="f full"><label>Observações (opcional)</label><textarea id="cr-notes" placeholder="Ex.: trouxe de volta na visita de hoje..."></textarea></div>
+ <div class="f full"><div class="note" style="margin:0"><span id="cr-stock-note">Após salvar: ${available-1} un. permanecerão na loja e 1 un. voltará ao estoque em casa.</span></div></div></div>`;
+ const ov=stockModal('Registrar retorno à empresa',body,()=>consignacaoRetornoCreate(ov,consignacaoId),'Registrar retorno');
+ const g=id=>ov.querySelector('#'+id),update=()=>{const q=Math.max(0,Math.floor(num(g('cr-qty').value)));g('cr-stock-note').textContent=q>available?`Quantidade maior que o saldo da loja (${available} un.).`: `Após salvar: ${available-q} un. permanecerão na loja e ${q} un. voltarão ao estoque em casa.`;g('cr-stock-note').style.color=q>available?'var(--bad)':'var(--ink)';};
+ g('cr-qty').addEventListener('input',update);update();
+}
+function consignacaoRetornoCreate(ov,consignacaoId){
+ const g=id=>ov.querySelector('#'+id),date=dt(g('cr-date').value),qty=num(g('cr-qty').value),reason=String(g('cr-reason').value||'Recolhimento para estoque da empresa').trim(),notes=String(g('cr-notes').value||'').trim();
+ const current=rows('consignacoes').find(x=>String(x._id)===String(consignacaoId));
+ if(!current){toast('O envio consignado não foi encontrado. Atualize a tela.');return false;}
+ if(eq(current.status_acerto,'ACERTADO')){toast('Este envio já foi acertado e encerrado.');return false;}
+ const available=Math.max(0,Math.floor(current.estoque_loja!==''&&current.estoque_loja!=null?num(current.estoque_loja):num(current.qtd_enviada)-num(current.qtd_vendida)-num(current.qtd_devolvida)-num(current.qtd_avariada)));
+ if(!date){toast('Informe a data do retorno.');return false;}
+ if(!Number.isInteger(qty)||qty<1){toast('A quantidade precisa ser um número inteiro maior que zero.');return false;}
+ if(qty>available){toast(`Quantidade maior que o saldo disponível na loja (${available} un.).`);return false;}
+ const event={_id:uid(),data:date,quantidade:qty,motivo:reason,observacoes:notes,_criadoEm:new Date().toISOString()};
+ const history=Array.isArray(current.historico_devolucoes)?current.historico_devolucoes.slice():[];
+ const updated={...current,qtd_devolvida:Math.max(0,num(current.qtd_devolvida))+qty,estoque_loja:Math.max(0,available-qty),ultima_devolucao_data:date,historico_devolucoes:[...history,event]};
+ const ok=withDbTransaction(()=>{
+  setRows('consignacoes',rows('consignacoes').map(x=>String(x._id)===String(consignacaoId)?updated:x));
+  syncConsignacaoMovimentos(updated);
+  return true;
+ });
+ if(!ok)return false;
+ const product=rows('produtos').find(p=>eq(p.sku,updated.sku));
+ toast(`${qty} unidade(s) de ${product&&product.produto||updated.produto||updated.sku} retornaram da loja para o estoque da empresa. Não foi registrada venda.`);
+ return true;
+}
 
 function acertar(n){const t=todayS(),all=rows('consignacoes'),p=all.filter(r=>eq(r.loja_empresa,n)&&!eq(r.status_acerto,'ACERTADO')),tot=sum(p,'a_receber'),left=sum(p,'estoque_loja');
  if(!confirm(`Acertar ${p.length} lançamento(s) de ${n}, total ${money(tot)}?\nIsso lança uma ENTRADA recebida no caixa.`))return;
@@ -1953,8 +1998,13 @@ function syncConsignacaoMovimentos(r){
  consMoveUpsert('c:'+r._id+':env',envio>0?{data:dt(r.ultimo_envio)||String(r._criadoEm||'').slice(0,10)||todayS(),tipo:'ENVIO CONSIGNAÇÃO',sku,produto,quantidade:envio,origem:ref,observacoes:'Gerado automaticamente ao registrar o envio consignado. Movimento informativo; o saldo físico é controlado pela própria consignação.'}:null);
  const vend=Math.max(0,num(r.qtd_vendida));
  consMoveUpsert('c:'+r._id+':vend',vend>0?{data:dt(r.ultima_venda_data)||dt(r.ultimo_acerto)||todayS(),tipo:'VENDA CONSIGNADA',sku,produto,quantidade:vend,origem:ref,observacoes:'Gerado automaticamente pela quantidade vendida informada na consignação. Movimento informativo; o valor só entra no caixa no acerto da loja.'}:null);
- const dev=Math.max(0,num(r.qtd_devolvida));
- consMoveUpsert('c:'+r._id+':dev',dev>0?{data:dt(r.ultima_devolucao_data)||dt(r.ultimo_acerto)||todayS(),tipo:'DEVOLUÇÃO CONSIGNAÇÃO',sku,produto,quantidade:dev,origem:ref,observacoes:'Gerado automaticamente pela devolução da loja. Movimento informativo; a devolução já é considerada pela própria consignação.'}:null);
+ const dev=Math.max(0,num(r.qtd_devolvida)),returns=Array.isArray(r.historico_devolucoes)?r.historico_devolucoes:[],historyTotal=returns.reduce((a,x)=>a+Math.max(0,num(x&&x.quantidade)),0),legacyDev=Math.max(0,dev-historyTotal);
+ // Devoluções antigas sem detalhe continuam em um movimento consolidado; novas devoluções aparecem individualmente.
+ consMoveUpsert('c:'+r._id+':dev',legacyDev>0?{data:dt(r.ultima_devolucao_data)||dt(r.ultimo_acerto)||todayS(),tipo:'DEVOLUÇÃO CONSIGNAÇÃO',sku,produto,quantidade:legacyDev,origem:ref,observacoes:'Saldo de devoluções antigas, anteriores ao histórico individual. Movimento informativo; a devolução já é considerada pela própria consignação.'}:null);
+ const returnKeys=new Set();
+ returns.forEach((evt,index)=>{const eventId=String(evt&&evt._id||index),lk='c:'+r._id+':ret:'+eventId;returnKeys.add(lk);consMoveUpsert(lk,{data:dt(evt&&evt.data)||todayS(),tipo:'DEVOLUÇÃO CONSIGNAÇÃO',sku,produto,quantidade:Math.max(0,num(evt&&evt.quantidade)),origem:ref,observacoes:['Retorno físico à empresa',evt&&evt.motivo||'',evt&&evt.observacoes||''].filter(Boolean).join(' · ')+'. Movimento informativo; o saldo é atualizado pela própria consignação.'});});
+ const returnPrefix='c:'+r._id+':ret:',movementRows=rows('movimentos'),staleReturns=movementRows.filter(m=>String(m._lk||'').startsWith(returnPrefix)&&!returnKeys.has(String(m._lk)));
+ if(staleReturns.length){const staleIds=new Set(staleReturns.map(m=>m._id));setRows('movimentos',movementRows.filter(m=>!staleIds.has(m._id)));}
 }
 function syncAllConsignacaoMovimentos(){rows('consignacoes').forEach(syncConsignacaoMovimentos)}
 
@@ -6143,9 +6193,11 @@ function consignacaoVendaCreate(ov,consignacaoId){
  return true;
 }
 document.addEventListener('click',e=>{
- const b=e.target&&e.target.closest?e.target.closest('[data-cons-venda]'):null;
- if(!b)return;
- e.preventDefault();e.stopPropagation();consignacaoVendaOpen(b.getAttribute('data-cons-venda'));
+ const target=e.target&&e.target.closest?e.target.closest('[data-cons-retorno],[data-cons-venda]'):null;
+ if(!target)return;
+ e.preventDefault();e.stopPropagation();
+ if(target.hasAttribute('data-cons-retorno')){consignacaoRetornoOpen(target.getAttribute('data-cons-retorno'));return;}
+ consignacaoVendaOpen(target.getAttribute('data-cons-venda'));
 },true);
 </script>
 
