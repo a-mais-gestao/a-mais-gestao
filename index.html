@@ -2,7 +2,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0a0d"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"><title>A+ Gestão</title><!-- A+ revisão de persistência, importação, imagens, recebimento e cache offline · 2026-11-05 --><!-- A+ MOBILE 2026-10-24: navegação inferior, safe-area, formulários touch, proteção de edição e compartilhamento de backup. -->
+<meta name="theme-color" content="#0a0a0d"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"><title>A+ Gestão</title><!-- A+ comissão segura: preserva percentuais explícitos e históricos · 2026-11-13 -->
+<!-- A+ revisão de persistência, importação, imagens, recebimento e cache offline · 2026-11-05 --><!-- A+ MOBILE 2026-10-24: navegação inferior, safe-area, formulários touch, proteção de edição e compartilhamento de backup. -->
 <!-- Nova Impressão auditada: perdas reais informadas e fonte física obrigatória na conclusão -->
 <!-- A+ IMPRESSÃO UX REESTRUTURADA: fluxo guiado, cards por destino/placa, materiais, preço e revisão final -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -690,6 +691,10 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
  .loja-cons-products.is-list .loja-cons-product-card .ac{grid-column:1;justify-content:flex-start}
  .lojas-cons-toolbar-head{align-items:flex-start}
 }
+</style>
+
+<style id="aplus-product-editor-layout">
+.prod-edit{display:grid;gap:12px}.prod-edit-section{border:1px solid var(--line);background:var(--card);border-radius:13px;padding:14px 15px}.prod-edit-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.prod-edit-head b{display:block;font-size:14px;font-weight:700;color:var(--ink)}.prod-edit-head small,.prod-edit-help{display:block;color:var(--mut);font-size:12px;line-height:1.5}.prod-edit-head small{margin-top:3px}.prod-edit-help{margin:10px 0 0}.prod-edit-section .fg{gap:11px}.prod-edit-section .sec{margin-top:0}.prod-edit-more{border:1px solid var(--line);border-radius:13px;padding:12px 14px;background:var(--card)}.prod-edit-more>summary{font-size:13px;font-weight:650;color:var(--txt);margin:0;list-style-position:inside}.prod-edit-extra{border:0;padding:12px 0 0}.prod-edit-hidden{display:none!important}@media(max-width:560px){.prod-edit-section{padding:12px}.prod-edit-section .fg{grid-template-columns:1fr}.prod-edit-section .f.full{grid-column:1}}
 </style>
 </head>
 <body><div class="app"><div class="scrim" id="scrim"></div><aside class="sb" id="sb"><div class="brand"><span class="logo">A<i>+</i></span><div>Gestão<small>Controle do negócio</small></div></div><nav class="sn" id="tabs"></nav><div class="sbf"><span class="av">A+</span><div><b>Meu negócio</b><small>Salvo automaticamente neste aparelho</small></div></div></aside><main class="main"><header class="top"><button class="btn mn" id="burger" aria-label="Menu">☰</button><div class="grow"></div><span class="save-state" id="save-state" aria-live="polite">✓ Salvo neste aparelho</span><button class="btn hm" id="pal">Buscar Ctrl+K</button><button class="btn" id="theme" aria-label="Tema">◐</button><div class="qa"><button class="btn p" id="qa">+ Registrar ▾</button><div class="qm" id="qm"></div></div><button id="imp" hidden></button><button id="add" hidden></button></header>
@@ -2542,7 +2547,7 @@ function form(id,rid=null,preset=null){if(id==='impressoes'||id==='v-nova')retur
   if(archiveBob&&k==='estoque_atual')h=`<input type="hidden" name="${k}" value="${esc(v)}"><input value="${esc(stockQtyLabel(archiveBob.quantity)+' nas bobinas')}" readonly title="Saldo calculado das bobinas, não deste cadastro agregado"><small style="display:block;color:var(--mut);line-height:1.45;margin-top:6px">Este cadastro histórico mantém estoque interno em zero para não contar o filamento duas vezes. Saldo físico: ${esc(stockQtyLabel(archiveBob.quantity))} em ${archiveBob.bobinas.length} bobina(s). Gerencie cada rolo na tela Bobinas.</small>`;
   else if(k==='kit_id'&&['vendas','personalizados'].includes(id)){const kid=String(v||''),K=rows('kits').filter(x=>eq(x.ativo,'SIM')||eq(x._id,kid));h=`<select name="kit_id"><option value="">— Produto normal / sem kit —</option>${K.map(x=>`<option value="${esc(x._id)}" ${eq(kid,x._id)?'selected':''}>${esc((x.codigo_kit||'')+' · '+(x.nome||'Kit sem nome')+' · '+money(x.preco_venda))}</option>`).join('')}</select>`;}
   else if(ty==='textarea')h=`<textarea name="${k}">${esc(v)}</textarea>`;
-  else if(so&&so.length<=5&&!(id==='financeiro'&&['fonte_recurso','classificacao_capital'].includes(k))){const o=so.includes(v)||!v?so:[...so,v];h=`<input type="hidden" name="${k}" value="${esc(v)}"><div class="seg" data-seg="${k}">${o.map(z=>`<button type="button" class="${v===z?'on':''}">${esc(z)}</button>`).join('')}</div>`}
+  else if(so&&so.length<=5&&!(id==='financeiro'&&['fonte_recurso','classificacao_capital'].includes(k))&&!(id==='produtos'&&k==='estrategia_estoque')){const o=so.includes(v)||!v?so:[...so,v];h=`<input type="hidden" name="${k}" value="${esc(v)}"><div class="seg" data-seg="${k}">${o.map(z=>`<button type="button" class="${v===z?'on':''}">${esc(z)}</button>`).join('')}</div>`}
   else if(so){const o=so.includes(v)||!v?so:[...so,v];h=`<select name="${k}" ${consStatusLocked?'disabled title="Use o botão Acertar para encerrar a consignação."':''}><option value=""></option>${o.map(z=>`<option ${v===z?'selected':''}>${esc(z)}</option>`).join('')}</select>`}
   else{const op=opts(m,k)||(/sku|loja|empresa|contato_id|cidade|produto$|material|categoria|responsavel|nicho|cliente|fornecedor|concorrente|cor$/.test(k)?lookup(k):null),ms=(MASTER[id]||[]).includes(k),L2=!ms&&(LK.test(k)||SELK.test(k))&&ty!=='number'&&ty!=='date'?[...new Set([...(op||[]),...(LK.test(k)?(GLOBAL.test(k)?suggest(k):suggestM(id,k)):[]),...(v?[v]:[])])].filter(Boolean):[];
    if(L2.length)h=`<select name="${k}"><option value=""></option>${L2.map(z=>`<option ${v===z?'selected':''}>${esc(z)}</option>`).join('')}<option value="__new">➕ Novo…</option></select>`;
@@ -2551,12 +2556,38 @@ function form(id,rid=null,preset=null){if(id==='impressoes'||id==='v-nova')retur
   const hint=id==='financeiro'&&k==='fonte_recurso'?(Array.isArray(old._rateioFontes)&&old._rateioFontes.length>1?`<small style="display:block;color:var(--warn);line-height:1.45;margin-top:6px">Este lançamento tem pagamento dividido: ${esc(finRateioLabel(old))}. Se alterar a fonte “Quem pagou”, o rateio dividido será removido; se alterar somente o valor, as proporções serão recalculadas.</small>`:'<small style="display:block;color:var(--mut);line-height:1.45;margin-top:6px">“Financiamento de terceiro” usa o saldo do empréstimo recebido: em uma saída paga, esse saldo diminui. A dívida só diminui quando você registra o pagamento do empréstimo. “Terceiro — a empresa deve” é para quando outra pessoa pagou o fornecedor diretamente, sem transferir o dinheiro para uma caixa sua.</small>') : '';
   return`<div class="f ${ty==='textarea'?'full':''}" data-field="${esc(k)}"><label>${esc(l)}${req?' *':''}${auto?' (automático)':''}</label>${h}${hint}</div>`};
  const main=m.fields.filter((f,i)=>!calcK.includes(f[0])&&f[2]!=='textarea'&&(i<(m.id==='vendas'?10:8)||f[3]===true||['kit_id','quantidade_kit'].includes(f[0])||(m.id==='personalizados'&&['valor_total','custo_estimado','sinal','saldo'].includes(f[0]))||f[0]==='foto')),more=m.fields.filter(f=>!calcK.includes(f[0])&&f[2]!=='textarea'&&!main.includes(f)),ta=m.fields.filter(f=>f[2]==='textarea'),cf=m.fields.filter(f=>calcK.includes(f[0]));
- const indPanel=rid&&['vendas','personalizados','produtos','custos','matriz_precos','consignacoes'].includes(id)?`<div style="margin-bottom:12px">${lucroIndicadoresHTML(old,id)}</div>`:'';
- $('#form').innerHTML=`${indPanel}<div class="fg">${main.map(fld).join('')}${id==='vendas'?'<div id="sale-guide" class="sale-guide"></div>':''}${cf.length?`<div class="sec">Calculado automaticamente</div>${cf.map(fld).join('')}`:''}${ta.map(fld).join('')}${more.length?`<details><summary>Mais campos (${more.length})</summary><div class="fg">${more.map(fld).join('')}</div></details>`:''}</div>${dls.join('')}`;
+ const indPanel=rid&&['vendas','personalizados','custos','matriz_precos','consignacoes'].includes(id)?`<div style="margin-bottom:12px">${lucroIndicadoresHTML(old,id)}</div>`:'';
+ const productEditor=()=>{
+  const byKey=Object.fromEntries(m.fields.map(f=>[f[0],f]));
+  const pf=k=>byKey[k]?fld(byKey[k]):'';
+  const conditional=(k,condition)=>pf(k).replace(`data-field="${k}"`,`data-field="${k}" data-prod-if="${condition}"`);
+  const visible=new Set(['sku','produto','produto_base','versao_produto','categoria_negocio','linha_comercial','tipo_produto','uso_produto','preco_padrao','ativo','estoque_minimo','teste_limite','custo_unitario','tempo_h','peso_g','horas_manuais','setup_h','lote_un','categoria','disponibilidade','observacoes','nicho','foto','fotos_extras','descricao_curta','descricao_completa','medidas','material','cores','destaque']);
+  if(!rid)visible.add('estoque_inicial');
+  const hidden=m.fields.filter(f=>!visible.has(f[0])).map(f=>`<input type="hidden" name="${f[0]}" value="${esc(old[f[0]]??'')}">`).join('');
+  const initial= !rid ? `<section class="prod-edit-section"><div class="prod-edit-head"><div><b>Estoque inicial</b><small>Informe somente o que você já tem fisicamente ao começar o controle deste produto.</small></div></div><div class="fg">${pf('estoque_inicial')}</div><p class="prod-edit-help">Depois do cadastro, entradas, produção, vendas e ajustes devem ser registrados nos módulos de estoque. Este valor deixa de ser editável para evitar diferenças no saldo.</p></section>` : '';
+  return `<div class="prod-edit">
+   <section class="prod-edit-section"><div class="prod-edit-head"><div><b>01 · Identificação</b><small>O que é o produto e como ele se conecta ao restante do sistema.</small></div></div><div class="fg">${pf('sku')}${pf('produto')}${pf('produto_base')}${pf('versao_produto')}</div></section>
+   <section class="prod-edit-section"><div class="prod-edit-head"><div><b>02 · Classificação e venda</b><small>Define como o produto aparece no catálogo e como o sistema sugere o preço.</small></div></div><div class="fg">${pf('categoria_negocio')}${conditional('linha_comercial','CHAVEIRO')}${pf('tipo_produto')}${pf('uso_produto')}${pf('preco_padrao')}${pf('ativo')}</div><p class="prod-edit-help">A faixa Econômico/Elaborado só aparece para produtos da linha Chaveiro. As regras de preço e combos continuam sendo aplicadas pelos módulos de venda.</p></section>
+   <section class="prod-edit-section"><div class="prod-edit-head"><div><b>03 · Estoque</b><small>Configura os alertas e a estratégia de reposição.</small></div></div><div class="fg">${pf('estoque_minimo')}${conditional('teste_limite','TESTE_DEMANDA')}</div><p class="prod-edit-help">A estratégia de reposição e a fase comercial são ajustadas diretamente no cartão do produto. O limite de unidades aparece aqui somente quando a estratégia estiver em “Teste de demanda”.</p></section>
+   <section class="prod-edit-section"><div class="prod-edit-head"><div><b>04 · Ficha técnica e custos</b><small>Informações usadas para estimar o custo de produção e apoiar a precificação.</small></div></div><div class="fg">${pf('peso_g')}${pf('tempo_h')}${pf('horas_manuais')}${pf('setup_h')}${pf('lote_un')}${pf('custo_unitario')}</div><p class="prod-edit-help">Peso, tempo de impressão, trabalho manual, setup e tamanho do lote alimentam a estimativa de custo. Quando existir um custo calculado no módulo Custos, ele prevalece; o custo deste cadastro funciona como referência alternativa.</p></section>
+   ${initial}
+   <details class="prod-edit-more"><summary>Catálogo, apresentação e informações adicionais</summary><div class="prod-edit-section prod-edit-extra">
+    <div class="prod-edit-head"><div><b>Apresentação no Catálogo A+</b><small>Informações usadas na vitrine, nos filtros e na divulgação dos produtos.</small></div></div>
+    <div class="fg">${pf('nicho')}${pf('foto')}${pf('fotos_extras')}${pf('descricao_curta')}${pf('descricao_completa')}${pf('medidas')}${pf('material')}${pf('cores')}${pf('destaque')}</div>
+    <div class="prod-edit-head" style="margin-top:14px"><div><b>Outras informações</b><small>Classificação complementar e anotações internas.</small></div></div>
+    <div class="fg">${pf('categoria')}${pf('disponibilidade')}${pf('observacoes')}</div>
+    <p class="prod-edit-help">Esses campos são opcionais. Fotos e descrições aparecem na vitrine; nicho ajuda a analisar os segmentos atendidos; categoria e disponibilidade alimentam os filtros do catálogo.</p>
+   </div></details>
+   <div class="prod-edit-hidden">${hidden}</div>
+  </div>${dls.join('')}`;
+ };
+ $('#form').innerHTML=id==='produtos'?productEditor():`${indPanel}<div class="fg">${main.map(fld).join('')}${id==='vendas'?'<div id="sale-guide" class="sale-guide"></div>':''}${cf.length?`<div class="sec">Calculado automaticamente</div>${cf.map(fld).join('')}`:''}${ta.map(fld).join('')}${more.length?`<details><summary>Mais campos (${more.length})</summary><div class="fg">${more.map(fld).join('')}</div></details>`:''}</div>${dls.join('')}`;
  $('#mt').textContent=(rid?'Editar · ':'Novo · ')+m.label;$('#del').style.display=$('#dup').style.display=rid?'':'none';$('#ov').classList.add('on');
- const F=$('#form');F.querySelectorAll('[data-seg]').forEach(s=>s.onclick=e=>{const b=e.target.closest('button');if(!b)return;const on=b.classList.contains('on');s.querySelectorAll('button').forEach(x=>x.classList.remove('on'));F.elements[s.dataset.seg].value=on?'':b.textContent;on||b.classList.add('on');link(F.elements[s.dataset.seg])});
- F.oninput=F.onchange=e=>{if(e.target.value==='__new'){const n=e.target.name;e.target.outerHTML=`<input name="${n}" placeholder="Digite o novo valor">`;F.elements[n].focus();return}if(e.target.dataset.auto&&e.type==='input')e.target.dataset.dirty=1;if(e.type==='change'&&e.target.inputMode==='decimal'&&e.target.value.trim()!==''&&!e.target.dataset.auto)e.target.value=f2(num(e.target.value));link(e.target);if(id==='vendas')saleGuideUpdate()};
- if(!rid)link(null);if(id==='vendas')saleGuideUpdate();setTimeout(()=>{const e=F.querySelector('input:not([type=hidden]):not([data-auto]),select,textarea');e&&e.focus()},60)}
+ const F=$('#form');
+ const syncProductEditor=()=>{if(id!=='produtos')return;const cat=String(F.elements.categoria_negocio?.value||'').toUpperCase(),strategy=String(F.elements.estrategia_estoque?.value||'').toUpperCase();const line=F.querySelector('[data-prod-if="CHAVEIRO"]'),limit=F.querySelector('[data-prod-if="TESTE_DEMANDA"]');if(line)line.style.display=cat==='CHAVEIRO'?'':'none';if(limit){const show=strategy==='TESTE_DEMANDA';limit.style.display=show?'':'none';const input=F.elements.teste_limite;if(show&&input&&!String(input.value||'').trim())input.value='5';}};
+ F.querySelectorAll('[data-seg]').forEach(s=>s.onclick=e=>{const b=e.target.closest('button');if(!b)return;const on=b.classList.contains('on');s.querySelectorAll('button').forEach(x=>x.classList.remove('on'));F.elements[s.dataset.seg].value=on?'':b.textContent;on||b.classList.add('on');link(F.elements[s.dataset.seg]);syncProductEditor()});
+ F.oninput=F.onchange=e=>{if(e.target.value==='__new'){const n=e.target.name;e.target.outerHTML=`<input name="${n}" placeholder="Digite o novo valor">`;F.elements[n].focus();return}if(e.target.dataset.auto&&e.type==='input')e.target.dataset.dirty=1;if(e.type==='change'&&e.target.inputMode==='decimal'&&e.target.value.trim()!==''&&!e.target.dataset.auto)e.target.value=f2(num(e.target.value));link(e.target);syncProductEditor();if(id==='vendas')saleGuideUpdate()};
+ syncProductEditor();if(!rid)link(null);if(id==='vendas')saleGuideUpdate();setTimeout(()=>{const e=F.querySelector('input:not([type=hidden]):not([data-auto]),select,textarea');e&&e.focus()},60)}
 function lookup(k){const c={produtos:'produto',lojas:'loja_empresa',contatos:'empresa',cidades:'cidade',materiais:'material'};if(/sku/.test(k))return[...new Set([...rows('produtos'),...rows('catalogo')].map(r=>r.sku).filter(Boolean))];if(k==='produto'||k==='produto_solucao')return[...new Set([...rows('produtos'),...rows('catalogo')].map(r=>r.produto).filter(Boolean))];
  // Vendas pode ser feita para uma loja parceira OU para uma pessoa física cadastrada em Contatos.
  // Só contatos sem empresa entram como pessoas físicas, para não transformar funcionários de lojas em clientes duplicados.
@@ -3581,19 +3612,21 @@ async function migV5(){
  setTimeout(()=>alert('Produtos duplicados unidos (uma única vez):\n\n• '+L.join('\n• ')+'\n\nLotes, produção, vendas, custos e preços foram religados ao produto mantido. Uma cópia dos dados de antes foi guardada em Mais › Backup e dados.'),900);
  return true;
  }catch(e){console.error('migV5',e);return false}}
-/* Atualização única do padrão de comissão das lojas para 20%.
-   Migra apenas cadastros de loja vazios ou com o antigo padrão de 30%; preserva percentuais personalizados.
-   As comissões registradas nos envios/vendas históricos não são alteradas. */
+/* Atualização segura do padrão de comissão das lojas.
+   Regra: 20% é o padrão para lojas novas e para cadastros antigos sem percentual.
+   Nunca converte um percentual explícito de 30% para 20%, porque o valor pode ser uma condição personalizada.
+   Cada consignação/venda mantém a comissão gravada no próprio registro como fotografia histórica. */
 async function migComissaoLojas20(){
- const key='aplus_mig_comissao_20';
+ const key='aplus_mig_comissao_20_safe_v2';
  try{
   if(localStorage.getItem(key)==='1')return true;
   const current=rows('lojas'),next=current.map(l=>{
    const raw=String(l.comissao??'').trim();
-   return (!raw||Math.abs(num(raw)-30)<0.000001)?{...l,comissao:DEFAULT_STORE_COMMISSION}:l;
+   // Só preenche o que está vazio; qualquer percentual explícito é preservado.
+   return !raw?{...l,comissao:DEFAULT_STORE_COMMISSION}:l;
   });
   if(JSON.stringify(current)!==JSON.stringify(next)){
-   if(!await snapSave('antes de atualizar o padrão de comissão das lojas para 20%'))return false;
+   if(!await snapSave('antes de preencher comissões vazias com o padrão de 20%'))return false;
    const ok=withDbTransaction(()=>{setRows('lojas',next);return true});
    if(!ok||!await waitForDbIdle())return false;
   }
@@ -4449,7 +4482,7 @@ telefone:'Telefone ou WhatsApp com DDD, ex.: (44) 99999-9999.',
 cidade:'Cidade. Escolha da lista ou use "Novo…". Alimenta o módulo Cidades.',
 bairro:'Bairro do endereço.',rua:'Rua / logradouro.',numero:'Número do endereço.',
 data_inicio:'Data em que a parceria ou trabalho começou.',
-comissao:'Percentual que a loja fica de cada venda (padrão atual: 20%). Usado no cálculo das consignações.',
+comissao:'Percentual que a loja recebe nos novos envios. Padrão para lojas novas: 20%. Cada consignação já registrada mantém sua própria comissão histórica. Percentuais explícitos personalizados, como 30%, são preservados.',
 proxima_visita:'Data prevista da próxima visita para repor produtos ou fazer o acerto.',
 ultimo_acerto:'Data do último acerto de contas com a loja.',
 canal:'Por onde a venda/contato aconteceu. Escolha da lista ou use "Novo…".',
