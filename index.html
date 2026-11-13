@@ -653,6 +653,44 @@ html[data-theme="light"] select option:hover { background-color:#d6130a !importa
 .loja-product-info>b{display:block;line-height:1.35;white-space:normal}
 .loja-product-info>small{display:block;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
 </style>
+<style id="apx-lojas-cons-view">
+/* Lojas parceiras: visualização em grade/lista e filtros por tipo de chaveiro. */
+.lojas-cons-toolbar{display:flex;flex-direction:column;gap:12px;margin:0 0 16px;padding:14px 16px}
+.lojas-cons-toolbar-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.lojas-cons-toolbar-head h3{margin:0;font-size:15px}
+.lojas-cons-toolbar-head small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+.lojas-cons-view-switch{display:flex;gap:5px;align-items:center;background:var(--bg);border:1px solid var(--line);padding:4px;border-radius:11px}
+.lojas-cons-view-switch .btn{padding:6px 11px}
+.lojas-cons-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.lojas-cons-filters .chip{display:inline-flex;align-items:center;gap:6px}
+.lojas-cons-filters .chip small{font-size:10px;opacity:.78}
+.loja-cons-products{padding-top:10px}
+.loja-cons-products.is-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:10px}
+.loja-cons-products.is-list{display:flex;flex-direction:column;gap:8px}
+.loja-cons-product-card{min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:13px;padding:12px;display:flex;flex-direction:column;gap:11px}
+.loja-cons-product-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0}
+.loja-cons-product-main{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;flex:1}
+.loja-cons-product-tags{display:flex;gap:5px;flex-wrap:wrap}
+.loja-cons-product-value{flex:0 0 auto;text-align:right;min-width:76px}
+.loja-cons-product-value b{display:block;font-size:15px;line-height:1.25}
+.loja-cons-product-value small{display:block;color:var(--mut);font-size:11px;line-height:1.35;margin-top:3px}
+.loja-cons-product-card .loja-product-info{width:100%;gap:3px}
+.loja-cons-product-card .loja-product-info>b{font-size:13px}
+.loja-cons-product-card .loja-product-info>small{font-size:11px;color:var(--mut)}
+.loja-cons-product-card .ac{margin:0!important;gap:6px}
+.loja-cons-products.is-grid .loja-cons-product-card .ac{margin-top:auto!important}
+.loja-cons-products.is-list .loja-cons-product-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 16px;padding:10px 12px}
+.loja-cons-products.is-list .loja-cons-product-head{align-items:center}
+.loja-cons-products.is-list .loja-cons-product-card .ac{grid-column:1/-1;justify-content:flex-end}
+.loja-cons-empty-filter{padding:14px;border:1px dashed var(--line);border-radius:11px;color:var(--mut);font-size:13px}
+@media(max-width:650px){
+ .loja-cons-products.is-grid{grid-template-columns:repeat(auto-fill,minmax(185px,1fr))}
+ .loja-cons-products.is-list .loja-cons-product-card{grid-template-columns:minmax(0,1fr)}
+ .loja-cons-products.is-list .loja-cons-product-value{text-align:left;display:flex;gap:6px;align-items:baseline}
+ .loja-cons-products.is-list .loja-cons-product-card .ac{grid-column:1;justify-content:flex-start}
+ .lojas-cons-toolbar-head{align-items:flex-start}
+}
+</style>
 </head>
 <body><div class="app"><div class="scrim" id="scrim"></div><aside class="sb" id="sb"><div class="brand"><span class="logo">A<i>+</i></span><div>Gestão<small>Controle do negócio</small></div></div><nav class="sn" id="tabs"></nav><div class="sbf"><span class="av">A+</span><div><b>Meu negócio</b><small>Salvo automaticamente neste aparelho</small></div></div></aside><main class="main"><header class="top"><button class="btn mn" id="burger" aria-label="Menu">☰</button><div class="grow"></div><span class="save-state" id="save-state" aria-live="polite">✓ Salvo neste aparelho</span><button class="btn hm" id="pal">Buscar Ctrl+K</button><button class="btn" id="theme" aria-label="Tema">◐</button><div class="qa"><button class="btn p" id="qa">+ Registrar ▾</button><div class="qm" id="qm"></div></div><button id="imp" hidden></button><button id="add" hidden></button></header>
 <div class="hubwrap" id="hubbar"></div><section class="content" id="content"></section></main></div>
@@ -1648,10 +1686,34 @@ function hoje(){const t=todayS(),rg=perRange(hp,t),pv=prevR(rg),soon=addD(t,3),T
  ${dh('Atividade recente')}<div class="panel">${act.length?act.map(x=>`<button class="todo" data-f="${x.m}|${x.r._id}"><span>${esc(x.l)}</span><b class="ok">${fd(x.d)}</b></button>`).join(''):'<div class="empty"><b>Nada registrado ainda</b>Use “+ Registrar” para começar.</div>'}</div>`;
  document.querySelectorAll('[data-hp]').forEach(b=>b.onclick=()=>{hp=b.dataset.hp;hoje()});$('#hcmp').onchange=e=>{hcmp=e.target.checked;hoje()};$('#hmeta').onclick=()=>{const v=prompt('Meta de faturamento do mês (R$):',mt||'');if(v!==null){setMeta(t,num(v));hoje()}};document.querySelectorAll('[data-qk]').forEach(b=>b.onclick=()=>qkOpen(b.dataset.qk));{const ha=$('#hall');if(ha)ha.onclick=()=>{hAll=!hAll;hoje()}}document.querySelectorAll('[data-done]').forEach(b=>b.onclick=e=>{e.stopPropagation();markDone(b.dataset.done)});bkBind();wire()}
 /* LOJAS: consignação por parceiro, com acerto em um clique */
+function lojaConsTipoProduto(row){
+ const P=rows('produtos'),p=P.find(x=>eq(x.sku,row&&row.sku))||{},name=String((row&&row.produto)||p.produto||'').toLowerCase(),sku=String((row&&row.sku)||p.sku||'').toUpperCase();
+ const explicit=String(p.categoria_negocio||row&&row.categoria_negocio||'').toUpperCase(),line=String(p.linha_comercial||row&&row.linha_comercial||'').toUpperCase(),rawType=String(p.tipo_produto||row&&row.tipo_produto||'').toUpperCase();
+ const inferred=typeof keychainClassifyProduct==='function'?keychainClassifyProduct({...p,sku:sku,produto:name}):null;
+ const isKeychain=explicit==='CHAVEIRO'||line==='ECONOMICO'||line==='ELABORADO'||/chaveiro/.test(name)||/^P3D-(03[4-9]|04[0-4])$/.test(sku)||!!(inferred&&inferred.categoria_negocio==='CHAVEIRO');
+ if(!isKeychain||explicit==='OUTRO')return{key:'OUTROS_PRODUTOS',label:'Outros produtos',line:'',isKeychain:false};
+ const type=(rawType&&rawType!=='OUTRO'?rawType:String(inferred&&inferred.tipo_produto||'')).toUpperCase();
+ if(/CLICKER/.test(type)||/clicker/.test(name))return{key:'CLICKER',label:'Clickers',line:line,isKeychain:true};
+ if(/ARTICUL/.test(type)||/articulad/.test(name))return{key:'ARTICULADO',label:'Articulados',line:line,isKeychain:true};
+ if(/(^|\b)2D(\b|$)/.test(type)||/\b2d\b/.test(name)||/^P3D-(030|031|028)$/.test(sku))return{key:'2D',label:'Chaveiros 2D',line:line,isKeychain:true};
+ if(/ANIMAL|SIMPLES/.test(type)||/animal|gato|cachorro|coelho|urso|doninha|raposa|galinha|golfinho|axolote|peixe|foca|vaca|tubar|pato/.test(name))return{key:'ANIMAIS',label:'Animais / simples',line:line,isKeychain:true};
+ if(line==='A_CLASSIFICAR')return{key:'A_CLASSIFICAR',label:'A classificar',line:line,isKeychain:true};
+ return{key:'OUTROS_CHAVEIROS',label:'Outros chaveiros',line:line,isKeychain:true};
+}
+function lojasConsUi(){
+ const filters=['TODOS','2D','ARTICULADO','CLICKER','ANIMAIS','OUTROS_CHAVEIROS','A_CLASSIFICAR','OUTROS_PRODUTOS'];
+ let view='grid',filter='TODOS';
+ try{view=localStorage.getItem('aplus_lojas_cons_view')==='list'?'list':'grid';const saved=localStorage.getItem('aplus_lojas_cons_filter');if(filters.includes(saved))filter=saved}catch(e){}
+ return{view,filter,filters};
+}
 function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'),t=todayS(),kc=(l,v,c,s)=>`<div class="kc2" style="--c:${c||'var(--acc)'}"><small>${l}</small><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
  const hasValue=v=>v!==undefined&&v!==null&&String(v).trim()!=='',prod=sku=>P.find(p=>eq(p.sku,sku)),cost=r=>num((prod(r.sku)||{}).custo_unitario),price=r=>num(r.preco_unitario)||num((prod(r.sku)||{}).preco_padrao),pct=(r,l)=>hasValue(r.comissao_pct)?num(r.comissao_pct):hasValue(l&&l.comissao)?num(l.comissao):DEFAULT_STORE_COMMISSION;
  const resumo=l=>{const all=C.filter(r=>eq(r.loja_empresa,l.loja_empresa)),pend=all.filter(r=>!eq(r.status_acerto,'ACERTADO')),stock=pend.filter(r=>num(r.estoque_loja)>0),units=sum(stock,'estoque_loja'),imm=sum(stock,r=>num(r.estoque_loja)*cost(r)),gross=sum(stock,r=>num(r.estoque_loja)*price(r)),comm=sum(stock,r=>num(r.estoque_loja)*price(r)*pct(r,l)/100),net=gross-comm,potProfit=net-imm,sold=sum(all,'qtd_vendida'),recv=sum(pend,'a_receber'),soldGross=sum(all,'valor_bruto');return{all,pend,stock,units,imm,gross,comm,net,potProfit,sold,recv,soldGross}};
- const RS=L.map(l=>[l,resumo(l)]),T=RS.reduce((a,[l,r])=>({units:a.units+r.units,imm:a.imm+r.imm,gross:a.gross+r.gross,net:a.net+r.net,profit:a.profit+r.potProfit,recv:a.recv+r.recv}),{units:0,imm:0,gross:0,net:0,profit:0,recv:0});
+ const RS=L.map(l=>[l,resumo(l)]),T=RS.reduce((a,[l,r])=>({units:a.units+r.units,imm:a.imm+r.imm,gross:a.gross+r.gross,net:a.net+r.net,profit:a.profit+r.potProfit,recv:a.recv+r.recv}),{units:0,imm:0,gross:0,net:0,profit:0,recv:0}),ui=lojasConsUi();
+ const allStock=RS.flatMap(([l,r])=>r.stock.map(x=>({row:x,type:lojaConsTipoProduto(x)})));
+ const filterDefs=[['TODOS','Todos'],['2D','2D'],['ARTICULADO','Articulados'],['CLICKER','Clickers'],['ANIMAIS','Animais / simples'],['OUTROS_CHAVEIROS','Outros chaveiros'],['A_CLASSIFICAR','A classificar'],['OUTROS_PRODUTOS','Outros produtos']];
+ const filterCount=k=>k==='TODOS'?allStock.length:allStock.filter(x=>x.type.key===k).length;
+ const filterLabel=(filterDefs.find(x=>x[0]===ui.filter)||filterDefs[0])[1];
  $('#content').innerHTML=head('Lojas parceiras',`<button class="btn p" type="button" data-lote="">📦 Envio em lote</button><button class="btn" data-go="consignacoes">Todas as consignações</button><button class="btn" data-go="avarias">⚠️ Quebras / avarias</button><button class="btn p" data-f="lojas|">+ Nova loja</button>`)+
  (L.length?`<div class="k5" style="margin-bottom:18px">
  ${kc('Peças nas lojas',f2(T.units),'#3b82f6','Unidades ainda em consignação')}
@@ -1660,7 +1722,9 @@ function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'
  ${kc('Potencial para você',money(T.net),'var(--acc)','Após comissão estimada dos lojistas')}
  ${kc('Lucro potencial',money(T.profit),T.profit>=0?'var(--acc)':'var(--bad)','Potencial líquido − custo das peças')}
  ${kc('A receber agora',money(T.recv),'#3b82f6','Já vendido e ainda não acertado')}
- </div><div class="grid">${RS.map(([l,r])=>{const v=dt(l.proxima_visita),last=dt(l.ultimo_acerto),mLoja=lucroIndicadoresResumo(r.all.filter(x=>num(x.qtd_vendida)>0),'consignacoes'),products=r.stock.map(x=>{const q=num(x.estoque_loja),cu=cost(x),pv=price(x),pc=pct(x,l),gb=q*pv,nv=gb*(1-pc/100),lastSale=dt(x.ultima_venda_data);return`<div class="rw" style="align-items:flex-start"><span class="loja-product-info"><b>${esc(x.produto||produtoTexto(x.sku,x)||x.sku||'Produto')}</b><small class="ok">${q} un na loja · ${f2(num(x.qtd_vendida))} vendida(s) · custo ${money(cu)}/un · venda ${money(pv)}/un${lastSale?' · última venda '+lastSale.split('-').reverse().join('/') :''}</small></span><span style="text-align:right"><b>${money(gb)}</b><small class="ok">potencial · ${money(nv)} p/ você</small></span></div><div class="ac" style="margin:6px 0 10px"><button class="btn s p" type="button" data-cons-venda="${esc(x._id)}">＋ Registrar venda</button><button class="btn s" type="button" data-avaria-cons="${esc(x._id)}">⚠️ Registrar avaria</button><button class="btn s" type="button" data-avaria-repair-return="${esc(x._id)}">↩️ Retorno para reparo</button></div>`}).join('');
+ </div>
+ <section class="panel lojas-cons-toolbar"><div class="lojas-cons-toolbar-head"><div><h3>Produtos consignados</h3><small>${allStock.length} registro(s) com saldo nas lojas · filtro atual: ${esc(filterLabel)}</small></div><div class="lojas-cons-view-switch" role="group" aria-label="Visualização dos produtos consignados"><button type="button" class="btn s ${ui.view==='grid'?'p':''}" data-lojas-view="grid" aria-pressed="${ui.view==='grid'}">▦ Grade</button><button type="button" class="btn s ${ui.view==='list'?'p':''}" data-lojas-view="list" aria-pressed="${ui.view==='list'}">☷ Lista</button></div></div><div class="lojas-cons-filters" aria-label="Filtrar produtos consignados">${filterDefs.map(([k,label])=>`<button type="button" class="chip ${ui.filter===k?'on':''}" data-lojas-filter="${k}" aria-pressed="${ui.filter===k}">${label} <small>${filterCount(k)}</small></button>`).join('')}</div></section>
+ <div class="grid">${RS.map(([l,r])=>{const v=dt(l.proxima_visita),last=dt(l.ultimo_acerto),mLoja=lucroIndicadoresResumo(r.all.filter(x=>num(x.qtd_vendida)>0),'consignacoes'),visibleStock=r.stock.filter(x=>ui.filter==='TODOS'||lojasConsTipoProduto(x).key===ui.filter),products=visibleStock.map(x=>{const q=num(x.estoque_loja),cu=cost(x),pv=price(x),pc=pct(x,l),gb=q*pv,nv=gb*(1-pc/100),lastSale=dt(x.ultima_venda_data),type=lojaConsTipoProduto(x),p=prod(x.sku)||{},line=String(p.linha_comercial||'').toUpperCase(),lineLabel=line==='ECONOMICO'?'Econômico':line==='ELABORADO'?'Elaborado':line==='A_CLASSIFICAR'?'Linha a classificar':'';return`<article class="loja-cons-product-card"><div class="loja-cons-product-head"><div class="loja-cons-product-main"><div class="loja-cons-product-tags"><span class="pill ${type.key==='OUTROS_PRODUTOS'?'':type.key==='A_CLASSIFICAR'?'r':'g'}">${esc(type.label)}</span>${lineLabel?`<span class="pill ${line==='ELABORADO'?'a':'g'}">${esc(lineLabel)}</span>`:''}</div><span class="loja-product-info"><b>${esc(x.produto||produtoTexto(x.sku,x)||x.sku||'Produto')}</b><small>${q} un na loja · ${f2(num(x.qtd_vendida))} vendida(s) · custo ${money(cu)}/un · venda ${money(pv)}/un${lastSale?' · última venda '+lastSale.split('-').reverse().join('/') :''}</small></span></div><div class="loja-cons-product-value"><b>${money(gb)}</b><small>potencial<br>${money(nv)} p/ você</small></div></div><div class="ac"><button class="btn s p" type="button" data-cons-venda="${esc(x._id)}">＋ Registrar venda</button><button class="btn s" type="button" data-avaria-cons="${esc(x._id)}">⚠️ Registrar avaria</button><button class="btn s" type="button" data-avaria-repair-return="${esc(x._id)}">↩️ Retorno para reparo</button></div></article>`}).join('');
  return`<div class="lc" style="display:flex;flex-direction:column;gap:10px"><div><h3>${esc(l.loja_empresa)}</h3><span class="ok">${esc(l.cidade||'')} ${l.status?pill(l.status):''} · comissão padrão ${f2(hasValue(l.comissao)?num(l.comissao):DEFAULT_STORE_COMMISSION)}%</span></div>
  <div class="nums" style="grid-template-columns:repeat(3,1fr)"><div><small>Na loja</small>${f2(r.units)} un</div><div><small>Vendido</small>${f2(r.sold)} un</div><div><small>A receber</small>${money(r.recv)}</div></div>
  <div class="panel" style="padding:12px;margin:0"><b style="font-size:13px">Capital e potencial nesta loja</b>
@@ -1669,12 +1733,16 @@ function lojasV(){const L=rows('lojas'),C=rows('consignacoes'),P=rows('produtos'
  <div class="rw"><span>🤝 Comissão potencial da loja</span><b>${money(r.comm)}</b></div>
  <div class="rw"><span>💵 Potencial para você</span><b>${money(r.net)}</b></div>
  <div class="rw"><span>📈 Lucro potencial sobre o estoque</span><b style="color:${r.potProfit>=0?'var(--acc)':'var(--bad)'}">${money(r.potProfit)}</b></div></div>
- ${products?`<details open><summary><b>Produtos atualmente na loja</b></summary><div style="margin-top:6px">${products}</div></details>`:'<div class="ok">Nenhuma peça pendente nesta loja.</div>'}
+ ${r.stock.length?`<details open><summary><b>Produtos atualmente na loja</b> <small class="ok">${visibleStock.length} de ${r.stock.length} registro(s)</small></summary>${visibleStock.length?`<div class="loja-cons-products is-${ui.view}">${products}</div>`:`<div class="loja-cons-empty-filter">Nenhum produto desta loja corresponde ao filtro “${esc(filterLabel)}”.</div>`}</details>`:'<div class="ok">Nenhuma peça pendente nesta loja.</div>'}
  ${mLoja.n?`<div class="panel" style="padding:10px;margin:0"><b style="font-size:13px">Lucros estimados do que já vendeu</b><div class="rw"><span>Lucro Virgem</span><b>${money(mLoja.lucroVirgem)}</b></div><div class="rw"><span>Lucro sem Ajustes</span><b>${money(mLoja.lucroSemAjustes)}</b></div></div>`:''}
  <div class="ok">Próxima visita: ${v?`<b style="color:${v<t?'var(--bad)':'inherit'}">${v.split('-').reverse().join('/')}</b>`:'não marcada'}${last?' · último acerto: <b>'+last.split('-').reverse().join('/')+'</b>':''}</div>
  <div class="ac"><button class="btn s" type="button" data-avaria-store="${esc(l.loja_empresa)}">⚠️ Registrar avaria</button><button class="btn s" data-f='consignacoes|' data-p='${esc(JSON.stringify({loja_empresa:l.loja_empresa,comissao_pct:hasValue(l.comissao)?num(l.comissao):DEFAULT_STORE_COMMISSION,ultimo_envio:t}))}'>+ Envio</button><button class="btn s" type="button" data-lote="${esc(l.loja_empresa)}">📦 Lote</button>${r.pend.length?`<button class="btn s p" data-ac="${esc(l.loja_empresa)}">Acertar ${money(r.recv)}</button>`:''}<button class="btn s" data-f="lojas|${l._id}">Editar</button></div></div>`}).join('')}</div>`:'<div class="empty"><b>Cadastre sua primeira loja parceira</b>Depois registre os envios e acerte tudo por aqui.</div>')+
  '<p class="foot"><b>Dinheiro parado</b> usa o custo real cadastrado de cada produto. <b>Venda potencial</b> usa o preço de venda da consignação. <b>Potencial para você</b> desconta a comissão do lojista. Esses valores são projeções do estoque que ainda está nas lojas.</p>';
- document.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>acertar(b.dataset.ac));wire()}
+ document.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>acertar(b.dataset.ac));
+ document.querySelectorAll('[data-lojas-view]').forEach(b=>b.onclick=()=>{try{localStorage.setItem('aplus_lojas_cons_view',b.dataset.lojasView)}catch(e){}lojasV()});
+ document.querySelectorAll('[data-lojas-filter]').forEach(b=>b.onclick=()=>{try{localStorage.setItem('aplus_lojas_cons_filter',b.dataset.lojasFilter)}catch(e){}lojasV()});
+ wire()}
+
 function acertar(n){const t=todayS(),all=rows('consignacoes'),p=all.filter(r=>eq(r.loja_empresa,n)&&!eq(r.status_acerto,'ACERTADO')),tot=sum(p,'a_receber'),left=sum(p,'estoque_loja');
  if(!confirm(`Acertar ${p.length} lançamento(s) de ${n}, total ${money(tot)}?\nIsso lança uma ENTRADA recebida no caixa.`))return;
  let ret=0;if(left>0){const v=prompt(`Sobraram ${left} un. sem vender na loja.\nQuantas VOLTARAM para casa? (0 = todas ficam na loja)`,'0');if(v===null)return;ret=Math.max(0,Math.min(left,Math.floor(num(v))))}
